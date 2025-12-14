@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, serial, integer, real, timestamp, index, jsonb } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, serial, integer, real, timestamp, index, jsonb, boolean } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -21,6 +21,7 @@ export const users = pgTable("users", {
   firstName: varchar("first_name"),
   lastName: varchar("last_name"),
   profileImageUrl: varchar("profile_image_url"),
+  isAdmin: boolean("is_admin").default(false),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -28,6 +29,60 @@ export const users = pgTable("users", {
 export type UpsertUser = typeof users.$inferInsert;
 export type User = typeof users.$inferSelect;
 
+// Cuisine categories
+export const cuisineCategories = pgTable("cuisine_categories", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull().unique(),
+  icon: text("icon"),
+});
+
+export const insertCuisineCategorySchema = createInsertSchema(cuisineCategories).omit({ id: true });
+export type InsertCuisineCategory = z.infer<typeof insertCuisineCategorySchema>;
+export type CuisineCategory = typeof cuisineCategories.$inferSelect;
+
+// Restaurant registration requests (pending validation)
+export const restaurantRegistrations = pgTable("restaurant_registrations", {
+  id: serial("id").primaryKey(),
+  userId: varchar("user_id").references(() => users.id),
+  
+  // Restaurant info
+  restaurantName: text("restaurant_name").notNull(),
+  address: text("address").notNull(),
+  phone: text("phone").notNull(),
+  companyName: text("company_name").notNull(),
+  registrationNumber: text("registration_number"),
+  cuisineType: text("cuisine_type").notNull(),
+  priceRange: text("price_range").notNull(),
+  description: text("description"),
+  
+  // Opening hours (JSON format)
+  openingHours: jsonb("opening_hours"),
+  
+  // Files
+  logoUrl: text("logo_url"),
+  photos: text("photos").array(),
+  menuPdfUrl: text("menu_pdf_url"),
+  
+  // Validation
+  status: text("status").notNull().default("pending"),
+  adminNotes: text("admin_notes"),
+  
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertRegistrationSchema = createInsertSchema(restaurantRegistrations).omit({
+  id: true,
+  status: true,
+  adminNotes: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertRegistration = z.infer<typeof insertRegistrationSchema>;
+export type RestaurantRegistration = typeof restaurantRegistrations.$inferSelect;
+
+// Existing restaurants table
 export const restaurants = pgTable("restaurants", {
   id: serial("id").primaryKey(),
   name: text("name").notNull(),
@@ -39,6 +94,10 @@ export const restaurants = pgTable("restaurants", {
   description: text("description").notNull(),
   features: text("features").array().notNull(),
   ownerId: varchar("owner_id").references(() => users.id),
+  phone: text("phone"),
+  address: text("address"),
+  openingHours: jsonb("opening_hours"),
+  menuPdfUrl: text("menu_pdf_url"),
 });
 
 export const insertRestaurantSchema = createInsertSchema(restaurants).omit({

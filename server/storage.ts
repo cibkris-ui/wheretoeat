@@ -7,9 +7,14 @@ import {
   type InsertRestaurant,
   type Booking,
   type InsertBooking,
+  type RestaurantRegistration,
+  type InsertRegistration,
+  type CuisineCategory,
   users,
   restaurants,
-  bookings
+  bookings,
+  restaurantRegistrations,
+  cuisineCategories
 } from "@shared/schema";
 
 export interface IStorage {
@@ -24,6 +29,14 @@ export interface IStorage {
   
   createBooking(booking: InsertBooking): Promise<Booking>;
   getBookingsByRestaurant(restaurantId: number): Promise<Booking[]>;
+  
+  getCuisineCategories(): Promise<CuisineCategory[]>;
+  
+  createRegistration(registration: InsertRegistration): Promise<RestaurantRegistration>;
+  getRegistrationsByUser(userId: string): Promise<RestaurantRegistration[]>;
+  getAllRegistrations(): Promise<RestaurantRegistration[]>;
+  getRegistration(id: number): Promise<RestaurantRegistration | undefined>;
+  updateRegistrationStatus(id: number, status: string, adminNotes?: string): Promise<RestaurantRegistration | undefined>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -81,6 +94,37 @@ export class DatabaseStorage implements IStorage {
 
   async getBookingsByRestaurant(restaurantId: number): Promise<Booking[]> {
     return await db.select().from(bookings).where(eq(bookings.restaurantId, restaurantId));
+  }
+
+  async getCuisineCategories(): Promise<CuisineCategory[]> {
+    return await db.select().from(cuisineCategories);
+  }
+
+  async createRegistration(registration: InsertRegistration): Promise<RestaurantRegistration> {
+    const [newReg] = await db.insert(restaurantRegistrations).values(registration).returning();
+    return newReg;
+  }
+
+  async getRegistrationsByUser(userId: string): Promise<RestaurantRegistration[]> {
+    return await db.select().from(restaurantRegistrations).where(eq(restaurantRegistrations.userId, userId));
+  }
+
+  async getAllRegistrations(): Promise<RestaurantRegistration[]> {
+    return await db.select().from(restaurantRegistrations);
+  }
+
+  async getRegistration(id: number): Promise<RestaurantRegistration | undefined> {
+    const [reg] = await db.select().from(restaurantRegistrations).where(eq(restaurantRegistrations.id, id));
+    return reg;
+  }
+
+  async updateRegistrationStatus(id: number, status: string, adminNotes?: string): Promise<RestaurantRegistration | undefined> {
+    const [updated] = await db
+      .update(restaurantRegistrations)
+      .set({ status, adminNotes, updatedAt: new Date() })
+      .where(eq(restaurantRegistrations.id, id))
+      .returning();
+    return updated;
   }
 }
 
