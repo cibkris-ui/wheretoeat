@@ -1,8 +1,7 @@
 import { Link } from "wouter";
-import { Star, MapPin, Tag } from "lucide-react";
+import { Star, MapPin } from "lucide-react";
 import type { Restaurant } from "@shared/schema";
-import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 
 interface RestaurantCardProps {
   restaurant: Restaurant;
@@ -24,12 +23,6 @@ export function RestaurantCard({ restaurant }: RestaurantCardProps) {
              <span className="text-[10px] text-muted-foreground uppercase font-medium">/ 5</span>
           </div>
           
-          {/* Discount Tag (Mock) */}
-          <div className="absolute top-3 left-3">
-             <Badge className="bg-primary text-white font-bold border-0 px-2 py-1 text-xs">
-                -20% sur la carte
-             </Badge>
-          </div>
         </div>
         
         <CardHeader className="p-4 pb-1">
@@ -52,14 +45,6 @@ export function RestaurantCard({ restaurant }: RestaurantCardProps) {
           </div>
         </CardContent>
         
-        <CardFooter className="p-4 pt-2 border-t border-border/40 mt-auto bg-muted/20">
-           <div className="flex items-center gap-2 w-full">
-             <div className="bg-yellow-100 p-1 rounded-sm">
-                <Tag className="w-3 h-3 text-yellow-700" />
-             </div>
-             <span className="text-xs font-medium text-muted-foreground">Accepte les Yums</span>
-           </div>
-        </CardFooter>
       </Card>
     </Link>
   );
