@@ -32,7 +32,7 @@ const PRICE_RANGES = [
 export default function RestaurateurRegister() {
   const [, setLocation] = useLocation();
   const [step, setStep] = useState(1);
-  const [authMode, setAuthMode] = useState<"register" | "login">("register");
+  const [authMode, setAuthMode] = useState<"register" | "login">("login");
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [loggedInUserId, setLoggedInUserId] = useState<string | null>(null);
   const [formData, setFormData] = useState({
@@ -337,13 +337,13 @@ export default function RestaurateurRegister() {
             <CardContent>
               <Tabs value={authMode} onValueChange={(v) => setAuthMode(v as "register" | "login")} className="w-full">
                 <TabsList className="grid w-full grid-cols-2 mb-6">
-                  <TabsTrigger value="register" data-testid="tab-register">
-                    <User className="w-4 h-4 mr-2" />
-                    Créer un compte
-                  </TabsTrigger>
                   <TabsTrigger value="login" data-testid="tab-login">
                     <LogIn className="w-4 h-4 mr-2" />
                     Se connecter
+                  </TabsTrigger>
+                  <TabsTrigger value="register" data-testid="tab-register">
+                    <User className="w-4 h-4 mr-2" />
+                    Créer un compte
                   </TabsTrigger>
                 </TabsList>
 
