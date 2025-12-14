@@ -10,7 +10,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ObjectUploader } from "@/components/ObjectUploader";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useLocation } from "wouter";
-import { Upload, Store, FileText, Image, CheckCircle, User, LogIn } from "lucide-react";
+import { Upload, Store, FileText, Image, CheckCircle, User, LogIn, Check } from "lucide-react";
+import { Checkbox } from "@/components/ui/checkbox";
 
 interface UploadResult {
   successful: Array<{ uploadURL: string }>;
@@ -46,7 +47,7 @@ export default function RestaurateurRegister() {
     phone: "",
     companyName: "",
     registrationNumber: "",
-    cuisineType: "",
+    cuisineType: [] as string[],
     priceRange: "",
     description: "",
     logoUrl: "",
@@ -241,7 +242,7 @@ export default function RestaurateurRegister() {
     loginMutation.mutate({ email: formData.email, password: formData.password });
   };
 
-  const updateField = (field: string, value: string) => {
+  const updateField = (field: string, value: string | string[]) => {
     setFormData(prev => ({ ...prev, [field]: value }));
     if (field === "password" || field === "confirmPassword") {
       setPasswordError("");
@@ -569,19 +570,38 @@ export default function RestaurateurRegister() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="space-y-2">
-                <Label>Type de cuisine *</Label>
-                <Select value={formData.cuisineType} onValueChange={(v) => updateField("cuisineType", v)}>
-                  <SelectTrigger data-testid="select-cuisine-type">
-                    <SelectValue placeholder="Sélectionnez un type de cuisine" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {categories.map((cat) => (
-                      <SelectItem key={cat.id} value={cat.name}>
-                        {cat.icon} {cat.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <Label>Types de cuisine * (plusieurs choix possibles)</Label>
+                <div className="grid grid-cols-2 md:grid-cols-3 gap-3 p-4 border rounded-lg max-h-64 overflow-y-auto">
+                  {categories.map((cat) => {
+                    const isSelected = formData.cuisineType.includes(cat.name);
+                    return (
+                      <label
+                        key={cat.id}
+                        className={`flex items-center gap-2 p-2 rounded-lg cursor-pointer transition-colors ${
+                          isSelected ? "bg-primary/10 border-primary border" : "bg-muted/50 hover:bg-muted border border-transparent"
+                        }`}
+                        data-testid={`checkbox-cuisine-${cat.id}`}
+                      >
+                        <Checkbox
+                          checked={isSelected}
+                          onCheckedChange={(checked) => {
+                            if (checked) {
+                              updateField("cuisineType", [...formData.cuisineType, cat.name]);
+                            } else {
+                              updateField("cuisineType", formData.cuisineType.filter((c: string) => c !== cat.name));
+                            }
+                          }}
+                        />
+                        <span className="text-sm">{cat.icon} {cat.name}</span>
+                      </label>
+                    );
+                  })}
+                </div>
+                {formData.cuisineType.length > 0 && (
+                  <p className="text-sm text-muted-foreground">
+                    Sélectionné: {formData.cuisineType.join(", ")}
+                  </p>
+                )}
               </div>
               <div className="space-y-2">
                 <Label>Gamme de prix *</Label>
@@ -615,7 +635,7 @@ export default function RestaurateurRegister() {
                 </Button>
                 <Button
                   onClick={() => setStep(4)}
-                  disabled={!formData.cuisineType || !formData.priceRange}
+                  disabled={formData.cuisineType.length === 0 || !formData.priceRange}
                   data-testid="button-next-step-3"
                 >
                   Continuer

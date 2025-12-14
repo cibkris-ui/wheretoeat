@@ -52,7 +52,7 @@ export const restaurantRegistrations = pgTable("restaurant_registrations", {
   phone: text("phone").notNull(),
   companyName: text("company_name").notNull(),
   registrationNumber: text("registration_number"),
-  cuisineType: text("cuisine_type").notNull(),
+  cuisineType: text("cuisine_type").array().notNull(),
   priceRange: text("price_range").notNull(),
   description: text("description"),
   
