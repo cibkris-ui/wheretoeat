@@ -6,6 +6,8 @@ import { fromZodError } from "zod-validation-error";
 import { setupAuth, isAuthenticated } from "./replitAuth";
 import { ObjectStorageService, ObjectNotFoundError } from "./objectStorage";
 import { ObjectPermission } from "./objectAcl";
+import bcrypt from "bcryptjs";
+import { z } from "zod";
 
 export async function registerRoutes(
   httpServer: Server,
@@ -13,6 +15,70 @@ export async function registerRoutes(
 ): Promise<Server> {
   
   await setupAuth(app);
+
+  const registerUserSchema = z.object({
+    email: z.string().email(),
+    password: z.string().min(6),
+    firstName: z.string().optional(),
+    lastName: z.string().optional(),
+  });
+
+  const loginSchema = z.object({
+    email: z.string().email(),
+    password: z.string(),
+  });
+
+  app.post("/api/auth/register", async (req, res) => {
+    try {
+      const result = registerUserSchema.safeParse(req.body);
+      if (!result.success) {
+        return res.status(400).json({ message: fromZodError(result.error).message });
+      }
+
+      const { email, password, firstName, lastName } = result.data;
+
+      const existingUser = await storage.getUserByEmail(email);
+      if (existingUser) {
+        return res.status(400).json({ message: "Un compte avec cet email existe déjà" });
+      }
+
+      const hashedPassword = await bcrypt.hash(password, 10);
+      const user = await storage.createUserWithPassword(email, hashedPassword, firstName, lastName);
+
+      (req.session as any).userId = user.id;
+      res.status(201).json({ user: { id: user.id, email: user.email, firstName: user.firstName, lastName: user.lastName } });
+    } catch (error: any) {
+      console.error("Registration error:", error);
+      res.status(500).json({ message: "Erreur lors de l'inscription" });
+    }
+  });
+
+  app.post("/api/auth/login", async (req, res) => {
+    try {
+      const result = loginSchema.safeParse(req.body);
+      if (!result.success) {
+        return res.status(400).json({ message: fromZodError(result.error).message });
+      }
+
+      const { email, password } = result.data;
+
+      const user = await storage.getUserByEmail(email);
+      if (!user || !user.password) {
+        return res.status(401).json({ message: "Email ou mot de passe incorrect" });
+      }
+
+      const validPassword = await bcrypt.compare(password, user.password);
+      if (!validPassword) {
+        return res.status(401).json({ message: "Email ou mot de passe incorrect" });
+      }
+
+      (req.session as any).userId = user.id;
+      res.json({ user: { id: user.id, email: user.email, firstName: user.firstName, lastName: user.lastName } });
+    } catch (error: any) {
+      console.error("Login error:", error);
+      res.status(500).json({ message: "Erreur lors de la connexion" });
+    }
+  });
 
   app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
     try {
@@ -192,6 +258,56 @@ export async function registerRoutes(
     }
   });
 
+  const restaurantRegistrationWithAccountSchema = z.object({
+    email: z.string().email(),
+    password: z.string().min(6),
+    firstName: z.string().optional(),
+    lastName: z.string().optional(),
+    restaurantName: z.string().min(1),
+    address: z.string().min(1),
+    phone: z.string().min(1),
+    companyName: z.string().min(1),
+    registrationNumber: z.string().optional(),
+    cuisineType: z.string().min(1),
+    priceRange: z.string().min(1),
+    description: z.string().optional(),
+    logoUrl: z.string().optional(),
+    photos: z.array(z.string()).optional(),
+    menuPdfUrl: z.string().optional(),
+  });
+
+  app.post("/api/registrations/with-account", async (req, res) => {
+    try {
+      const result = restaurantRegistrationWithAccountSchema.safeParse(req.body);
+      if (!result.success) {
+        return res.status(400).json({ 
+          message: fromZodError(result.error).message 
+        });
+      }
+
+      const { email, password, firstName, lastName, ...registrationData } = result.data;
+
+      const existingUser = await storage.getUserByEmail(email);
+      if (existingUser) {
+        return res.status(400).json({ message: "Un compte avec cet email existe déjà" });
+      }
+
+      const hashedPassword = await bcrypt.hash(password, 10);
+      const user = await storage.createUserWithPassword(email, hashedPassword, firstName, lastName);
+
+      const registration = await storage.createRegistration({
+        userId: user.id,
+        ...registrationData,
+      });
+
+      (req.session as any).userId = user.id;
+      res.status(201).json({ user: { id: user.id, email: user.email }, registration });
+    } catch (error: any) {
+      console.error("Registration with account error:", error);
+      res.status(500).json({ message: "Erreur lors de l'inscription" });
+    }
+  });
+
   app.post("/api/registrations", isAuthenticated, async (req: any, res) => {
     try {
       const userId = req.user.claims.sub;
@@ -256,7 +372,7 @@ export async function registerRoutes(
           ownerId: registration.userId,
           phone: registration.phone,
           address: registration.address,
-          openingHours: registration.openingHours,
+          openingHours: registration.openingHours as Record<string, unknown> | undefined,
           menuPdfUrl: registration.menuPdfUrl,
         });
         return res.json({ registration, restaurant: newRestaurant });
@@ -267,7 +383,7 @@ export async function registerRoutes(
     }
   });
 
-  app.post("/api/objects/upload", isAuthenticated, async (req: any, res) => {
+  app.post("/api/objects/upload", async (req: any, res) => {
     try {
       const objectStorageService = new ObjectStorageService();
       const uploadURL = await objectStorageService.getObjectEntityUploadURL();
@@ -278,17 +394,16 @@ export async function registerRoutes(
     }
   });
 
-  app.put("/api/objects/finalize", isAuthenticated, async (req: any, res) => {
+  app.put("/api/objects/finalize", async (req: any, res) => {
     try {
       if (!req.body.uploadURL) {
         return res.status(400).json({ error: "uploadURL is required" });
       }
-      const userId = req.user.claims.sub;
       const objectStorageService = new ObjectStorageService();
       const objectPath = await objectStorageService.trySetObjectEntityAclPolicy(
         req.body.uploadURL,
         {
-          owner: userId,
+          owner: "registration",
           visibility: "public",
         },
       );
