@@ -117,10 +117,19 @@ export async function registerRoutes(
         return res.status(403).json({ message: "Not authorized to edit this restaurant" });
       }
       
-      const { name, description, image, features, cuisine, location, priceRange } = req.body;
-      const updated = await storage.updateRestaurant(id, { 
-        name, description, image, features, cuisine, location, priceRange 
-      });
+      const updateData: Record<string, any> = {};
+      const allowedFields = ['name', 'description', 'image', 'features', 'cuisine', 'location', 'priceRange'];
+      for (const field of allowedFields) {
+        if (req.body[field] !== undefined) {
+          updateData[field] = req.body[field];
+        }
+      }
+      
+      if (Object.keys(updateData).length === 0) {
+        return res.status(400).json({ message: "No valid fields to update" });
+      }
+      
+      const updated = await storage.updateRestaurant(id, updateData);
       res.json(updated);
     } catch (error: any) {
       res.status(500).json({ message: error.message });
@@ -148,11 +157,21 @@ export async function registerRoutes(
     }
   });
 
-  app.get("/api/restaurants/:id/bookings", async (req, res) => {
+  app.get("/api/restaurants/:id/bookings", isAuthenticated, async (req: any, res) => {
     try {
       const id = parseInt(req.params.id);
       if (isNaN(id)) {
         return res.status(400).json({ message: "Invalid restaurant ID" });
+      }
+      
+      const restaurant = await storage.getRestaurant(id);
+      if (!restaurant) {
+        return res.status(404).json({ message: "Restaurant not found" });
+      }
+      
+      const userId = req.user.claims.sub;
+      if (restaurant.ownerId !== userId) {
+        return res.status(403).json({ message: "Not authorized to view bookings" });
       }
       
       const bookings = await storage.getBookingsByRestaurant(id);

@@ -1,7 +1,18 @@
 import { Link } from "wouter";
-import { UtensilsCrossed } from "lucide-react";
+import { UtensilsCrossed, LogOut, LayoutDashboard } from "lucide-react";
+import { useAuth } from "@/hooks/useAuth";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 
 export function Navbar() {
+  const { user, isAuthenticated, isLoading } = useAuth();
+
   return (
     <nav className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-16 items-center justify-between">
@@ -15,9 +26,53 @@ export function Navbar() {
           <Link href="/" className="hover:text-primary transition-colors cursor-pointer">Accueil</Link>
           <Link href="/" className="hover:text-primary transition-colors cursor-pointer">Restaurants</Link>
           <Link href="/" className="hover:text-primary transition-colors cursor-pointer">À propos</Link>
-          <button className="hidden md:inline-flex h-9 items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring">
-            Pour les Restaurateurs
-          </button>
+          
+          {isLoading ? (
+            <div className="h-9 w-24 bg-muted animate-pulse rounded-md" />
+          ) : isAuthenticated && user ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="ghost" className="relative h-9 w-9 rounded-full" data-testid="user-menu-trigger">
+                  <Avatar className="h-9 w-9">
+                    <AvatarImage src={user.profileImageUrl || undefined} alt={user.firstName || "User"} />
+                    <AvatarFallback>
+                      {user.firstName?.[0] || user.email?.[0] || "U"}
+                    </AvatarFallback>
+                  </Avatar>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <div className="flex items-center gap-2 p-2">
+                  <Avatar className="h-8 w-8">
+                    <AvatarImage src={user.profileImageUrl || undefined} />
+                    <AvatarFallback>{user.firstName?.[0] || "U"}</AvatarFallback>
+                  </Avatar>
+                  <div className="flex flex-col">
+                    <span className="text-sm font-medium">{user.firstName} {user.lastName}</span>
+                    <span className="text-xs text-muted-foreground">{user.email}</span>
+                  </div>
+                </div>
+                <DropdownMenuItem asChild>
+                  <Link href="/dashboard" className="cursor-pointer" data-testid="link-dashboard">
+                    <LayoutDashboard className="mr-2 h-4 w-4" />
+                    Tableau de bord
+                  </Link>
+                </DropdownMenuItem>
+                <DropdownMenuItem asChild>
+                  <a href="/api/logout" className="cursor-pointer text-red-600" data-testid="link-logout">
+                    <LogOut className="mr-2 h-4 w-4" />
+                    Déconnexion
+                  </a>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <a href="/api/login">
+              <Button className="hidden md:inline-flex h-9" data-testid="button-login">
+                Pour les Restaurateurs
+              </Button>
+            </a>
+          )}
         </div>
       </div>
     </nav>
