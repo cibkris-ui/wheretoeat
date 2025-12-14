@@ -1,4 +1,4 @@
-import { db } from "./db";
+import { db, pool } from "./db";
 import { restaurants } from "@shared/schema";
 
 const seedRestaurants = [
@@ -45,7 +45,7 @@ const seedRestaurants = [
 ];
 
 async function seed() {
-  console.log("🌱 Seeding database...");
+  console.log("🌱 Seeding MySQL database...");
   
   try {
     const existing = await db.select().from(restaurants);
@@ -62,6 +62,8 @@ async function seed() {
   } catch (error) {
     console.error("❌ Error seeding database:", error);
     throw error;
+  } finally {
+    await pool.end();
   }
 }
 
