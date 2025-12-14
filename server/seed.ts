@@ -1,7 +1,5 @@
-import { drizzle } from "drizzle-orm/mysql2";
-import mysql from "mysql2/promise";
+import { db } from "./db";
 import { restaurants } from "@shared/schema";
-import * as schema from "@shared/schema";
 
 const seedRestaurants = [
   {
@@ -49,18 +47,6 @@ const seedRestaurants = [
 async function seed() {
   console.log("🌱 Seeding database...");
   
-  // Create a dedicated connection for seeding
-  const connection = await mysql.createPool({
-    host: process.env.MYSQL_HOST,
-    user: process.env.MYSQL_USER,
-    password: process.env.MYSQL_PASSWORD,
-    database: process.env.MYSQL_DATABASE,
-    waitForConnections: true,
-    connectionLimit: 2,
-  });
-  
-  const db = drizzle(connection, { schema, mode: "default" });
-  
   try {
     const existing = await db.select().from(restaurants);
     
@@ -76,8 +62,6 @@ async function seed() {
   } catch (error) {
     console.error("❌ Error seeding database:", error);
     throw error;
-  } finally {
-    await connection.end();
   }
 }
 
