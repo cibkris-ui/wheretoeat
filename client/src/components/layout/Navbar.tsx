@@ -25,7 +25,7 @@ export function Navbar() {
         </Link>
         <div className="flex items-center gap-6 text-sm font-medium">
           <Link href="/" className="hover:text-primary transition-colors cursor-pointer">Accueil</Link>
-          <Link href="/" className="hover:text-primary transition-colors cursor-pointer">Restaurants</Link>
+          <Link href="/restaurants" className="hover:text-primary transition-colors cursor-pointer">Restaurants</Link>
           <Link href="/" className="hover:text-primary transition-colors cursor-pointer">À propos</Link>
           
           {isLoading ? (

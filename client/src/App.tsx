@@ -9,11 +9,13 @@ import RestaurantDetail from "@/pages/RestaurantDetail";
 import Dashboard from "@/pages/Dashboard";
 import RestaurateurRegister from "@/pages/RestaurateurRegister";
 import Admin from "@/pages/Admin";
+import Restaurants from "@/pages/Restaurants";
 
 function Router() {
   return (
     <Switch>
       <Route path="/" component={Home}/>
+      <Route path="/restaurants" component={Restaurants} />
       <Route path="/restaurant/:id" component={RestaurantDetail} />
       <Route path="/dashboard" component={Dashboard} />
       <Route path="/inscrire-restaurant" component={RestaurateurRegister} />
