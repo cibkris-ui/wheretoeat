@@ -6,10 +6,11 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ObjectUploader } from "@/components/ObjectUploader";
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { useLocation } from "wouter";
-import { Upload, Store, FileText, Image, CheckCircle, User } from "lucide-react";
+import { Upload, Store, FileText, Image, CheckCircle, User, LogIn } from "lucide-react";
 
 interface UploadResult {
   successful: Array<{ uploadURL: string }>;
@@ -31,6 +32,9 @@ const PRICE_RANGES = [
 export default function RestaurateurRegister() {
   const [, setLocation] = useLocation();
   const [step, setStep] = useState(1);
+  const [authMode, setAuthMode] = useState<"register" | "login">("register");
+  const [isLoggedIn, setIsLoggedIn] = useState(false);
+  const [loggedInUserId, setLoggedInUserId] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     email: "",
     password: "",
@@ -51,6 +55,7 @@ export default function RestaurateurRegister() {
   });
   const [submitted, setSubmitted] = useState(false);
   const [passwordError, setPasswordError] = useState("");
+  const [loginError, setLoginError] = useState("");
 
   const { data: categories = [] } = useQuery<CuisineCategory[]>({
     queryKey: ["cuisine-categories"],
@@ -61,7 +66,32 @@ export default function RestaurateurRegister() {
     },
   });
 
-  const submitMutation = useMutation({
+  const loginMutation = useMutation({
+    mutationFn: async (data: { email: string; password: string }) => {
+      const res = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify(data),
+      });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.message || "Erreur de connexion");
+      }
+      return res.json();
+    },
+    onSuccess: (data) => {
+      setIsLoggedIn(true);
+      setLoggedInUserId(data.user.id);
+      setLoginError("");
+      setStep(2);
+    },
+    onError: (error: Error) => {
+      setLoginError(error.message);
+    },
+  });
+
+  const submitWithAccountMutation = useMutation({
     mutationFn: async (data: typeof formData) => {
       const res = await fetch("/api/registrations/with-account", {
         method: "POST",
@@ -72,6 +102,37 @@ export default function RestaurateurRegister() {
           password: data.password,
           firstName: data.firstName || undefined,
           lastName: data.lastName || undefined,
+          restaurantName: data.restaurantName,
+          address: data.address,
+          phone: data.phone,
+          companyName: data.companyName,
+          registrationNumber: data.registrationNumber || undefined,
+          cuisineType: data.cuisineType,
+          priceRange: data.priceRange,
+          description: data.description || undefined,
+          logoUrl: data.logoUrl || undefined,
+          photos: data.photos.length > 0 ? data.photos : undefined,
+          menuPdfUrl: data.menuPdfUrl || undefined,
+        }),
+      });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.message || "Failed to submit");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      setSubmitted(true);
+    },
+  });
+
+  const submitExistingUserMutation = useMutation({
+    mutationFn: async (data: typeof formData) => {
+      const res = await fetch("/api/registrations", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
           restaurantName: data.restaurantName,
           address: data.address,
           phone: data.phone,
@@ -156,16 +217,28 @@ export default function RestaurateurRegister() {
   };
 
   const handleSubmit = () => {
-    if (formData.password !== formData.confirmPassword) {
-      setPasswordError("Les mots de passe ne correspondent pas");
+    if (isLoggedIn) {
+      submitExistingUserMutation.mutate(formData);
+    } else {
+      if (formData.password !== formData.confirmPassword) {
+        setPasswordError("Les mots de passe ne correspondent pas");
+        return;
+      }
+      if (formData.password.length < 6) {
+        setPasswordError("Le mot de passe doit contenir au moins 6 caractères");
+        return;
+      }
+      setPasswordError("");
+      submitWithAccountMutation.mutate(formData);
+    }
+  };
+
+  const handleLogin = () => {
+    if (!formData.email || !formData.password) {
+      setLoginError("Veuillez remplir tous les champs");
       return;
     }
-    if (formData.password.length < 6) {
-      setPasswordError("Le mot de passe doit contenir au moins 6 caractères");
-      return;
-    }
-    setPasswordError("");
-    submitMutation.mutate(formData);
+    loginMutation.mutate({ email: formData.email, password: formData.password });
   };
 
   const updateField = (field: string, value: string) => {
@@ -173,9 +246,15 @@ export default function RestaurateurRegister() {
     if (field === "password" || field === "confirmPassword") {
       setPasswordError("");
     }
+    if (field === "email" || field === "password") {
+      setLoginError("");
+    }
   };
 
   const isStep1Valid = () => {
+    if (authMode === "login") {
+      return formData.email && formData.password;
+    }
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     return (
       formData.email &&
@@ -184,6 +263,8 @@ export default function RestaurateurRegister() {
       formData.password === formData.confirmPassword
     );
   };
+
+  const submitMutation = isLoggedIn ? submitExistingUserMutation : submitWithAccountMutation;
 
   if (submitted) {
     return (
@@ -197,7 +278,10 @@ export default function RestaurateurRegister() {
               </div>
               <CardTitle className="text-2xl">Demande envoyée !</CardTitle>
               <CardDescription>
-                Votre compte a été créé et votre demande d'inscription a été envoyée avec succès.
+                {isLoggedIn 
+                  ? "Votre demande d'inscription a été envoyée avec succès."
+                  : "Votre compte a été créé et votre demande d'inscription a été envoyée avec succès."
+                }
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4 text-center">
@@ -214,6 +298,8 @@ export default function RestaurateurRegister() {
     );
   }
 
+  const totalSteps = isLoggedIn ? 3 : 4;
+
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
@@ -227,7 +313,7 @@ export default function RestaurateurRegister() {
         </div>
 
         <div className="flex justify-center gap-2 mb-8">
-          {[1, 2, 3, 4].map((s) => (
+          {Array.from({ length: totalSteps }, (_, i) => i + 1).map((s) => (
             <div
               key={s}
               className={`w-20 h-2 rounded-full ${s <= step ? "bg-primary" : "bg-muted"}`}
@@ -235,7 +321,7 @@ export default function RestaurateurRegister() {
           ))}
         </div>
 
-        {step === 1 && (
+        {step === 1 && !isLoggedIn && (
           <Card>
             <CardHeader>
               <div className="flex items-center gap-3">
@@ -243,90 +329,142 @@ export default function RestaurateurRegister() {
                   <User className="w-5 h-5 text-primary" />
                 </div>
                 <div>
-                  <CardTitle>Créez votre compte</CardTitle>
-                  <CardDescription>Vos informations personnelles pour accéder à votre espace</CardDescription>
+                  <CardTitle>Connexion ou création de compte</CardTitle>
+                  <CardDescription>Connectez-vous ou créez un compte pour continuer</CardDescription>
                 </div>
               </div>
             </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="email">Adresse email *</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={formData.email}
-                  onChange={(e) => updateField("email", e.target.value)}
-                  placeholder="votre@email.ch"
-                  data-testid="input-email"
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="firstName">Prénom</Label>
-                  <Input
-                    id="firstName"
-                    value={formData.firstName}
-                    onChange={(e) => updateField("firstName", e.target.value)}
-                    placeholder="Jean"
-                    data-testid="input-first-name"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="lastName">Nom</Label>
-                  <Input
-                    id="lastName"
-                    value={formData.lastName}
-                    onChange={(e) => updateField("lastName", e.target.value)}
-                    placeholder="Dupont"
-                    data-testid="input-last-name"
-                  />
-                </div>
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="password">Mot de passe *</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  value={formData.password}
-                  onChange={(e) => updateField("password", e.target.value)}
-                  placeholder="Minimum 6 caractères"
-                  data-testid="input-password"
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="confirmPassword">Confirmer le mot de passe *</Label>
-                <Input
-                  id="confirmPassword"
-                  type="password"
-                  value={formData.confirmPassword}
-                  onChange={(e) => updateField("confirmPassword", e.target.value)}
-                  placeholder="Confirmez votre mot de passe"
-                  data-testid="input-confirm-password"
-                />
-              </div>
-              {passwordError && (
-                <p className="text-sm text-red-600">{passwordError}</p>
-              )}
-              <div className="flex justify-end pt-4">
-                <Button
-                  onClick={() => {
-                    if (formData.password !== formData.confirmPassword) {
-                      setPasswordError("Les mots de passe ne correspondent pas");
-                      return;
-                    }
-                    if (formData.password.length < 6) {
-                      setPasswordError("Le mot de passe doit contenir au moins 6 caractères");
-                      return;
-                    }
-                    setPasswordError("");
-                    setStep(2);
-                  }}
-                  disabled={!isStep1Valid()}
-                  data-testid="button-next-step-1"
-                >
-                  Continuer
-                </Button>
-              </div>
+            <CardContent>
+              <Tabs value={authMode} onValueChange={(v) => setAuthMode(v as "register" | "login")} className="w-full">
+                <TabsList className="grid w-full grid-cols-2 mb-6">
+                  <TabsTrigger value="register" data-testid="tab-register">
+                    <User className="w-4 h-4 mr-2" />
+                    Créer un compte
+                  </TabsTrigger>
+                  <TabsTrigger value="login" data-testid="tab-login">
+                    <LogIn className="w-4 h-4 mr-2" />
+                    Se connecter
+                  </TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="register" className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="email">Adresse email *</Label>
+                    <Input
+                      id="email"
+                      type="email"
+                      value={formData.email}
+                      onChange={(e) => updateField("email", e.target.value)}
+                      placeholder="votre@email.ch"
+                      data-testid="input-email"
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="space-y-2">
+                      <Label htmlFor="firstName">Prénom</Label>
+                      <Input
+                        id="firstName"
+                        value={formData.firstName}
+                        onChange={(e) => updateField("firstName", e.target.value)}
+                        placeholder="Jean"
+                        data-testid="input-first-name"
+                      />
+                    </div>
+                    <div className="space-y-2">
+                      <Label htmlFor="lastName">Nom</Label>
+                      <Input
+                        id="lastName"
+                        value={formData.lastName}
+                        onChange={(e) => updateField("lastName", e.target.value)}
+                        placeholder="Dupont"
+                        data-testid="input-last-name"
+                      />
+                    </div>
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="password">Mot de passe *</Label>
+                    <Input
+                      id="password"
+                      type="password"
+                      value={formData.password}
+                      onChange={(e) => updateField("password", e.target.value)}
+                      placeholder="Minimum 6 caractères"
+                      data-testid="input-password"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="confirmPassword">Confirmer le mot de passe *</Label>
+                    <Input
+                      id="confirmPassword"
+                      type="password"
+                      value={formData.confirmPassword}
+                      onChange={(e) => updateField("confirmPassword", e.target.value)}
+                      placeholder="Confirmez votre mot de passe"
+                      data-testid="input-confirm-password"
+                    />
+                  </div>
+                  {passwordError && (
+                    <p className="text-sm text-red-600">{passwordError}</p>
+                  )}
+                  <div className="flex justify-end pt-4">
+                    <Button
+                      onClick={() => {
+                        if (formData.password !== formData.confirmPassword) {
+                          setPasswordError("Les mots de passe ne correspondent pas");
+                          return;
+                        }
+                        if (formData.password.length < 6) {
+                          setPasswordError("Le mot de passe doit contenir au moins 6 caractères");
+                          return;
+                        }
+                        setPasswordError("");
+                        setStep(2);
+                      }}
+                      disabled={!isStep1Valid()}
+                      data-testid="button-next-step-1"
+                    >
+                      Continuer
+                    </Button>
+                  </div>
+                </TabsContent>
+
+                <TabsContent value="login" className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="login-email">Adresse email</Label>
+                    <Input
+                      id="login-email"
+                      type="email"
+                      value={formData.email}
+                      onChange={(e) => updateField("email", e.target.value)}
+                      placeholder="votre@email.ch"
+                      data-testid="input-login-email"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="login-password">Mot de passe</Label>
+                    <Input
+                      id="login-password"
+                      type="password"
+                      value={formData.password}
+                      onChange={(e) => updateField("password", e.target.value)}
+                      placeholder="Votre mot de passe"
+                      data-testid="input-login-password"
+                    />
+                  </div>
+                  {loginError && (
+                    <p className="text-sm text-red-600">{loginError}</p>
+                  )}
+                  <div className="flex justify-end pt-4">
+                    <Button
+                      onClick={handleLogin}
+                      disabled={!isStep1Valid() || loginMutation.isPending}
+                      data-testid="button-login"
+                    >
+                      {loginMutation.isPending ? "Connexion..." : "Se connecter et continuer"}
+                    </Button>
+                  </div>
+                </TabsContent>
+              </Tabs>
             </CardContent>
           </Card>
         )}
@@ -398,9 +536,12 @@ export default function RestaurateurRegister() {
                 </div>
               </div>
               <div className="flex justify-between pt-4">
-                <Button variant="outline" onClick={() => setStep(1)} data-testid="button-prev-step-2">
-                  Retour
-                </Button>
+                {!isLoggedIn && (
+                  <Button variant="outline" onClick={() => setStep(1)} data-testid="button-prev-step-2">
+                    Retour
+                  </Button>
+                )}
+                {isLoggedIn && <div />}
                 <Button
                   onClick={() => setStep(3)}
                   disabled={!formData.restaurantName || !formData.address || !formData.phone || !formData.companyName}
@@ -570,7 +711,12 @@ export default function RestaurateurRegister() {
                   disabled={submitMutation.isPending}
                   data-testid="button-submit"
                 >
-                  {submitMutation.isPending ? "Envoi en cours..." : "Créer mon compte et envoyer la demande"}
+                  {submitMutation.isPending 
+                    ? "Envoi en cours..." 
+                    : isLoggedIn 
+                      ? "Envoyer la demande"
+                      : "Créer mon compte et envoyer la demande"
+                  }
                 </Button>
               </div>
               {submitMutation.error && (

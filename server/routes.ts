@@ -308,9 +308,12 @@ export async function registerRoutes(
     }
   });
 
-  app.post("/api/registrations", isAuthenticated, async (req: any, res) => {
+  app.post("/api/registrations", async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.user?.claims?.sub || req.session?.userId;
+      if (!userId) {
+        return res.status(401).json({ message: "Vous devez être connecté pour effectuer cette action" });
+      }
       const result = insertRegistrationSchema.safeParse({ ...req.body, userId });
       if (!result.success) {
         return res.status(400).json({ 
