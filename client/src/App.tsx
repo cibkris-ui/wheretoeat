@@ -7,6 +7,8 @@ import NotFound from "@/pages/not-found";
 import Home from "@/pages/Home";
 import RestaurantDetail from "@/pages/RestaurantDetail";
 import Dashboard from "@/pages/Dashboard";
+import RestaurateurRegister from "@/pages/RestaurateurRegister";
+import Admin from "@/pages/Admin";
 
 function Router() {
   return (
@@ -14,6 +16,8 @@ function Router() {
       <Route path="/" component={Home}/>
       <Route path="/restaurant/:id" component={RestaurantDetail} />
       <Route path="/dashboard" component={Dashboard} />
+      <Route path="/inscrire-restaurant" component={RestaurateurRegister} />
+      <Route path="/admin" component={Admin} />
       <Route component={NotFound} />
     </Switch>
   );
