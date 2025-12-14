@@ -1,12 +1,12 @@
 import { sql } from "drizzle-orm";
-import { mysqlTable, varchar, int, float, text, timestamp, json } from "drizzle-orm/mysql-core";
+import { pgTable, text, varchar, serial, integer, real, timestamp } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
-export const users = mysqlTable("users", {
-  id: varchar("id", { length: 36 }).primaryKey().default(sql`(UUID())`),
-  username: varchar("username", { length: 255 }).notNull().unique(),
-  password: varchar("password", { length: 255 }).notNull(),
+export const users = pgTable("users", {
+  id: varchar("id").primaryKey().default(sql`gen_random_uuid()`),
+  username: text("username").notNull().unique(),
+  password: text("password").notNull(),
 });
 
 export const insertUserSchema = createInsertSchema(users).pick({
@@ -17,16 +17,16 @@ export const insertUserSchema = createInsertSchema(users).pick({
 export type InsertUser = z.infer<typeof insertUserSchema>;
 export type User = typeof users.$inferSelect;
 
-export const restaurants = mysqlTable("restaurants", {
-  id: int("id").primaryKey().autoincrement(),
-  name: varchar("name", { length: 255 }).notNull(),
-  cuisine: varchar("cuisine", { length: 255 }).notNull(),
-  location: varchar("location", { length: 255 }).notNull(),
-  rating: float("rating").notNull(),
-  priceRange: varchar("price_range", { length: 10 }).notNull(),
-  image: varchar("image", { length: 500 }).notNull(),
+export const restaurants = pgTable("restaurants", {
+  id: serial("id").primaryKey(),
+  name: text("name").notNull(),
+  cuisine: text("cuisine").notNull(),
+  location: text("location").notNull(),
+  rating: real("rating").notNull(),
+  priceRange: text("price_range").notNull(),
+  image: text("image").notNull(),
   description: text("description").notNull(),
-  features: json("features").$type<string[]>().notNull(),
+  features: text("features").array().notNull(),
 });
 
 export const insertRestaurantSchema = createInsertSchema(restaurants).omit({
@@ -36,18 +36,18 @@ export const insertRestaurantSchema = createInsertSchema(restaurants).omit({
 export type InsertRestaurant = z.infer<typeof insertRestaurantSchema>;
 export type Restaurant = typeof restaurants.$inferSelect;
 
-export const bookings = mysqlTable("bookings", {
-  id: int("id").primaryKey().autoincrement(),
-  restaurantId: int("restaurant_id").notNull(),
-  date: varchar("date", { length: 20 }).notNull(),
-  time: varchar("time", { length: 10 }).notNull(),
-  guests: int("guests").notNull(),
-  firstName: varchar("first_name", { length: 100 }).notNull(),
-  lastName: varchar("last_name", { length: 100 }).notNull(),
-  email: varchar("email", { length: 255 }).notNull(),
-  phone: varchar("phone", { length: 30 }).notNull(),
+export const bookings = pgTable("bookings", {
+  id: serial("id").primaryKey(),
+  restaurantId: integer("restaurant_id").notNull().references(() => restaurants.id),
+  date: text("date").notNull(),
+  time: text("time").notNull(),
+  guests: integer("guests").notNull(),
+  firstName: text("first_name").notNull(),
+  lastName: text("last_name").notNull(),
+  email: text("email").notNull(),
+  phone: text("phone").notNull(),
   specialRequest: text("special_request"),
-  newsletter: int("newsletter").notNull().default(0),
+  newsletter: integer("newsletter").notNull().default(0),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
