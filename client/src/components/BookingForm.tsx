@@ -130,6 +130,7 @@ export function BookingForm() {
                         date < new Date() || date < new Date("1900-01-01")
                       }
                       initialFocus
+                      className="p-3 md:p-4 border rounded-md shadow-sm [--cell-size:2.5rem] md:[--cell-size:3rem] [&_.rdp-caption_label]:text-base md:[&_.rdp-caption_label]:text-lg"
                     />
                   </PopoverContent>
                 </Popover>
