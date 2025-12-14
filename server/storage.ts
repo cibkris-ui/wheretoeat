@@ -2,7 +2,7 @@ import { eq } from "drizzle-orm";
 import { db } from "./db";
 import { 
   type User, 
-  type InsertUser, 
+  type UpsertUser,
   type Restaurant, 
   type InsertRestaurant,
   type Booking,
@@ -14,12 +14,13 @@ import {
 
 export interface IStorage {
   getUser(id: string): Promise<User | undefined>;
-  getUserByUsername(username: string): Promise<User | undefined>;
-  createUser(user: InsertUser): Promise<User>;
+  upsertUser(user: UpsertUser): Promise<User>;
   
   getAllRestaurants(): Promise<Restaurant[]>;
   getRestaurant(id: number): Promise<Restaurant | undefined>;
+  getRestaurantsByOwner(ownerId: string): Promise<Restaurant[]>;
   createRestaurant(restaurant: InsertRestaurant): Promise<Restaurant>;
+  updateRestaurant(id: number, data: Partial<InsertRestaurant>): Promise<Restaurant | undefined>;
   
   createBooking(booking: InsertBooking): Promise<Booking>;
   getBookingsByRestaurant(restaurantId: number): Promise<Booking[]>;
@@ -31,13 +32,18 @@ export class DatabaseStorage implements IStorage {
     return user;
   }
 
-  async getUserByUsername(username: string): Promise<User | undefined> {
-    const [user] = await db.select().from(users).where(eq(users.username, username));
-    return user;
-  }
-
-  async createUser(insertUser: InsertUser): Promise<User> {
-    const [user] = await db.insert(users).values(insertUser).returning();
+  async upsertUser(userData: UpsertUser): Promise<User> {
+    const [user] = await db
+      .insert(users)
+      .values(userData)
+      .onConflictDoUpdate({
+        target: users.id,
+        set: {
+          ...userData,
+          updatedAt: new Date(),
+        },
+      })
+      .returning();
     return user;
   }
 
@@ -50,9 +56,22 @@ export class DatabaseStorage implements IStorage {
     return restaurant;
   }
 
+  async getRestaurantsByOwner(ownerId: string): Promise<Restaurant[]> {
+    return await db.select().from(restaurants).where(eq(restaurants.ownerId, ownerId));
+  }
+
   async createRestaurant(restaurant: InsertRestaurant): Promise<Restaurant> {
     const [newRestaurant] = await db.insert(restaurants).values(restaurant).returning();
     return newRestaurant;
+  }
+
+  async updateRestaurant(id: number, data: Partial<InsertRestaurant>): Promise<Restaurant | undefined> {
+    const [updated] = await db
+      .update(restaurants)
+      .set(data)
+      .where(eq(restaurants.id, id))
+      .returning();
+    return updated;
   }
 
   async createBooking(booking: InsertBooking): Promise<Booking> {
