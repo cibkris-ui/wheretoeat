@@ -1,11 +1,7 @@
 import { Link } from "wouter";
-import { UtensilsCrossed, User } from "lucide-react";
-import { useAuth } from "@/hooks/useAuth";
-import { Button } from "@/components/ui/button";
+import { UtensilsCrossed } from "lucide-react";
 
 export function Navbar() {
-  const { user, isAuthenticated, isLoading } = useAuth();
-
   return (
     <nav className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-16 items-center justify-between">
@@ -19,23 +15,9 @@ export function Navbar() {
           <Link href="/" className="hover:text-primary transition-colors cursor-pointer">Accueil</Link>
           <Link href="/" className="hover:text-primary transition-colors cursor-pointer">Restaurants</Link>
           <Link href="/" className="hover:text-primary transition-colors cursor-pointer">À propos</Link>
-          
-          {!isLoading && (
-            isAuthenticated ? (
-              <Link href="/dashboard">
-                <Button variant="default" size="sm" className="gap-2" data-testid="button-dashboard">
-                  <User className="h-4 w-4" />
-                  <span className="hidden md:inline">{user?.firstName || "Dashboard"}</span>
-                </Button>
-              </Link>
-            ) : (
-              <a href="/api/login">
-                <Button variant="default" size="sm" data-testid="button-login">
-                  Pour les Restaurateurs
-                </Button>
-              </a>
-            )
-          )}
+          <button className="hidden md:inline-flex h-9 items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground shadow transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring">
+            Pour les Restaurateurs
+          </button>
         </div>
       </div>
     </nav>
