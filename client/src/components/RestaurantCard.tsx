@@ -1,6 +1,6 @@
 import { Link } from "wouter";
 import { Star, MapPin, Tag } from "lucide-react";
-import { Restaurant } from "@/lib/mockData";
+import type { Restaurant } from "@shared/schema";
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 

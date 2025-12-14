@@ -17,12 +17,13 @@ import {
   FormMessage,
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea"; // Assuming we have or will use standard input for text area
+import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
-import { Switch } from "@/components/ui/switch"; // Need to make sure we have Switch, otherwise use checkbox
+import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
+import { useMutation } from "@tanstack/react-query";
+import { createBooking } from "@/lib/api";
 
-// Define the steps
 type Step = "date" | "time" | "guests" | "details" | "confirmation";
 
 const formSchema = z.object({
@@ -38,7 +39,11 @@ const formSchema = z.object({
   newsletter: z.boolean().default(false),
 });
 
-export function BookingForm() {
+interface BookingFormProps {
+  restaurantId: number;
+}
+
+export function BookingForm({ restaurantId }: BookingFormProps) {
   const { toast } = useToast();
   const [step, setStep] = useState<Step>("date");
   const [direction, setDirection] = useState(1);
@@ -53,6 +58,24 @@ export function BookingForm() {
 
   const { watch, setValue, handleSubmit, trigger } = form;
   const formData = watch();
+
+  const bookingMutation = useMutation({
+    mutationFn: createBooking,
+    onSuccess: () => {
+      setStep("confirmation");
+      toast({
+        title: "Réservation confirmée !",
+        description: `Un email a été envoyé à ${formData.email}`,
+      });
+    },
+    onError: (error: Error) => {
+      toast({
+        title: "Erreur",
+        description: error.message || "Une erreur est survenue lors de la réservation",
+        variant: "destructive",
+      });
+    },
+  });
 
   const handleNext = async (nextStep: Step) => {
     let isValid = false;
@@ -72,11 +95,17 @@ export function BookingForm() {
   };
 
   function onSubmit(values: z.infer<typeof formSchema>) {
-    console.log(values);
-    setStep("confirmation");
-    toast({
-      title: "Réservation confirmée !",
-      description: `Un email a été envoyé à ${values.email}`,
+    bookingMutation.mutate({
+      restaurantId,
+      date: format(values.date, "yyyy-MM-dd"),
+      time: values.time,
+      guests: values.guests,
+      firstName: values.firstName,
+      lastName: values.lastName,
+      email: values.email,
+      phone: values.phone,
+      specialRequest: values.specialRequest,
+      newsletter: values.newsletter ? 1 : 0,
     });
   }
 
@@ -398,8 +427,13 @@ export function BookingForm() {
                   />
                </div>
 
-               <Button type="submit" className="w-full h-12 text-lg font-bold bg-[#00645A] hover:bg-[#004d45] mt-4">
-                 Confirmez votre réservation
+               <Button 
+                 type="submit" 
+                 className="w-full h-12 text-lg font-bold bg-[#00645A] hover:bg-[#004d45] mt-4"
+                 disabled={bookingMutation.isPending}
+                 data-testid="button-submit-booking"
+               >
+                 {bookingMutation.isPending ? "Confirmation..." : "Confirmez votre réservation"}
                </Button>
                <p className="text-[10px] text-center text-muted-foreground">
                  Service gratuit. La disponibilité est confirmée immédiatement.

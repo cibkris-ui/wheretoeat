@@ -1,24 +1,43 @@
 import { useRoute } from "wouter";
-import { getRestaurant } from "@/lib/mockData";
 import { Navbar } from "@/components/layout/Navbar";
 import { BookingForm } from "@/components/BookingForm";
 import { Badge } from "@/components/ui/badge";
 import { MapPin, Star, ChefHat, Clock, Phone, Globe } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useQuery } from "@tanstack/react-query";
+import { fetchRestaurant } from "@/lib/api";
 
 export default function RestaurantDetail() {
   const [, params] = useRoute("/restaurant/:id");
   const id = params ? parseInt(params.id) : 0;
-  const restaurant = getRestaurant(id);
+  
+  const { data: restaurant, isLoading, error } = useQuery({
+    queryKey: ["restaurant", id],
+    queryFn: () => fetchRestaurant(id),
+    enabled: id > 0,
+  });
 
-  if (!restaurant) {
+  if (isLoading) {
+    return (
+      <div className="min-h-screen flex flex-col">
+        <Navbar />
+        <div className="flex-1 flex items-center justify-center">
+          <div className="text-center" data-testid="loading-restaurant">
+            <p className="text-muted-foreground">Chargement du restaurant...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error || !restaurant) {
     return (
       <div className="min-h-screen flex flex-col">
         <Navbar />
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center">
             <h1 className="text-4xl font-serif font-bold mb-4">Restaurant Introuvable</h1>
-            <Button onClick={() => window.history.back()}>Retour</Button>
+            <Button onClick={() => window.history.back()} data-testid="button-back">Retour</Button>
           </div>
         </div>
       </div>
@@ -143,7 +162,7 @@ export default function RestaurantDetail() {
             <div className="bg-card border rounded-xl shadow-lg p-6">
               <h3 className="text-xl font-serif font-bold mb-1">Réserver une table</h3>
               <p className="text-sm text-muted-foreground mb-6">Réserver chez {restaurant.name}</p>
-              <BookingForm />
+              <BookingForm restaurantId={restaurant.id} />
             </div>
           </div>
         </div>

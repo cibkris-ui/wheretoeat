@@ -1,13 +1,19 @@
 import { Navbar } from "@/components/layout/Navbar";
 import { RestaurantCard } from "@/components/RestaurantCard";
-import { restaurants } from "@/lib/mockData";
 import { Search, MapPin, Calendar, Clock, Users } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import heroImage from '@assets/generated_images/elegant_restaurant_dining_atmosphere_hero_background.png';
 import { Separator } from "@/components/ui/separator";
+import { useQuery } from "@tanstack/react-query";
+import { fetchRestaurants } from "@/lib/api";
 
 export default function Home() {
+  const { data: restaurants, isLoading, error } = useQuery({
+    queryKey: ["restaurants"],
+    queryFn: fetchRestaurants,
+  });
+
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
@@ -82,11 +88,25 @@ export default function Home() {
           <Button variant="link" className="text-primary font-bold">Voir tout</Button>
         </div>
         
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-          {restaurants.map((restaurant) => (
-            <RestaurantCard key={restaurant.id} restaurant={restaurant} />
-          ))}
-        </div>
+        {isLoading && (
+          <div className="text-center py-12" data-testid="loading-restaurants">
+            <p className="text-muted-foreground">Chargement des restaurants...</p>
+          </div>
+        )}
+        
+        {error && (
+          <div className="text-center py-12" data-testid="error-restaurants">
+            <p className="text-red-600">Erreur lors du chargement des restaurants.</p>
+          </div>
+        )}
+        
+        {restaurants && restaurants.length > 0 && (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            {restaurants.map((restaurant) => (
+              <RestaurantCard key={restaurant.id} restaurant={restaurant} />
+            ))}
+          </div>
+        )}
       </section>
 
       {/* Categories / Banner */}
