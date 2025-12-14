@@ -18,6 +18,7 @@ const allowlist = [
   "jsonwebtoken",
   "memorystore",
   "multer",
+  "mysql2",
   "nanoid",
   "nodemailer",
   "openai",
