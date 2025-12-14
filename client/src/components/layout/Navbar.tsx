@@ -1,11 +1,12 @@
 import { Link } from "wouter";
-import { UtensilsCrossed, LogOut, LayoutDashboard } from "lucide-react";
+import { UtensilsCrossed, LogOut, LayoutDashboard, Store, Shield } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -59,6 +60,24 @@ export function Navbar() {
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>
+                  <Link href="/inscrire-restaurant" className="cursor-pointer" data-testid="link-register-restaurant">
+                    <Store className="mr-2 h-4 w-4" />
+                    Inscrire un restaurant
+                  </Link>
+                </DropdownMenuItem>
+                {user?.isAdmin && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem asChild>
+                      <Link href="/admin" className="cursor-pointer" data-testid="link-admin">
+                        <Shield className="mr-2 h-4 w-4" />
+                        Administration
+                      </Link>
+                    </DropdownMenuItem>
+                  </>
+                )}
+                <DropdownMenuSeparator />
+                <DropdownMenuItem asChild>
                   <a href="/api/logout" className="cursor-pointer text-red-600" data-testid="link-logout">
                     <LogOut className="mr-2 h-4 w-4" />
                     Déconnexion
@@ -67,11 +86,11 @@ export function Navbar() {
               </DropdownMenuContent>
             </DropdownMenu>
           ) : (
-            <a href="/api/login">
-              <Button className="hidden md:inline-flex h-9" data-testid="button-login">
+            <Link href="/inscrire-restaurant">
+              <Button className="hidden md:inline-flex h-9" data-testid="button-register">
                 Pour les Restaurateurs
               </Button>
-            </a>
+            </Link>
           )}
         </div>
       </div>
