@@ -3,6 +3,7 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { format } from "date-fns";
+import { fr } from "date-fns/locale";
 import { Calendar as CalendarIcon, Users, Clock, CheckCircle2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -32,17 +33,17 @@ import { useToast } from "@/hooks/use-toast";
 
 const formSchema = z.object({
   date: z.date({
-    required_error: "A date of reservation is required.",
+    required_error: "Une date de réservation est requise.",
   }),
   time: z.string({
-    required_error: "Please select a time.",
+    required_error: "Veuillez choisir une heure.",
   }),
   guests: z.string({
-    required_error: "Please select number of guests.",
+    required_error: "Veuillez choisir le nombre d'invités.",
   }),
-  name: z.string().min(2, "Name must be at least 2 characters."),
-  email: z.string().email("Invalid email address."),
-  phone: z.string().min(10, "Phone number must be at least 10 digits."),
+  name: z.string().min(2, "Le nom doit contenir au moins 2 caractères."),
+  email: z.string().email("Adresse email invalide."),
+  phone: z.string().min(10, "Le numéro de téléphone doit contenir au moins 10 chiffres."),
 });
 
 export function BookingForm() {
@@ -62,8 +63,8 @@ export function BookingForm() {
     setTimeout(() => {
       setIsSubmitted(true);
       toast({
-        title: "Table Reserved!",
-        description: `We've sent a confirmation to ${values.email}.`,
+        title: "Table Réservée !",
+        description: `Nous avons envoyé une confirmation à ${values.email}.`,
       });
     }, 1000);
   }
@@ -74,9 +75,9 @@ export function BookingForm() {
         <div className="h-16 w-16 bg-green-100 text-green-600 rounded-full flex items-center justify-center mb-2">
           <CheckCircle2 className="h-8 w-8" />
         </div>
-        <h3 className="text-2xl font-serif font-bold text-foreground">Reservation Confirmed</h3>
+        <h3 className="text-2xl font-serif font-bold text-foreground">Réservation Confirmée</h3>
         <p className="text-muted-foreground max-w-xs mx-auto">
-          Your table has been successfully booked. You will receive an email confirmation shortly.
+          Votre table a été réservée avec succès. Vous recevrez une confirmation par email sous peu.
         </p>
         <Button 
           variant="outline" 
@@ -86,7 +87,7 @@ export function BookingForm() {
           }}
           className="mt-4"
         >
-          Make Another Reservation
+          Faire une autre réservation
         </Button>
       </div>
     );
@@ -113,9 +114,9 @@ export function BookingForm() {
                         )}
                       >
                         {field.value ? (
-                          format(field.value, "PPP")
+                          format(field.value, "PPP", { locale: fr })
                         ) : (
-                          <span>Pick a date</span>
+                          <span>Choisir une date</span>
                         )}
                         <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
                       </Button>
@@ -144,11 +145,11 @@ export function BookingForm() {
             name="time"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Time</FormLabel>
+                <FormLabel>Heure</FormLabel>
                 <Select onValueChange={field.onChange} defaultValue={field.value}>
                   <FormControl>
                     <SelectTrigger>
-                      <SelectValue placeholder="Select time" />
+                      <SelectValue placeholder="Choisir l'heure" />
                     </SelectTrigger>
                   </FormControl>
                   <SelectContent>
@@ -174,17 +175,17 @@ export function BookingForm() {
           name="guests"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Guests</FormLabel>
+              <FormLabel>Invités</FormLabel>
               <Select onValueChange={field.onChange} defaultValue={field.value}>
                 <FormControl>
                   <SelectTrigger>
-                    <SelectValue placeholder="Number of guests" />
+                    <SelectValue placeholder="Nombre d'invités" />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
                   {[1, 2, 3, 4, 5, 6, 7, 8].map((num) => (
                     <SelectItem key={num} value={num.toString()}>
-                      {num} {num === 1 ? "Guest" : "Guests"}
+                      {num} {num === 1 ? "Personne" : "Personnes"}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -195,16 +196,16 @@ export function BookingForm() {
         />
 
         <div className="space-y-4 pt-4 border-t">
-          <h4 className="font-medium text-sm text-muted-foreground uppercase tracking-wider">Contact Details</h4>
+          <h4 className="font-medium text-sm text-muted-foreground uppercase tracking-wider">Coordonnées</h4>
           
           <FormField
             control={form.control}
             name="name"
             render={({ field }) => (
               <FormItem>
-                <FormLabel>Full Name</FormLabel>
+                <FormLabel>Nom Complet</FormLabel>
                 <FormControl>
-                  <Input placeholder="John Doe" {...field} />
+                  <Input placeholder="Jean Dupont" {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -219,7 +220,7 @@ export function BookingForm() {
                 <FormItem>
                   <FormLabel>Email</FormLabel>
                   <FormControl>
-                    <Input placeholder="john@example.com" {...field} />
+                    <Input placeholder="jean@exemple.ch" {...field} />
                   </FormControl>
                   <FormMessage />
                 </FormItem>
@@ -230,7 +231,7 @@ export function BookingForm() {
               name="phone"
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel>Phone</FormLabel>
+                  <FormLabel>Téléphone</FormLabel>
                   <FormControl>
                     <Input placeholder="+41 79 123 45 67" {...field} />
                   </FormControl>
@@ -242,12 +243,12 @@ export function BookingForm() {
         </div>
 
         <Button type="submit" className="w-full text-lg h-12 mt-6">
-          Complete Reservation
+          Confirmer la Réservation
         </Button>
         <p className="text-xs text-center text-muted-foreground mt-4">
-          By clicking "Complete Reservation" you agree to our Terms of Service.
+          En cliquant sur "Confirmer", vous acceptez nos Conditions Générales.
           <br/>
-          (Note: This is a demo, no real booking is made)
+          (Note : Ceci est une démo, aucune réservation réelle n'est effectuée)
         </p>
       </form>
     </Form>

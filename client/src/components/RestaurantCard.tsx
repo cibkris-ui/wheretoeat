@@ -27,7 +27,7 @@ export function RestaurantCard({ restaurant }: RestaurantCardProps) {
           {/* Discount Tag (Mock) */}
           <div className="absolute top-3 left-3">
              <Badge className="bg-primary text-white font-bold border-0 px-2 py-1 text-xs">
-                -20% off food
+                -20% sur la carte
              </Badge>
           </div>
         </div>
@@ -57,7 +57,7 @@ export function RestaurantCard({ restaurant }: RestaurantCardProps) {
              <div className="bg-yellow-100 p-1 rounded-sm">
                 <Tag className="w-3 h-3 text-yellow-700" />
              </div>
-             <span className="text-xs font-medium text-muted-foreground">Accepts Yums</span>
+             <span className="text-xs font-medium text-muted-foreground">Accepte les Yums</span>
            </div>
         </CardFooter>
       </Card>

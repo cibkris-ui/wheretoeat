@@ -25,10 +25,10 @@ export default function Home() {
         
         <div className="relative z-10 container text-center text-white space-y-6 px-4">
           <h1 className="text-4xl md:text-6xl font-bold tracking-tight animate-in fade-in slide-in-from-bottom-4 duration-700">
-            Book the best restaurants in Switzerland
+            Réservez les meilleurs restaurants en Suisse
           </h1>
           <p className="text-lg md:text-xl font-medium opacity-90 max-w-2xl mx-auto animate-in fade-in slide-in-from-bottom-6 duration-700 delay-100">
-            20,000+ restaurants available to book now
+            20 000+ restaurants disponibles à la réservation
           </p>
           
           {/* TheFork Style Search Bar */}
@@ -40,7 +40,7 @@ export default function Home() {
                 <Search className="h-5 w-5 text-gray-400 mr-3 flex-shrink-0" />
                 <Input 
                   className="border-0 shadow-none focus-visible:ring-0 text-gray-800 placeholder:text-gray-500 h-full p-0 text-base" 
-                  placeholder="Restaurant, cuisine, or address" 
+                  placeholder="Restaurant, cuisine ou adresse" 
                 />
               </div>
 
@@ -48,7 +48,7 @@ export default function Home() {
               <div className="hidden md:flex items-center gap-4 px-4 h-12 md:border-r border-gray-200 min-w-fit cursor-pointer hover:bg-gray-50 transition-colors">
                  <div className="flex items-center gap-2">
                     <Calendar className="h-5 w-5 text-gray-400" />
-                    <span className="text-gray-700 font-medium">Today</span>
+                    <span className="text-gray-700 font-medium">Aujourd'hui</span>
                  </div>
                  <Separator orientation="vertical" className="h-6" />
                  <div className="flex items-center gap-2">
@@ -58,13 +58,13 @@ export default function Home() {
                  <Separator orientation="vertical" className="h-6" />
                  <div className="flex items-center gap-2">
                     <Users className="h-5 w-5 text-gray-400" />
-                    <span className="text-gray-700 font-medium">2 people</span>
+                    <span className="text-gray-700 font-medium">2 pers.</span>
                  </div>
               </div>
 
               <div className="w-full md:w-auto p-1">
                 <Button size="lg" className="w-full md:w-auto h-12 px-8 text-base font-bold bg-primary hover:bg-primary/90 border-0 rounded-md shadow-sm">
-                  Search
+                  Rechercher
                 </Button>
               </div>
             </div>
@@ -76,10 +76,10 @@ export default function Home() {
       <section className="py-16 container px-4 bg-gray-50/50">
         <div className="flex justify-between items-end mb-8">
           <div>
-            <h2 className="text-2xl font-bold mb-2 text-gray-900">Popular in Switzerland</h2>
-            <p className="text-muted-foreground">The most booked restaurants this week</p>
+            <h2 className="text-2xl font-bold mb-2 text-gray-900">Populaire en Suisse</h2>
+            <p className="text-muted-foreground">Les restaurants les plus réservés cette semaine</p>
           </div>
-          <Button variant="link" className="text-primary font-bold">See all</Button>
+          <Button variant="link" className="text-primary font-bold">Voir tout</Button>
         </div>
         
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -92,9 +92,9 @@ export default function Home() {
       {/* Categories / Banner */}
       <section className="bg-white py-16">
         <div className="container px-4">
-          <h2 className="text-2xl font-bold mb-8 text-gray-900">Inspiration for your next meal</h2>
+          <h2 className="text-2xl font-bold mb-8 text-gray-900">Inspiration pour votre prochain repas</h2>
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
-            {['Italian', 'French', 'Swiss', 'Japanese', 'Chinese', 'Indian', 'Burgers', 'Pizza', 'Sushi', 'Vegan', 'Brunch', 'Romantic'].map((cat) => (
+            {['Italien', 'Français', 'Suisse', 'Japonais', 'Chinois', 'Indien', 'Burgers', 'Pizza', 'Sushi', 'Végétalien', 'Brunch', 'Romantique'].map((cat) => (
               <div key={cat} className="group cursor-pointer bg-white p-4 rounded-lg border border-gray-200 hover:border-primary hover:shadow-md transition-all text-center">
                 <h3 className="font-medium text-sm text-gray-700 group-hover:text-primary transition-colors">{cat}</h3>
               </div>
@@ -107,28 +107,28 @@ export default function Home() {
         <div className="container px-4 grid grid-cols-1 md:grid-cols-4 gap-8">
           <div className="space-y-4">
             <h4 className="text-xl font-bold text-primary">WHERETOEAT.CH</h4>
-            <p className="text-sm">Discover and book the best restaurants.</p>
+            <p className="text-sm">Découvrez et réservez les meilleurs restaurants.</p>
           </div>
           <div>
-            <h5 className="font-bold mb-4 text-gray-900">Discover</h5>
+            <h5 className="font-bold mb-4 text-gray-900">Découvrir</h5>
             <ul className="space-y-2 text-sm">
               <li className="hover:text-primary cursor-pointer">Zurich</li>
-              <li className="hover:text-primary cursor-pointer">Geneva</li>
-              <li className="hover:text-primary cursor-pointer">Basel</li>
+              <li className="hover:text-primary cursor-pointer">Genève</li>
+              <li className="hover:text-primary cursor-pointer">Bâle</li>
               <li className="hover:text-primary cursor-pointer">Zermatt</li>
             </ul>
           </div>
           <div>
-            <h5 className="font-bold mb-4 text-gray-900">More</h5>
+            <h5 className="font-bold mb-4 text-gray-900">Plus</h5>
             <ul className="space-y-2 text-sm">
-              <li className="hover:text-primary cursor-pointer">About Us</li>
+              <li className="hover:text-primary cursor-pointer">À propos</li>
               <li className="hover:text-primary cursor-pointer">Restaurateurs</li>
               <li className="hover:text-primary cursor-pointer">Blog</li>
               <li className="hover:text-primary cursor-pointer">Contact</li>
             </ul>
           </div>
           <div>
-            <h5 className="font-bold mb-4 text-gray-900">Download App</h5>
+            <h5 className="font-bold mb-4 text-gray-900">Télécharger l'App</h5>
             <div className="flex gap-2">
                <div className="h-10 w-32 bg-gray-900 rounded-md flex items-center justify-center text-white text-xs font-bold cursor-pointer">App Store</div>
                <div className="h-10 w-32 bg-gray-900 rounded-md flex items-center justify-center text-white text-xs font-bold cursor-pointer">Google Play</div>
@@ -136,7 +136,7 @@ export default function Home() {
           </div>
         </div>
         <div className="container px-4 mt-12 pt-8 border-t text-center text-sm text-gray-400">
-          © {new Date().getFullYear()} WHERETOEAT.CH. All rights reserved.
+          © {new Date().getFullYear()} WHERETOEAT.CH. Tous droits réservés.
         </div>
       </footer>
     </div>

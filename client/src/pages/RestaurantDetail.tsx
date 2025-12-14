@@ -17,8 +17,8 @@ export default function RestaurantDetail() {
         <Navbar />
         <div className="flex-1 flex items-center justify-center">
           <div className="text-center">
-            <h1 className="text-4xl font-serif font-bold mb-4">Restaurant Not Found</h1>
-            <Button onClick={() => window.history.back()}>Go Back</Button>
+            <h1 className="text-4xl font-serif font-bold mb-4">Restaurant Introuvable</h1>
+            <Button onClick={() => window.history.back()}>Retour</Button>
           </div>
         </div>
       </div>
@@ -50,7 +50,7 @@ export default function RestaurantDetail() {
                 </div>
                 <div className="flex items-center gap-1 text-foreground font-medium">
                   <Star className="w-4 h-4 fill-primary text-primary" />
-                  {restaurant.rating} (120+ reviews)
+                  {restaurant.rating} (120+ avis)
                 </div>
                 <div>{restaurant.priceRange}</div>
               </div>
@@ -63,7 +63,7 @@ export default function RestaurantDetail() {
         {/* Left Content */}
         <div className="lg:col-span-2 space-y-12">
           <section>
-            <h2 className="text-2xl font-serif font-bold mb-4">About</h2>
+            <h2 className="text-2xl font-serif font-bold mb-4">À propos</h2>
             <p className="text-lg text-muted-foreground leading-relaxed">
               {restaurant.description}
             </p>
@@ -77,28 +77,28 @@ export default function RestaurantDetail() {
           </section>
 
           <section>
-            <h2 className="text-2xl font-serif font-bold mb-6">Info & Hours</h2>
+            <h2 className="text-2xl font-serif font-bold mb-6">Infos & Horaires</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-4">
                 <div className="flex items-start gap-3">
                   <MapPin className="w-5 h-5 text-muted-foreground mt-0.5" />
                   <div>
-                    <h4 className="font-medium">Address</h4>
-                    <p className="text-sm text-muted-foreground">Example Street 123<br/>{restaurant.location}, Switzerland</p>
+                    <h4 className="font-medium">Adresse</h4>
+                    <p className="text-sm text-muted-foreground">Rue Exemple 123<br/>{restaurant.location}, Suisse</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
                   <Phone className="w-5 h-5 text-muted-foreground mt-0.5" />
                   <div>
-                    <h4 className="font-medium">Phone</h4>
+                    <h4 className="font-medium">Téléphone</h4>
                     <p className="text-sm text-muted-foreground">+41 44 123 45 67</p>
                   </div>
                 </div>
                 <div className="flex items-start gap-3">
                   <Globe className="w-5 h-5 text-muted-foreground mt-0.5" />
                   <div>
-                    <h4 className="font-medium">Website</h4>
-                    <p className="text-sm text-muted-foreground underline cursor-pointer">www.example.com</p>
+                    <h4 className="font-medium">Site Web</h4>
+                    <p className="text-sm text-muted-foreground underline cursor-pointer">www.exemple.ch</p>
                   </div>
                 </div>
               </div>
@@ -106,29 +106,29 @@ export default function RestaurantDetail() {
               <div className="space-y-2">
                 <div className="flex items-center gap-2 font-medium mb-2">
                   <Clock className="w-5 h-5 text-muted-foreground" />
-                  Opening Hours
+                  Heures d'ouverture
                 </div>
                 <div className="grid grid-cols-2 text-sm gap-y-1">
-                  <span className="text-muted-foreground">Monday - Friday</span>
+                  <span className="text-muted-foreground">Lundi - Vendredi</span>
                   <span>11:30 - 23:00</span>
-                  <span className="text-muted-foreground">Saturday</span>
+                  <span className="text-muted-foreground">Samedi</span>
                   <span>17:00 - 24:00</span>
-                  <span className="text-muted-foreground">Sunday</span>
-                  <span>Closed</span>
+                  <span className="text-muted-foreground">Dimanche</span>
+                  <span>Fermé</span>
                 </div>
               </div>
             </div>
           </section>
 
           <section>
-            <h2 className="text-2xl font-serif font-bold mb-4">From the Menu</h2>
+            <h2 className="text-2xl font-serif font-bold mb-4">À la Carte</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                {/* Mock Menu Items */}
                {[1, 2, 3, 4].map((i) => (
                  <div key={i} className="flex justify-between items-start border-b border-dashed pb-2">
                    <div>
-                     <h4 className="font-medium">Signature Dish {i}</h4>
-                     <p className="text-xs text-muted-foreground">Fresh local ingredients, chef's special sauce</p>
+                     <h4 className="font-medium">Plat Signature {i}</h4>
+                     <p className="text-xs text-muted-foreground">Ingrédients frais locaux, sauce spéciale du chef</p>
                    </div>
                    <span className="font-medium">CHF {20 + i * 5}.-</span>
                  </div>
@@ -141,8 +141,8 @@ export default function RestaurantDetail() {
         <div className="lg:col-span-1">
           <div className="sticky top-24">
             <div className="bg-card border rounded-xl shadow-lg p-6">
-              <h3 className="text-xl font-serif font-bold mb-1">Make a Reservation</h3>
-              <p className="text-sm text-muted-foreground mb-6">Book a table at {restaurant.name}</p>
+              <h3 className="text-xl font-serif font-bold mb-1">Réserver une table</h3>
+              <p className="text-sm text-muted-foreground mb-6">Réserver chez {restaurant.name}</p>
               <BookingForm />
             </div>
           </div>

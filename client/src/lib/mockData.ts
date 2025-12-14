@@ -19,46 +19,46 @@ export const restaurants: Restaurant[] = [
   {
     id: 1,
     name: "La Tavola Rustica",
-    cuisine: "Italian",
+    cuisine: "Italien",
     location: "Zurich",
     rating: 4.8,
     priceRange: "$$",
     image: italianImage,
-    description: "Authentic handmade pasta served in a warm, rustic setting. Famous for our truffle tagliatelle and extensive wine list.",
-    features: ["Outdoor Seating", "Vegetarian Friendly", "Wheelchair Accessible"]
+    description: "Pâtes artisanales authentiques servies dans un cadre chaleureux et rustique. Célèbre pour nos tagliatelles aux truffes et notre vaste carte des vins.",
+    features: ["Terrasse", "Végétarien", "Accessible PMR"]
   },
   {
     id: 2,
     name: "Chalet de Montagne",
-    cuisine: "Swiss",
+    cuisine: "Suisse",
     location: "Zermatt",
     rating: 4.9,
     priceRange: "$$$",
     image: swissImage,
-    description: "Experience the heart of Switzerland with our legendary fondue and raclette, served in a traditional wooden chalet with mountain views.",
-    features: ["Mountain View", "Private Rooms", "Cozy Atmosphere"]
+    description: "Découvrez le cœur de la Suisse avec nos légendaires fondues et raclettes, servies dans un chalet en bois traditionnel avec vue sur la montagne.",
+    features: ["Vue Montagne", "Salle Privée", "Ambiance Cosy"]
   },
   {
     id: 3,
     name: "Lumière",
-    cuisine: "Modern European",
-    location: "Geneva",
+    cuisine: "Européen Moderne",
+    location: "Genève",
     rating: 4.7,
     priceRange: "$$$$",
     image: modernImage,
-    description: "A culinary journey through modern Europe. Chef Jean-Pierre creates art on a plate using only the finest seasonal ingredients.",
-    features: ["Michelin Star", "Tasting Menu", "Sommelier Service"]
+    description: "Un voyage culinaire à travers l'Europe moderne. Le chef Jean-Pierre crée de l'art dans l'assiette en utilisant uniquement les meilleurs ingrédients de saison.",
+    features: ["Étoilé Michelin", "Menu Dégustation", "Sommelier"]
   },
   {
     id: 4,
     name: "Alpenblick",
-    cuisine: "Swiss / French",
+    cuisine: "Suisse / Français",
     location: "Interlaken",
     rating: 4.6,
     priceRange: "$$$",
     image: heroImage,
-    description: "Elegant dining with a panoramic view of the Alps. Blending traditional Swiss flavors with French sophistication.",
-    features: ["Scenic View", "Fine Wines", "Romantic"]
+    description: "Dîner élégant avec vue panoramique sur les Alpes. Mêlant saveurs suisses traditionnelles et sophistication française.",
+    features: ["Vue Panoramique", "Vins Fins", "Romantique"]
   }
 ];
 
