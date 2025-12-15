@@ -100,6 +100,7 @@ export const restaurants = pgTable("restaurants", {
   address: text("address"),
   openingHours: jsonb("opening_hours"),
   menuPdfUrl: text("menu_pdf_url"),
+  googlePlaceId: text("google_place_id"),
 });
 
 export const insertRestaurantSchema = createInsertSchema(restaurants).omit({
