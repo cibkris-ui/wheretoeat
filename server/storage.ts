@@ -32,6 +32,7 @@ export interface IStorage {
   createBooking(booking: InsertBooking): Promise<Booking>;
   getBookingsByRestaurant(restaurantId: number): Promise<Booking[]>;
   checkExistingBooking(clientIp: string, date: string, time: string): Promise<Booking | undefined>;
+  checkIpEmailMismatch(clientIp: string, email: string): Promise<Booking | undefined>;
   
   getCuisineCategories(): Promise<CuisineCategory[]>;
   
@@ -123,6 +124,17 @@ export class DatabaseStorage implements IStorage {
         eq(bookings.clientIp, clientIp),
         eq(bookings.date, date),
         eq(bookings.time, time)
+      )
+    );
+    return existing;
+  }
+
+  async checkIpEmailMismatch(clientIp: string, email: string): Promise<Booking | undefined> {
+    const { ne } = await import("drizzle-orm");
+    const [existing] = await db.select().from(bookings).where(
+      and(
+        eq(bookings.clientIp, clientIp),
+        ne(bookings.email, email)
       )
     );
     return existing;

@@ -221,6 +221,13 @@ export async function registerRoutes(
       const clientIp = req.headers['x-forwarded-for'] as string || req.socket.remoteAddress || 'unknown';
       const ipAddress = clientIp.split(',')[0].trim();
       
+      const emailMismatch = await storage.checkIpEmailMismatch(ipAddress, result.data.email);
+      if (emailMismatch) {
+        return res.status(400).json({ 
+          message: "Cette adresse IP est déjà associée à un autre compte email. Veuillez utiliser la même adresse email pour toutes vos réservations." 
+        });
+      }
+      
       const existingBooking = await storage.checkExistingBooking(ipAddress, result.data.date, result.data.time);
       if (existingBooking) {
         return res.status(400).json({ 
