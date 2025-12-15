@@ -74,3 +74,10 @@ Database tables:
 
 ### Fonts
 - Google Fonts: DM Serif Display (headers), Inter (UI text)
+
+## Fonctionnalités à ajouter
+
+### Emails (en attente de clé API Resend)
+- Email de confirmation envoyé au client quand le restaurateur valide une réservation
+- Email de rappel envoyé le matin de chaque réservation
+- Service recommandé: Resend (resend.com) - gratuit jusqu'à 3000 emails/mois
