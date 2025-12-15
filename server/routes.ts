@@ -218,7 +218,22 @@ export async function registerRoutes(
         return res.status(404).json({ message: "Restaurant not found" });
       }
       
-      const booking = await storage.createBooking(result.data);
+      const clientIp = req.headers['x-forwarded-for'] as string || req.socket.remoteAddress || 'unknown';
+      const ipAddress = clientIp.split(',')[0].trim();
+      
+      const existingBooking = await storage.checkExistingBooking(ipAddress, result.data.date, result.data.time);
+      if (existingBooking) {
+        return res.status(400).json({ 
+          message: "Vous avez déjà une réservation sur ce créneau horaire. Veuillez choisir un autre horaire." 
+        });
+      }
+      
+      const bookingData = {
+        ...result.data,
+        clientIp: ipAddress
+      };
+      
+      const booking = await storage.createBooking(bookingData);
       res.status(201).json(booking);
     } catch (error: any) {
       res.status(500).json({ message: error.message });

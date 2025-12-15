@@ -1,4 +1,4 @@
-import { eq } from "drizzle-orm";
+import { eq, and } from "drizzle-orm";
 import { db } from "./db";
 import { 
   type User, 
@@ -31,6 +31,7 @@ export interface IStorage {
   
   createBooking(booking: InsertBooking): Promise<Booking>;
   getBookingsByRestaurant(restaurantId: number): Promise<Booking[]>;
+  checkExistingBooking(clientIp: string, date: string, time: string): Promise<Booking | undefined>;
   
   getCuisineCategories(): Promise<CuisineCategory[]>;
   
@@ -114,6 +115,17 @@ export class DatabaseStorage implements IStorage {
 
   async getBookingsByRestaurant(restaurantId: number): Promise<Booking[]> {
     return await db.select().from(bookings).where(eq(bookings.restaurantId, restaurantId));
+  }
+
+  async checkExistingBooking(clientIp: string, date: string, time: string): Promise<Booking | undefined> {
+    const [existing] = await db.select().from(bookings).where(
+      and(
+        eq(bookings.clientIp, clientIp),
+        eq(bookings.date, date),
+        eq(bookings.time, time)
+      )
+    );
+    return existing;
   }
 
   async getCuisineCategories(): Promise<CuisineCategory[]> {

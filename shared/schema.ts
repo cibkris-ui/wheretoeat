@@ -23,6 +23,7 @@ export const users = pgTable("users", {
   lastName: varchar("last_name"),
   profileImageUrl: varchar("profile_image_url"),
   isAdmin: boolean("is_admin").default(false),
+  userType: text("user_type").default("client"),
   createdAt: timestamp("created_at").defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
@@ -120,6 +121,7 @@ export const bookings = pgTable("bookings", {
   phone: text("phone").notNull(),
   specialRequest: text("special_request"),
   newsletter: integer("newsletter").notNull().default(0),
+  clientIp: text("client_ip"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
