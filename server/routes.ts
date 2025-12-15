@@ -221,10 +221,22 @@ export async function registerRoutes(
       const clientIp = req.headers['x-forwarded-for'] as string || req.socket.remoteAddress || 'unknown';
       const ipAddress = clientIp.split(',')[0].trim();
       
-      const emailMismatch = await storage.checkIpEmailMismatch(ipAddress, result.data.email);
-      if (emailMismatch) {
+      let clientId = req.cookies?.clientId;
+      if (!clientId) {
+        clientId = `client_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+        res.cookie('clientId', clientId, { 
+          maxAge: 365 * 24 * 60 * 60 * 1000,
+          httpOnly: true,
+          sameSite: 'strict'
+        });
+      }
+      
+      const emailMismatchByIp = await storage.checkIpEmailMismatch(ipAddress, result.data.email);
+      const emailMismatchByCookie = await storage.checkClientIdEmailMismatch(clientId, result.data.email);
+      
+      if (emailMismatchByIp || emailMismatchByCookie) {
         return res.status(400).json({ 
-          message: "Cette adresse IP est déjà associée à un autre compte email. Veuillez utiliser la même adresse email pour toutes vos réservations." 
+          message: "Cet appareil est déjà associé à un autre compte email. Veuillez utiliser la même adresse email pour toutes vos réservations." 
         });
       }
       
@@ -237,7 +249,8 @@ export async function registerRoutes(
       
       const bookingData = {
         ...result.data,
-        clientIp: ipAddress
+        clientIp: ipAddress,
+        clientId: clientId
       };
       
       const booking = await storage.createBooking(bookingData);

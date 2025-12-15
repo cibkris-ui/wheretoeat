@@ -122,6 +122,7 @@ export const bookings = pgTable("bookings", {
   specialRequest: text("special_request"),
   newsletter: integer("newsletter").notNull().default(0),
   clientIp: text("client_ip"),
+  clientId: text("client_id"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
