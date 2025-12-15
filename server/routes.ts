@@ -6,6 +6,7 @@ import { fromZodError } from "zod-validation-error";
 import { setupAuth, isAuthenticated } from "./replitAuth";
 import { ObjectStorageService, ObjectNotFoundError } from "./objectStorage";
 import { ObjectPermission } from "./objectAcl";
+import { googlePlacesService } from "./googlePlaces";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 
@@ -463,6 +464,76 @@ export async function registerRoutes(
         return res.sendStatus(404);
       }
       return res.sendStatus(500);
+    }
+  });
+
+  app.get("/api/google-places/configured", async (_req, res) => {
+    res.json({ configured: googlePlacesService.isConfigured() });
+  });
+
+  app.get("/api/google-places/search", async (req, res) => {
+    try {
+      if (!googlePlacesService.isConfigured()) {
+        return res.status(503).json({ message: "Google Places API not configured" });
+      }
+      
+      const query = req.query.q as string;
+      const location = req.query.location as string | undefined;
+      
+      if (!query) {
+        return res.status(400).json({ message: "Query parameter 'q' is required" });
+      }
+      
+      const results = await googlePlacesService.searchPlaces(query, location);
+      res.json(results);
+    } catch (error: any) {
+      console.error("Error searching Google Places:", error);
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.get("/api/google-places/:placeId", async (req, res) => {
+    try {
+      if (!googlePlacesService.isConfigured()) {
+        return res.status(503).json({ message: "Google Places API not configured" });
+      }
+      
+      const { placeId } = req.params;
+      const details = await googlePlacesService.getPlaceDetails(placeId);
+      
+      if (!details) {
+        return res.status(404).json({ message: "Place not found" });
+      }
+      
+      res.json(details);
+    } catch (error: any) {
+      console.error("Error fetching place details:", error);
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.put("/api/restaurants/:id/google-place", isAuthenticated, async (req: any, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid restaurant ID" });
+      }
+      
+      const restaurant = await storage.getRestaurant(id);
+      if (!restaurant) {
+        return res.status(404).json({ message: "Restaurant not found" });
+      }
+      
+      const userId = req.user.claims.sub;
+      if (restaurant.ownerId !== userId) {
+        return res.status(403).json({ message: "Not authorized to edit this restaurant" });
+      }
+      
+      const { googlePlaceId } = req.body;
+      const updated = await storage.updateRestaurant(id, { googlePlaceId });
+      res.json(updated);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
     }
   });
 

@@ -1,6 +1,7 @@
 import { useRoute } from "wouter";
 import { Navbar } from "@/components/layout/Navbar";
 import { BookingForm } from "@/components/BookingForm";
+import { GoogleRating } from "@/components/GoogleRating";
 import { Badge } from "@/components/ui/badge";
 import { MapPin, Star, ChefHat, Clock, Phone, Globe } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -62,15 +63,18 @@ export default function RestaurantDetail() {
             <div>
               <Badge className="mb-4 bg-primary text-primary-foreground hover:bg-primary/90">{restaurant.cuisine}</Badge>
               <h1 className="text-4xl md:text-6xl font-serif font-bold mb-2">{restaurant.name}</h1>
-              <div className="flex items-center gap-4 text-muted-foreground">
+              <div className="flex items-center gap-4 text-muted-foreground flex-wrap">
                 <div className="flex items-center gap-1">
                   <MapPin className="w-4 h-4" />
                   {restaurant.location}
                 </div>
-                <div className="flex items-center gap-1 text-foreground font-medium">
-                  <Star className="w-4 h-4 fill-primary text-primary" />
-                  {restaurant.rating} (120+ avis)
-                </div>
+                {restaurant.rating > 0 && (
+                  <div className="flex items-center gap-1 text-foreground font-medium">
+                    <Star className="w-4 h-4 fill-primary text-primary" />
+                    {restaurant.rating}
+                  </div>
+                )}
+                <GoogleRating googlePlaceId={restaurant.googlePlaceId} />
                 <div>{restaurant.priceRange}</div>
               </div>
             </div>
@@ -138,6 +142,15 @@ export default function RestaurantDetail() {
               </div>
             </div>
           </section>
+
+          {restaurant.googlePlaceId && (
+            <section>
+              <GoogleRating 
+                googlePlaceId={restaurant.googlePlaceId} 
+                showReviews={true} 
+              />
+            </section>
+          )}
 
           <section>
             <h2 className="text-2xl font-serif font-bold mb-4">À la Carte</h2>
