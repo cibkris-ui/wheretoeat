@@ -21,8 +21,8 @@
   --color-popover: hsl(0 0% 100%);
   --color-popover-foreground: hsl(0 0% 10%);
 
-  /* Primary Green #599648 (TheFork Brand) */
-  --color-primary: hsl(108 35% 44%); 
+  /* Primary Red */
+  --color-primary: hsl(0 72% 51%); 
   --color-primary-foreground: hsl(0 0% 100%);
 
   --color-secondary: hsl(0 0% 96%);
@@ -39,7 +39,7 @@
 
   --color-border: hsl(0 0% 90%);
   --color-input: hsl(0 0% 90%);
-  --color-ring: hsl(108 35% 44%);
+  --color-ring: hsl(0 72% 51%);
 
   --radius: 0.5rem;
 }

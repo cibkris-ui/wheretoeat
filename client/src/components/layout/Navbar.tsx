@@ -21,7 +21,7 @@ export function Navbar() {
           <div className="flex h-8 w-8 items-center justify-center rounded-sm bg-primary text-primary-foreground">
             <UtensilsCrossed className="h-5 w-5" />
           </div>
-          WHERETOEAT<span className="text-primary">.CH</span>
+          WHERE<span className="text-primary">TO</span>EAT.CH
         </Link>
         <div className="flex items-center gap-6 text-sm font-medium">
           <Link href="/" className="hover:text-primary transition-colors cursor-pointer">Accueil</Link>

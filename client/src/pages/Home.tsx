@@ -126,7 +126,7 @@ export default function Home() {
       <footer className="bg-white border-t py-12 text-gray-600">
         <div className="container px-4 grid grid-cols-1 md:grid-cols-4 gap-8">
           <div className="space-y-4">
-            <h4 className="text-xl font-bold text-primary">WHERETOEAT.CH</h4>
+            <h4 className="text-xl font-bold">WHERE<span className="text-primary">TO</span>EAT.CH</h4>
             <p className="text-sm">Découvrez et réservez les meilleurs restaurants.</p>
           </div>
           <div>
