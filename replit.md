@@ -81,3 +81,13 @@ Database tables:
 - Email de confirmation envoyé au client quand le restaurateur valide une réservation
 - Email de rappel envoyé le matin de chaque réservation
 - Service recommandé: Resend (resend.com) - gratuit jusqu'à 3000 emails/mois
+
+## Intégrations externes
+
+### Google Places API (en attente de clé API)
+- Affichage des notes Google sur les pages restaurant
+- Affichage des avis Google récents
+- Variable d'environnement requise: GOOGLE_PLACES_API_KEY
+- Champ googlePlaceId ajouté à la table restaurants
+- Routes API: GET /api/google-places/configured, /api/google-places/search, /api/google-places/:placeId
+- Composant frontend: GoogleRating.tsx
