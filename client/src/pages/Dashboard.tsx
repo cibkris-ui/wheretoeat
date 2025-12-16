@@ -10,7 +10,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Calendar, Clock, Users, MapPin, Star, Utensils, Edit, Check } from "lucide-react";
+import { Calendar, Clock, Users, MapPin, Star, Utensils, Edit, Check, Plus } from "lucide-react";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 import type { Restaurant, Booking } from "@shared/schema";
@@ -20,7 +20,6 @@ import { apiRequest } from "@/lib/queryClient";
 export default function Dashboard() {
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   const { toast } = useToast();
-  const queryClient = useQueryClient();
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -40,25 +39,6 @@ export default function Dashboard() {
     enabled: isAuthenticated,
   });
 
-  const { data: allRestaurants = [] } = useQuery<Restaurant[]>({
-    queryKey: ["/api/restaurants"],
-    enabled: isAuthenticated && myRestaurants.length === 0,
-  });
-
-  const claimMutation = useMutation({
-    mutationFn: async (restaurantId: number) => {
-      await apiRequest("POST", `/api/restaurants/${restaurantId}/claim`);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/my-restaurants"] });
-      queryClient.invalidateQueries({ queryKey: ["/api/restaurants"] });
-      toast({ title: "Restaurant revendiqué avec succès!" });
-    },
-    onError: () => {
-      toast({ title: "Erreur lors de la revendication", variant: "destructive" });
-    },
-  });
-
   if (authLoading) {
     return (
       <div className="min-h-screen bg-background">
@@ -74,26 +54,29 @@ export default function Dashboard() {
     return null;
   }
 
-  const availableRestaurants = allRestaurants.filter(r => !r.ownerId);
-
   return (
     <div className="min-h-screen bg-background">
       <Navbar />
       <div className="container py-8">
-        <div className="mb-8">
-          <h1 className="text-3xl font-serif font-bold">Tableau de bord restaurateur</h1>
-          <p className="text-muted-foreground mt-2">
-            Bienvenue, {user?.firstName || user?.email || "Restaurateur"}
-          </p>
+        <div className="mb-8 flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-serif font-bold">Tableau de bord restaurateur</h1>
+            <p className="text-muted-foreground mt-2">
+              Bienvenue, {user?.firstName || user?.email || "Restaurateur"}
+            </p>
+          </div>
+          <Button asChild data-testid="button-add-restaurant">
+            <a href="/inscrire-restaurant">
+              <Plus className="h-4 w-4 mr-2" />
+              Ajouter un restaurant
+            </a>
+          </Button>
         </div>
 
         <Tabs defaultValue="restaurants" className="space-y-6">
           <TabsList>
-            <TabsTrigger value="restaurants" data-testid="tab-restaurants">Mes restaurants</TabsTrigger>
+            <TabsTrigger value="restaurants" data-testid="tab-restaurants">Mes restaurants ({myRestaurants.length})</TabsTrigger>
             <TabsTrigger value="bookings" data-testid="tab-bookings">Réservations</TabsTrigger>
-            {myRestaurants.length === 0 && (
-              <TabsTrigger value="claim" data-testid="tab-claim">Revendiquer un restaurant</TabsTrigger>
-            )}
           </TabsList>
 
           <TabsContent value="restaurants" className="space-y-6">
@@ -105,15 +88,20 @@ export default function Dashboard() {
                   <p className="text-muted-foreground mb-4">
                     Vous n'avez pas encore de restaurant associé à votre compte.
                   </p>
-                  <Button onClick={() => document.querySelector('[value="claim"]')?.dispatchEvent(new MouseEvent('click'))}>
-                    Revendiquer un restaurant
+                  <Button asChild>
+                    <a href="/inscrire-restaurant">
+                      <Plus className="h-4 w-4 mr-2" />
+                      Ajouter mon restaurant
+                    </a>
                   </Button>
                 </CardContent>
               </Card>
             ) : (
-              myRestaurants.map(restaurant => (
-                <RestaurantManagement key={restaurant.id} restaurant={restaurant} />
-              ))
+              <div className="grid gap-6">
+                {myRestaurants.map(restaurant => (
+                  <RestaurantManagement key={restaurant.id} restaurant={restaurant} />
+                ))}
+              </div>
             )}
           </TabsContent>
 
@@ -134,45 +122,7 @@ export default function Dashboard() {
             )}
           </TabsContent>
 
-          <TabsContent value="claim" className="space-y-4">
-            <Card>
-              <CardHeader>
-                <CardTitle>Revendiquer un restaurant</CardTitle>
-                <CardDescription>
-                  Sélectionnez votre restaurant pour le gérer
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                {availableRestaurants.length === 0 ? (
-                  <p className="text-muted-foreground">Aucun restaurant disponible.</p>
-                ) : (
-                  availableRestaurants.map(restaurant => (
-                    <div key={restaurant.id} className="flex items-center justify-between p-4 border rounded-lg">
-                      <div className="flex items-center gap-4">
-                        <img 
-                          src={restaurant.image} 
-                          alt={restaurant.name}
-                          className="w-16 h-16 object-cover rounded"
-                        />
-                        <div>
-                          <h4 className="font-medium">{restaurant.name}</h4>
-                          <p className="text-sm text-muted-foreground">{restaurant.cuisine} • {restaurant.location}</p>
-                        </div>
-                      </div>
-                      <Button 
-                        onClick={() => claimMutation.mutate(restaurant.id)}
-                        disabled={claimMutation.isPending}
-                        data-testid={`claim-restaurant-${restaurant.id}`}
-                      >
-                        Revendiquer
-                      </Button>
-                    </div>
-                  ))
-                )}
-              </CardContent>
-            </Card>
-          </TabsContent>
-        </Tabs>
+          </Tabs>
       </div>
     </div>
   );
