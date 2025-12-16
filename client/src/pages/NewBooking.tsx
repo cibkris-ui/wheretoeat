@@ -89,6 +89,7 @@ export default function NewBooking() {
   const [isTimeOpen, setIsTimeOpen] = useState(false);
   const [isTagsDialogOpen, setIsTagsDialogOpen] = useState(false);
   const [selectedTags, setSelectedTags] = useState<string[]>([]);
+  const [expandedCategories, setExpandedCategories] = useState<Record<string, boolean>>({});
   
   const [formData, setFormData] = useState({
     lastName: "",
@@ -707,50 +708,61 @@ export default function NewBooking() {
             />
 
             <div className="space-y-6">
-              {Object.entries(CLIENT_TAGS).map(([key, category]) => (
-                <div key={key}>
-                  <div className="flex items-center justify-between mb-2">
-                    <h4 className="font-medium text-gray-700">{category.label}</h4>
-                    {category.tags.length > 5 && (
-                      <button className="text-sm text-teal-600 hover:underline">Voir moins</button>
-                    )}
-                  </div>
-                  <div className="flex flex-wrap gap-2">
-                    {category.tags.map(tag => {
-                      const isSelected = selectedTags.includes(tag);
-                      const isAllergy = key === "allergies";
-                      const isRisk = key === "risque";
-                      return (
-                        <button
-                          key={tag}
-                          onClick={() => {
-                            setSelectedTags(prev => 
-                              prev.includes(tag) 
-                                ? prev.filter(t => t !== tag)
-                                : [...prev, tag]
-                            );
-                          }}
-                          className={`px-3 py-1.5 rounded-full text-sm border transition-all flex items-center gap-1 ${
-                            isSelected
-                              ? isAllergy
-                                ? "bg-red-100 text-red-700 border-red-300"
-                                : isRisk
-                                ? "bg-orange-100 text-orange-700 border-orange-300"
-                                : "bg-teal-100 text-teal-700 border-teal-300"
-                              : "bg-white text-gray-600 border-gray-200 hover:border-teal-300"
-                          }`}
+              {Object.entries(CLIENT_TAGS).map(([key, category]) => {
+                const isExpanded = expandedCategories[key] || false;
+                const visibleTags = isExpanded ? category.tags : category.tags.slice(0, 4);
+                const hasMore = category.tags.length > 4;
+                
+                return (
+                  <div key={key}>
+                    <div className="flex items-center justify-between mb-2">
+                      <h4 className="font-medium text-gray-700">{category.label}</h4>
+                      {hasMore && (
+                        <button 
+                          className="text-sm text-teal-600 hover:underline"
+                          onClick={() => setExpandedCategories(prev => ({ ...prev, [key]: !isExpanded }))}
                         >
-                          {isAllergy && <span className="text-red-500">🚫</span>}
-                          {isRisk && <AlertTriangle className="h-3 w-3" />}
-                          {key === "fidelite" && tag === "VIP" && <Star className="h-3 w-3 text-yellow-500" />}
-                          {key === "autre" && tag === "Amateur de vin" && <Wine className="h-3 w-3" />}
-                          {tag}
+                          {isExpanded ? "Voir moins" : "Voir plus"}
                         </button>
-                      );
-                    })}
+                      )}
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                      {visibleTags.map(tag => {
+                        const isSelected = selectedTags.includes(tag);
+                        const isAllergy = key === "allergies";
+                        const isRisk = key === "risque";
+                        return (
+                          <button
+                            key={tag}
+                            onClick={() => {
+                              setSelectedTags(prev => 
+                                prev.includes(tag) 
+                                  ? prev.filter(t => t !== tag)
+                                  : [...prev, tag]
+                              );
+                            }}
+                            className={`px-3 py-1.5 rounded-full text-sm border transition-all flex items-center gap-1 ${
+                              isSelected
+                                ? isAllergy
+                                  ? "bg-red-100 text-red-700 border-red-300"
+                                  : isRisk
+                                  ? "bg-orange-100 text-orange-700 border-orange-300"
+                                  : "bg-teal-100 text-teal-700 border-teal-300"
+                                : "bg-white text-gray-600 border-gray-200 hover:border-teal-300"
+                            }`}
+                          >
+                            {isAllergy && <span className="text-red-500">🚫</span>}
+                            {isRisk && <AlertTriangle className="h-3 w-3" />}
+                            {key === "fidelite" && tag === "VIP" && <Star className="h-3 w-3 text-yellow-500" />}
+                            {key === "autre" && tag === "Amateur de vin" && <Wine className="h-3 w-3" />}
+                            {tag}
+                          </button>
+                        );
+                      })}
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
 
