@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { Navbar } from "@/components/layout/Navbar";
@@ -7,9 +7,6 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { 
   Calendar as CalendarIcon, 
   ChevronLeft, 
@@ -33,14 +30,12 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { format, addDays, subDays, isToday, isSameDay, parseISO, startOfDay, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth } from "date-fns";
 import { fr } from "date-fns/locale";
 import type { Restaurant, Booking } from "@shared/schema";
-import { apiRequest } from "@/lib/queryClient";
 
 type FilterType = "all" | "upcoming" | "in_service";
 
 export default function Dashboard() {
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   const { toast } = useToast();
-  const queryClient = useQueryClient();
 
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [searchQuery, setSearchQuery] = useState("");
@@ -48,17 +43,6 @@ export default function Dashboard() {
   const [selectedRestaurant, setSelectedRestaurant] = useState<number | "all">("all");
   const [isInitialized, setIsInitialized] = useState(false);
   const [activeSection, setActiveSection] = useState<"reservations" | "restaurants" | "stats" | "settings">("reservations");
-  const [isAddBookingOpen, setIsAddBookingOpen] = useState(false);
-  const [newBooking, setNewBooking] = useState({
-    firstName: "",
-    lastName: "",
-    email: "",
-    phone: "",
-    guests: 2,
-    date: format(new Date(), "yyyy-MM-dd"),
-    time: "19:00",
-    restaurantId: 0,
-  });
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -99,30 +83,6 @@ export default function Dashboard() {
       return results.flat();
     },
     enabled: restaurantIds.length > 0,
-  });
-
-  const createBookingMutation = useMutation({
-    mutationFn: async (data: typeof newBooking) => {
-      return apiRequest("POST", "/api/bookings", data);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/all-bookings"] });
-      setIsAddBookingOpen(false);
-      setNewBooking({
-        firstName: "",
-        lastName: "",
-        email: "",
-        phone: "",
-        guests: 2,
-        date: format(new Date(), "yyyy-MM-dd"),
-        time: "19:00",
-        restaurantId: myRestaurants[0]?.id || 0,
-      });
-      toast({ title: "Réservation créée avec succès!" });
-    },
-    onError: (error: Error) => {
-      toast({ title: "Erreur", description: error.message, variant: "destructive" });
-    },
   });
 
   const stats = useMemo(() => {
@@ -404,136 +364,14 @@ export default function Dashboard() {
               </div>
 
               <div className="flex items-center gap-2">
-                <Dialog open={isAddBookingOpen} onOpenChange={setIsAddBookingOpen}>
-                  <DialogTrigger asChild>
-                    <Button className="bg-primary" data-testid="btn-add-booking">
-                      <Plus className="h-4 w-4 mr-2" />
-                      Ajouter une réservation
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent className="max-w-md">
-                    <DialogHeader>
-                      <DialogTitle>Nouvelle réservation</DialogTitle>
-                    </DialogHeader>
-                    <div className="space-y-4 mt-4">
-                      <div className="grid grid-cols-2 gap-4">
-                        <div>
-                          <Label htmlFor="firstName">Prénom</Label>
-                          <Input
-                            id="firstName"
-                            value={newBooking.firstName}
-                            onChange={e => setNewBooking(prev => ({ ...prev, firstName: e.target.value }))}
-                            data-testid="input-booking-firstname"
-                          />
-                        </div>
-                        <div>
-                          <Label htmlFor="lastName">Nom</Label>
-                          <Input
-                            id="lastName"
-                            value={newBooking.lastName}
-                            onChange={e => setNewBooking(prev => ({ ...prev, lastName: e.target.value }))}
-                            data-testid="input-booking-lastname"
-                          />
-                        </div>
-                      </div>
-                      <div>
-                        <Label htmlFor="email">Email</Label>
-                        <Input
-                          id="email"
-                          type="email"
-                          value={newBooking.email}
-                          onChange={e => setNewBooking(prev => ({ ...prev, email: e.target.value }))}
-                          data-testid="input-booking-email"
-                        />
-                      </div>
-                      <div>
-                        <Label htmlFor="phone">Téléphone</Label>
-                        <Input
-                          id="phone"
-                          value={newBooking.phone}
-                          onChange={e => setNewBooking(prev => ({ ...prev, phone: e.target.value }))}
-                          data-testid="input-booking-phone"
-                        />
-                      </div>
-                      <div className="grid grid-cols-3 gap-4">
-                        <div>
-                          <Label htmlFor="guests">Personnes</Label>
-                          <Select
-                            value={newBooking.guests.toString()}
-                            onValueChange={v => setNewBooking(prev => ({ ...prev, guests: parseInt(v) }))}
-                          >
-                            <SelectTrigger data-testid="select-booking-guests">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {[1,2,3,4,5,6,7,8,9,10].map(n => (
-                                <SelectItem key={n} value={n.toString()}>{n}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div>
-                          <Label htmlFor="date">Date</Label>
-                          <Input
-                            id="date"
-                            type="date"
-                            value={newBooking.date}
-                            onChange={e => setNewBooking(prev => ({ ...prev, date: e.target.value }))}
-                            data-testid="input-booking-date"
-                          />
-                        </div>
-                        <div>
-                          <Label htmlFor="time">Heure</Label>
-                          <Select
-                            value={newBooking.time}
-                            onValueChange={v => setNewBooking(prev => ({ ...prev, time: v }))}
-                          >
-                            <SelectTrigger data-testid="select-booking-time">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {["11:00","11:30","12:00","12:30","13:00","13:30","18:00","18:30","19:00","19:30","20:00","20:30","21:00","21:30","22:00"].map(t => (
-                                <SelectItem key={t} value={t}>{t}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </div>
-                      {myRestaurants.length > 1 && (
-                        <div>
-                          <Label htmlFor="restaurant">Restaurant</Label>
-                          <Select
-                            value={newBooking.restaurantId.toString()}
-                            onValueChange={v => setNewBooking(prev => ({ ...prev, restaurantId: parseInt(v) }))}
-                          >
-                            <SelectTrigger data-testid="select-booking-restaurant">
-                              <SelectValue placeholder="Choisir un restaurant" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {myRestaurants.map(r => (
-                                <SelectItem key={r.id} value={r.id.toString()}>{r.name}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      )}
-                      <Button
-                        className="w-full"
-                        onClick={() => {
-                          const bookingData = {
-                            ...newBooking,
-                            restaurantId: myRestaurants.length === 1 ? myRestaurants[0].id : newBooking.restaurantId,
-                          };
-                          createBookingMutation.mutate(bookingData);
-                        }}
-                        disabled={createBookingMutation.isPending}
-                        data-testid="btn-submit-booking"
-                      >
-                        {createBookingMutation.isPending ? "Création..." : "Créer la réservation"}
-                      </Button>
-                    </div>
-                  </DialogContent>
-                </Dialog>
+                <Button 
+                  className="bg-primary" 
+                  onClick={() => window.location.href = "/dashboard/nouvelle-reservation"}
+                  data-testid="btn-add-booking"
+                >
+                  <Plus className="h-4 w-4 mr-2" />
+                  Ajouter une réservation
+                </Button>
               </div>
             </div>
           </CardContent>
