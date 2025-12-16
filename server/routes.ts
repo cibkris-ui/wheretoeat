@@ -1,4 +1,4 @@
-import type { Express } from "express";
+import type { Express, RequestHandler } from "express";
 import { createServer, type Server } from "http";
 import { storage } from "./storage";
 import { insertRestaurantSchema, insertBookingSchema, insertRegistrationSchema } from "@shared/schema";
@@ -9,6 +9,20 @@ import { ObjectPermission } from "./objectAcl";
 import { googlePlacesService } from "./googlePlaces";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
+
+const isAuthenticatedCombined: RequestHandler = async (req: any, res, next) => {
+  if (req.session?.userId) {
+    req.localUserId = req.session.userId;
+    return next();
+  }
+  
+  if (req.isAuthenticated?.() && req.user?.claims?.sub) {
+    req.localUserId = req.user.claims.sub;
+    return next();
+  }
+  
+  return res.status(401).json({ message: "Unauthorized" });
+};
 
 export async function registerRoutes(
   httpServer: Server,
@@ -81,10 +95,13 @@ export async function registerRoutes(
     }
   });
 
-  app.get('/api/auth/user', isAuthenticated, async (req: any, res) => {
+  app.get('/api/auth/user', isAuthenticatedCombined, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.localUserId;
       const user = await storage.getUser(userId);
+      if (!user) {
+        return res.status(404).json({ message: "User not found" });
+      }
       res.json(user);
     } catch (error: any) {
       console.error("Error fetching user:", error);
@@ -135,9 +152,9 @@ export async function registerRoutes(
     }
   });
 
-  app.get("/api/my-restaurants", isAuthenticated, async (req: any, res) => {
+  app.get("/api/my-restaurants", isAuthenticatedCombined, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.localUserId;
       const restaurants = await storage.getRestaurantsByOwner(userId);
       res.json(restaurants);
     } catch (error: any) {
@@ -145,7 +162,7 @@ export async function registerRoutes(
     }
   });
 
-  app.post("/api/restaurants/:id/claim", isAuthenticated, async (req: any, res) => {
+  app.post("/api/restaurants/:id/claim", isAuthenticatedCombined, async (req: any, res) => {
     try {
       const id = parseInt(req.params.id);
       if (isNaN(id)) {
@@ -161,7 +178,7 @@ export async function registerRoutes(
         return res.status(400).json({ message: "Restaurant already claimed" });
       }
       
-      const userId = req.user.claims.sub;
+      const userId = req.localUserId;
       const updated = await storage.updateRestaurant(id, { ownerId: userId });
       res.json(updated);
     } catch (error: any) {
@@ -169,7 +186,7 @@ export async function registerRoutes(
     }
   });
 
-  app.put("/api/restaurants/:id", isAuthenticated, async (req: any, res) => {
+  app.put("/api/restaurants/:id", isAuthenticatedCombined, async (req: any, res) => {
     try {
       const id = parseInt(req.params.id);
       if (isNaN(id)) {
@@ -181,7 +198,7 @@ export async function registerRoutes(
         return res.status(404).json({ message: "Restaurant not found" });
       }
       
-      const userId = req.user.claims.sub;
+      const userId = req.localUserId;
       if (restaurant.ownerId !== userId) {
         return res.status(403).json({ message: "Not authorized to edit this restaurant" });
       }
@@ -261,7 +278,7 @@ export async function registerRoutes(
     }
   });
 
-  app.get("/api/restaurants/:id/bookings", isAuthenticated, async (req: any, res) => {
+  app.get("/api/restaurants/:id/bookings", isAuthenticatedCombined, async (req: any, res) => {
     try {
       const id = parseInt(req.params.id);
       if (isNaN(id)) {
@@ -273,7 +290,7 @@ export async function registerRoutes(
         return res.status(404).json({ message: "Restaurant not found" });
       }
       
-      const userId = req.user.claims.sub;
+      const userId = req.localUserId;
       if (restaurant.ownerId !== userId) {
         return res.status(403).json({ message: "Not authorized to view bookings" });
       }
@@ -363,9 +380,9 @@ export async function registerRoutes(
     }
   });
 
-  app.get("/api/registrations", isAuthenticated, async (req: any, res) => {
+  app.get("/api/registrations", isAuthenticatedCombined, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.localUserId;
       const user = await storage.getUser(userId);
       if (user?.isAdmin) {
         const registrations = await storage.getAllRegistrations();
@@ -379,9 +396,9 @@ export async function registerRoutes(
     }
   });
 
-  app.put("/api/registrations/:id/status", isAuthenticated, async (req: any, res) => {
+  app.put("/api/registrations/:id/status", isAuthenticatedCombined, async (req: any, res) => {
     try {
-      const userId = req.user.claims.sub;
+      const userId = req.localUserId;
       const user = await storage.getUser(userId);
       if (!user?.isAdmin) {
         return res.status(403).json({ message: "Admin access required" });
@@ -512,7 +529,7 @@ export async function registerRoutes(
     }
   });
 
-  app.put("/api/restaurants/:id/google-place", isAuthenticated, async (req: any, res) => {
+  app.put("/api/restaurants/:id/google-place", isAuthenticatedCombined, async (req: any, res) => {
     try {
       const id = parseInt(req.params.id);
       if (isNaN(id)) {
@@ -524,7 +541,7 @@ export async function registerRoutes(
         return res.status(404).json({ message: "Restaurant not found" });
       }
       
-      const userId = req.user.claims.sub;
+      const userId = req.localUserId;
       if (restaurant.ownerId !== userId) {
         return res.status(403).json({ message: "Not authorized to edit this restaurant" });
       }
