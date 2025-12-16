@@ -1,12 +1,20 @@
 import { useState, useMemo, useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
+import { Link } from "wouter";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
-import { Navbar } from "@/components/layout/Navbar";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+  DropdownMenuLabel,
+} from "@/components/ui/dropdown-menu";
 import { 
   Calendar as CalendarIcon, 
   ChevronLeft, 
@@ -174,11 +182,8 @@ export default function Dashboard() {
 
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-gray-50">
-        <Navbar />
-        <div className="flex items-center justify-center h-[calc(100vh-64px)]">
-          <p className="text-muted-foreground">Chargement...</p>
-        </div>
+      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
+        <p className="text-muted-foreground">Chargement...</p>
       </div>
     );
   }
@@ -250,23 +255,81 @@ export default function Dashboard() {
 
         {/* Main content */}
         <div className="flex-1 ml-16">
-          <Navbar />
+          {/* Custom header with restaurant selector */}
+          <div className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+            <div className="container flex h-16 items-center justify-between">
+              <Link href="/" className="flex items-center gap-2 font-serif text-xl font-bold tracking-tight hover:opacity-90 transition-opacity cursor-pointer">
+                <div className="flex h-8 w-8 items-center justify-center rounded-sm bg-primary text-primary-foreground">
+                  <Utensils className="h-5 w-5" />
+                </div>
+                <span>WHERE<span className="text-primary mx-0.5">TO</span>EAT.CH</span>
+              </Link>
+              
+              <div className="flex items-center gap-3">
+                {/* Restaurant selector dropdown */}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" className="flex items-center gap-2" data-testid="restaurant-selector">
+                      <Store className="h-4 w-4" />
+                      <span className="max-w-[200px] truncate">{selectedRestaurantName}</span>
+                      <ChevronRight className="h-4 w-4 rotate-90" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-56">
+                    <DropdownMenuLabel>Mes restaurants</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    {myRestaurants.map(r => (
+                      <DropdownMenuItem 
+                        key={r.id}
+                        onClick={() => setSelectedRestaurant(r.id)}
+                        className={selectedRestaurant === r.id ? "bg-primary/10" : ""}
+                        data-testid={`dropdown-restaurant-${r.id}`}
+                      >
+                        <Utensils className="mr-2 h-4 w-4" />
+                        {r.name}
+                        {selectedRestaurant === r.id && (
+                          <span className="ml-auto text-primary">✓</span>
+                        )}
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+
+                {/* User avatar */}
+                {user && (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" className="relative h-9 w-9 rounded-full" data-testid="user-menu">
+                        <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center">
+                          <UserCircle className="h-5 w-5 text-primary" />
+                        </div>
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-56">
+                      <div className="flex items-center gap-2 p-2">
+                        <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
+                          <UserCircle className="h-5 w-5 text-primary" />
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="text-sm font-medium">{user.firstName} {user.lastName}</span>
+                          <span className="text-xs text-muted-foreground">{user.email}</span>
+                        </div>
+                      </div>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem asChild>
+                        <a href="/api/logout" className="cursor-pointer text-red-600">
+                          <LogOut className="mr-2 h-4 w-4" />
+                          Déconnexion
+                        </a>
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                )}
+              </div>
+            </div>
+          </div>
           
           <div className="container py-6">
-            {/* Header avec sélection du restaurant */}
-            <div className="flex flex-wrap items-center gap-3 mb-6">
-              {myRestaurants.map(r => (
-                <Button
-                  key={r.id}
-                  variant={selectedRestaurant === r.id ? "default" : "outline"}
-                  onClick={() => setSelectedRestaurant(r.id)}
-                  className={selectedRestaurant === r.id ? "bg-primary" : ""}
-                  data-testid={`btn-restaurant-${r.id}`}
-                >
-                  {r.name}
-                </Button>
-              ))}
-            </div>
 
             {activeSection === "reservations" && (
               <>
