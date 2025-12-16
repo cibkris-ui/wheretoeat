@@ -32,10 +32,6 @@ export function Navbar() {
           <span>WHERE<span className="text-primary mx-0.5">TO</span>EAT.CH</span>
         </Link>
         <div className="flex items-center gap-6 text-sm font-medium">
-          <Link href="/" className="hover:text-primary transition-colors cursor-pointer">Accueil</Link>
-          <Link href="/restaurants" className="hover:text-primary transition-colors cursor-pointer">Restaurants</Link>
-          <Link href="/" className="hover:text-primary transition-colors cursor-pointer">À propos</Link>
-          
           {isLoading ? (
             <div className="h-9 w-24 bg-muted animate-pulse rounded-md" />
           ) : isAuthenticated && user ? (
