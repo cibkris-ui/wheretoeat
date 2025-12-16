@@ -228,14 +228,6 @@ export default function Dashboard() {
       <div className="container py-6">
         {/* Header avec sélection du restaurant */}
         <div className="flex flex-wrap items-center gap-3 mb-6">
-          <Button
-            variant={selectedRestaurant === "all" ? "default" : "outline"}
-            onClick={() => setSelectedRestaurant("all")}
-            className={selectedRestaurant === "all" ? "bg-primary" : ""}
-            data-testid="btn-all-restaurants"
-          >
-            Tous les restaurants
-          </Button>
           {myRestaurants.map(r => (
             <Button
               key={r.id}
