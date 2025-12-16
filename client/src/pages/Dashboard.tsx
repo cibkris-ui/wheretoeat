@@ -189,6 +189,7 @@ export default function Dashboard() {
       const currentHour = now.getHours();
       const currentMinute = now.getMinutes();
       bookings = bookings.filter(b => {
+        if (b.arrivalTime || b.status === "cancelled" || b.status === "noshow") return true;
         if (!isToday(parseISO(b.date))) return true;
         const timeParts = b.time.split(":");
         const hour = parseInt(timeParts[0]) || 0;
