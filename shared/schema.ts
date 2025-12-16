@@ -126,6 +126,7 @@ export const bookings = pgTable("bookings", {
   clientIp: text("client_ip"),
   clientId: text("client_id"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
+  arrivalTime: text("arrival_time"),
 });
 
 export const insertBookingSchema = createInsertSchema(bookings).omit({

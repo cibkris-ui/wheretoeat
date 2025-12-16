@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
@@ -37,7 +37,8 @@ import {
   ClipboardList,
   LineChart,
   UserCircle,
-  Utensils
+  Utensils,
+  Check
 } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { format, addDays, subDays, isToday, isSameDay, parseISO, startOfDay, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth } from "date-fns";
@@ -49,6 +50,7 @@ type FilterType = "all" | "upcoming" | "in_service";
 export default function Dashboard() {
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [searchQuery, setSearchQuery] = useState("");
@@ -96,6 +98,24 @@ export default function Dashboard() {
       return results.flat();
     },
     enabled: restaurantIds.length > 0,
+  });
+
+  const markArrivalMutation = useMutation({
+    mutationFn: async (bookingId: number) => {
+      const res = await fetch(`/api/bookings/${bookingId}/arrival`, {
+        method: "PATCH",
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("Erreur lors de l'enregistrement");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/all-bookings"] });
+      toast({ title: "Arrivée enregistrée", description: "L'heure d'arrivée a été enregistrée." });
+    },
+    onError: () => {
+      toast({ title: "Erreur", description: "Impossible d'enregistrer l'arrivée.", variant: "destructive" });
+    },
   });
 
   const stats = useMemo(() => {
@@ -529,11 +549,26 @@ export default function Dashboard() {
                         </div>
                       </div>
                     </div>
-                    {myRestaurants.length > 1 && (
-                      <Badge variant="secondary" className="mt-2 md:mt-0">
-                        {getRestaurantName(booking.restaurantId)}
-                      </Badge>
-                    )}
+                    <div className="flex items-center gap-2 mt-2 md:mt-0">
+                      {booking.arrivalTime ? (
+                        <Badge variant="default" className="bg-green-600">
+                          <Check className="h-3 w-3 mr-1" />
+                          Arrivé à {booking.arrivalTime}
+                        </Badge>
+                      ) : (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="border-green-600 text-green-600 hover:bg-green-50"
+                          onClick={() => markArrivalMutation.mutate(booking.id)}
+                          disabled={markArrivalMutation.isPending}
+                          data-testid={`btn-arrival-${booking.id}`}
+                        >
+                          <Check className="h-4 w-4 mr-1" />
+                          Arrivé
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>

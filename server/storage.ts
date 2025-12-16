@@ -30,10 +30,12 @@ export interface IStorage {
   updateRestaurant(id: number, data: Partial<InsertRestaurant>): Promise<Restaurant | undefined>;
   
   createBooking(booking: InsertBooking): Promise<Booking>;
+  getBooking(id: number): Promise<Booking | undefined>;
   getBookingsByRestaurant(restaurantId: number): Promise<Booking[]>;
   checkExistingBooking(clientIp: string, date: string, time: string): Promise<Booking | undefined>;
   checkIpEmailMismatch(clientIp: string, email: string): Promise<Booking | undefined>;
   checkClientIdEmailMismatch(clientId: string, email: string): Promise<Booking | undefined>;
+  updateBookingArrival(id: number, arrivalTime: string): Promise<Booking | undefined>;
   
   getCuisineCategories(): Promise<CuisineCategory[]>;
   
@@ -115,8 +117,22 @@ export class DatabaseStorage implements IStorage {
     return newBooking;
   }
 
+  async getBooking(id: number): Promise<Booking | undefined> {
+    const [booking] = await db.select().from(bookings).where(eq(bookings.id, id));
+    return booking;
+  }
+
   async getBookingsByRestaurant(restaurantId: number): Promise<Booking[]> {
     return await db.select().from(bookings).where(eq(bookings.restaurantId, restaurantId));
+  }
+
+  async updateBookingArrival(id: number, arrivalTime: string): Promise<Booking | undefined> {
+    const [updated] = await db
+      .update(bookings)
+      .set({ arrivalTime })
+      .where(eq(bookings.id, id))
+      .returning();
+    return updated;
   }
 
   async checkExistingBooking(clientIp: string, date: string, time: string): Promise<Booking | undefined> {
