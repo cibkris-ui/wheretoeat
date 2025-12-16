@@ -1,27 +1,58 @@
-import { useEffect, useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { Navbar } from "@/components/layout/Navbar";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { MapPin, Star, Utensils, Edit, Check, Plus } from "lucide-react";
-import type { Restaurant } from "@shared/schema";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { 
+  Calendar as CalendarIcon, 
+  ChevronLeft, 
+  ChevronRight, 
+  Search, 
+  Users, 
+  Clock, 
+  Phone, 
+  Mail, 
+  Plus,
+  Filter,
+  TrendingUp,
+  CalendarDays,
+  UserCheck,
+  BarChart3
+} from "lucide-react";
+import { format, addDays, subDays, isToday, isSameDay, parseISO, startOfDay, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth } from "date-fns";
+import { fr } from "date-fns/locale";
+import type { Restaurant, Booking } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
-import { ReservationsManager } from "@/components/ReservationsManager";
-import { useSearch } from "wouter";
+
+type FilterType = "all" | "upcoming" | "in_service";
 
 export default function Dashboard() {
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   const { toast } = useToast();
-  const searchString = useSearch();
-  const searchParams = new URLSearchParams(searchString);
-  const selectedRestaurantId = searchParams.get("restaurant");
+  const queryClient = useQueryClient();
+
+  const [selectedDate, setSelectedDate] = useState(new Date());
+  const [searchQuery, setSearchQuery] = useState("");
+  const [activeFilter, setActiveFilter] = useState<FilterType>("all");
+  const [selectedRestaurant, setSelectedRestaurant] = useState<number | "all">("all");
+  const [isAddBookingOpen, setIsAddBookingOpen] = useState(false);
+  const [newBooking, setNewBooking] = useState({
+    firstName: "",
+    lastName: "",
+    email: "",
+    phone: "",
+    guests: 2,
+    date: format(new Date(), "yyyy-MM-dd"),
+    time: "19:00",
+    restaurantId: 0,
+  });
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -36,19 +67,138 @@ export default function Dashboard() {
     }
   }, [isAuthenticated, authLoading, toast]);
 
-  const { data: myRestaurants = [], isLoading: restaurantsLoading } = useQuery<Restaurant[]>({
+  const { data: myRestaurants = [] } = useQuery<Restaurant[]>({
     queryKey: ["/api/my-restaurants"],
     enabled: isAuthenticated,
   });
-  
-  const defaultTab = selectedRestaurantId ? "bookings" : "restaurants";
+
+  const restaurantIds = myRestaurants.map(r => r.id);
+
+  const { data: allBookings = [], isLoading: bookingsLoading } = useQuery<Booking[]>({
+    queryKey: ["/api/all-bookings", restaurantIds],
+    queryFn: async () => {
+      const bookingsPromises = restaurantIds.map(id =>
+        fetch(`/api/restaurants/${id}/bookings`, { credentials: "include" })
+          .then(res => res.ok ? res.json() : [])
+      );
+      const results = await Promise.all(bookingsPromises);
+      return results.flat();
+    },
+    enabled: restaurantIds.length > 0,
+  });
+
+  const createBookingMutation = useMutation({
+    mutationFn: async (data: typeof newBooking) => {
+      return apiRequest("POST", "/api/bookings", data);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/all-bookings"] });
+      setIsAddBookingOpen(false);
+      setNewBooking({
+        firstName: "",
+        lastName: "",
+        email: "",
+        phone: "",
+        guests: 2,
+        date: format(new Date(), "yyyy-MM-dd"),
+        time: "19:00",
+        restaurantId: myRestaurants[0]?.id || 0,
+      });
+      toast({ title: "Réservation créée avec succès!" });
+    },
+    onError: (error: Error) => {
+      toast({ title: "Erreur", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const stats = useMemo(() => {
+    const today = startOfDay(new Date());
+    const todayBookings = allBookings.filter(b => isSameDay(parseISO(b.date), today));
+    const totalGuests = todayBookings.reduce((sum, b) => sum + b.guests, 0);
+    const upcomingBookings = allBookings.filter(b => parseISO(b.date) >= today);
+    const monthStart = startOfMonth(today);
+    const monthEnd = endOfMonth(today);
+    const monthBookings = allBookings.filter(b => {
+      const d = parseISO(b.date);
+      return d >= monthStart && d <= monthEnd;
+    });
+
+    return {
+      todayCount: todayBookings.length,
+      todayGuests: totalGuests,
+      upcomingCount: upcomingBookings.length,
+      monthCount: monthBookings.length,
+    };
+  }, [allBookings]);
+
+  const filteredBookings = useMemo(() => {
+    let bookings = [...allBookings];
+
+    if (selectedRestaurant !== "all") {
+      bookings = bookings.filter(b => b.restaurantId === selectedRestaurant);
+    }
+
+    const selectedDayStart = startOfDay(selectedDate);
+    bookings = bookings.filter(b => {
+      const bookingDate = startOfDay(parseISO(b.date));
+      return isSameDay(bookingDate, selectedDayStart);
+    });
+
+    if (activeFilter === "upcoming") {
+      const now = new Date();
+      const currentHour = now.getHours();
+      const currentMinute = now.getMinutes();
+      bookings = bookings.filter(b => {
+        if (!isToday(parseISO(b.date))) return true;
+        const timeParts = b.time.split(":");
+        const hour = parseInt(timeParts[0]) || 0;
+        const minute = parseInt(timeParts[1]) || 0;
+        return hour > currentHour || (hour === currentHour && minute > currentMinute);
+      });
+    } else if (activeFilter === "in_service") {
+      const now = new Date();
+      const currentMinutes = now.getHours() * 60 + now.getMinutes();
+      bookings = bookings.filter(b => {
+        if (!isToday(parseISO(b.date))) return false;
+        const timeParts = b.time.split(":");
+        const hour = parseInt(timeParts[0]) || 0;
+        const minute = parseInt(timeParts[1]) || 0;
+        const bookingMinutes = hour * 60 + minute;
+        const serviceDuration = 120;
+        return bookingMinutes <= currentMinutes && bookingMinutes + serviceDuration > currentMinutes;
+      });
+    }
+
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase();
+      bookings = bookings.filter(b =>
+        b.firstName.toLowerCase().includes(query) ||
+        b.lastName.toLowerCase().includes(query) ||
+        b.phone.includes(query) ||
+        b.email.toLowerCase().includes(query)
+      );
+    }
+
+    return bookings.sort((a, b) => {
+      const parseTime = (t: string) => {
+        const parts = t.split(":");
+        return (parseInt(parts[0]) || 0) * 60 + (parseInt(parts[1]) || 0);
+      };
+      return parseTime(a.time) - parseTime(b.time);
+    });
+  }, [allBookings, selectedRestaurant, selectedDate, activeFilter, searchQuery]);
+
+  const getRestaurantName = (restaurantId: number) => {
+    const restaurant = myRestaurants.find(r => r.id === restaurantId);
+    return restaurant?.name || "Restaurant";
+  };
 
   if (authLoading) {
     return (
-      <div className="min-h-screen bg-background">
+      <div className="min-h-screen bg-gray-50">
         <Navbar />
-        <div className="container py-12 flex justify-center">
-          <p>Chargement...</p>
+        <div className="flex items-center justify-center h-[calc(100vh-64px)]">
+          <p className="text-muted-foreground">Chargement...</p>
         </div>
       </div>
     );
@@ -59,205 +209,357 @@ export default function Dashboard() {
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="min-h-screen bg-gray-50">
       <Navbar />
-      <div className="container py-8">
-        <div className="mb-8 flex items-center justify-between">
-          <div>
-            <h1 className="text-3xl font-serif font-bold">Tableau de bord restaurateur</h1>
-            <p className="text-muted-foreground mt-2">
-              Bienvenue, {user?.firstName || user?.email || "Restaurateur"}
-            </p>
-          </div>
-          <Button asChild data-testid="button-add-restaurant">
-            <a href="/inscrire-restaurant">
-              <Plus className="h-4 w-4 mr-2" />
-              Ajouter un restaurant
-            </a>
-          </Button>
+      
+      <div className="container py-6">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+          <Card className="bg-white">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-primary/10 rounded-lg">
+                  <CalendarDays className="h-5 w-5 text-primary" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold">{stats.todayCount}</p>
+                  <p className="text-sm text-muted-foreground">Réservations aujourd'hui</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-white">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-green-100 rounded-lg">
+                  <UserCheck className="h-5 w-5 text-green-600" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold">{stats.todayGuests}</p>
+                  <p className="text-sm text-muted-foreground">Couverts aujourd'hui</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-white">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-blue-100 rounded-lg">
+                  <TrendingUp className="h-5 w-5 text-blue-600" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold">{stats.upcomingCount}</p>
+                  <p className="text-sm text-muted-foreground">Réservations à venir</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-white">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-purple-100 rounded-lg">
+                  <BarChart3 className="h-5 w-5 text-purple-600" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold">{stats.monthCount}</p>
+                  <p className="text-sm text-muted-foreground">Ce mois-ci</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
         </div>
 
-        <Tabs defaultValue={defaultTab} className="space-y-6">
-          <TabsList>
-            <TabsTrigger value="restaurants" data-testid="tab-restaurants">Mes restaurants ({myRestaurants.length})</TabsTrigger>
-            <TabsTrigger value="bookings" data-testid="tab-bookings">Réservations</TabsTrigger>
-          </TabsList>
-
-          <TabsContent value="restaurants" className="space-y-6">
-            {myRestaurants.length === 0 ? (
-              <Card>
-                <CardContent className="py-12 text-center">
-                  <Utensils className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                  <h3 className="text-lg font-medium mb-2">Aucun restaurant</h3>
-                  <p className="text-muted-foreground mb-4">
-                    Vous n'avez pas encore de restaurant associé à votre compte.
-                  </p>
-                  <Button asChild>
-                    <a href="/inscrire-restaurant">
-                      <Plus className="h-4 w-4 mr-2" />
-                      Ajouter mon restaurant
-                    </a>
+        <Card className="bg-white mb-6">
+          <CardContent className="p-4">
+            <div className="flex flex-col md:flex-row items-center justify-between gap-4">
+              <div className="flex items-center gap-2">
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => setSelectedDate(subDays(selectedDate, 1))}
+                  data-testid="btn-prev-day"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <div className="flex items-center gap-2 px-4 py-2 bg-gray-100 rounded-lg min-w-[200px] justify-center">
+                  <CalendarIcon className="h-4 w-4 text-muted-foreground" />
+                  <span className="font-medium">
+                    {isToday(selectedDate) 
+                      ? "Aujourd'hui" 
+                      : format(selectedDate, "EEEE d MMMM", { locale: fr })}
+                  </span>
+                </div>
+                <Button
+                  variant="outline"
+                  size="icon"
+                  onClick={() => setSelectedDate(addDays(selectedDate, 1))}
+                  data-testid="btn-next-day"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+                {!isToday(selectedDate) && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => setSelectedDate(new Date())}
+                    className="text-primary"
+                  >
+                    Maintenant
                   </Button>
-                </CardContent>
-              </Card>
+                )}
+              </div>
+
+              <div className="flex items-center gap-2">
+                {myRestaurants.length > 1 && (
+                  <Select
+                    value={selectedRestaurant.toString()}
+                    onValueChange={(v) => setSelectedRestaurant(v === "all" ? "all" : parseInt(v))}
+                  >
+                    <SelectTrigger className="w-[180px]" data-testid="select-restaurant">
+                      <SelectValue placeholder="Tous les restaurants" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="all">Tous les restaurants</SelectItem>
+                      {myRestaurants.map(r => (
+                        <SelectItem key={r.id} value={r.id.toString()}>{r.name}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
+
+                <Dialog open={isAddBookingOpen} onOpenChange={setIsAddBookingOpen}>
+                  <DialogTrigger asChild>
+                    <Button className="bg-primary" data-testid="btn-add-booking">
+                      <Plus className="h-4 w-4 mr-2" />
+                      Ajouter une réservation
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent className="max-w-md">
+                    <DialogHeader>
+                      <DialogTitle>Nouvelle réservation</DialogTitle>
+                    </DialogHeader>
+                    <div className="space-y-4 mt-4">
+                      <div className="grid grid-cols-2 gap-4">
+                        <div>
+                          <Label htmlFor="firstName">Prénom</Label>
+                          <Input
+                            id="firstName"
+                            value={newBooking.firstName}
+                            onChange={e => setNewBooking(prev => ({ ...prev, firstName: e.target.value }))}
+                            data-testid="input-booking-firstname"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="lastName">Nom</Label>
+                          <Input
+                            id="lastName"
+                            value={newBooking.lastName}
+                            onChange={e => setNewBooking(prev => ({ ...prev, lastName: e.target.value }))}
+                            data-testid="input-booking-lastname"
+                          />
+                        </div>
+                      </div>
+                      <div>
+                        <Label htmlFor="email">Email</Label>
+                        <Input
+                          id="email"
+                          type="email"
+                          value={newBooking.email}
+                          onChange={e => setNewBooking(prev => ({ ...prev, email: e.target.value }))}
+                          data-testid="input-booking-email"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="phone">Téléphone</Label>
+                        <Input
+                          id="phone"
+                          value={newBooking.phone}
+                          onChange={e => setNewBooking(prev => ({ ...prev, phone: e.target.value }))}
+                          data-testid="input-booking-phone"
+                        />
+                      </div>
+                      <div className="grid grid-cols-3 gap-4">
+                        <div>
+                          <Label htmlFor="guests">Personnes</Label>
+                          <Select
+                            value={newBooking.guests.toString()}
+                            onValueChange={v => setNewBooking(prev => ({ ...prev, guests: parseInt(v) }))}
+                          >
+                            <SelectTrigger data-testid="select-booking-guests">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {[1,2,3,4,5,6,7,8,9,10].map(n => (
+                                <SelectItem key={n} value={n.toString()}>{n}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        <div>
+                          <Label htmlFor="date">Date</Label>
+                          <Input
+                            id="date"
+                            type="date"
+                            value={newBooking.date}
+                            onChange={e => setNewBooking(prev => ({ ...prev, date: e.target.value }))}
+                            data-testid="input-booking-date"
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor="time">Heure</Label>
+                          <Select
+                            value={newBooking.time}
+                            onValueChange={v => setNewBooking(prev => ({ ...prev, time: v }))}
+                          >
+                            <SelectTrigger data-testid="select-booking-time">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {["11:00","11:30","12:00","12:30","13:00","13:30","18:00","18:30","19:00","19:30","20:00","20:30","21:00","21:30","22:00"].map(t => (
+                                <SelectItem key={t} value={t}>{t}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      </div>
+                      {myRestaurants.length > 1 && (
+                        <div>
+                          <Label htmlFor="restaurant">Restaurant</Label>
+                          <Select
+                            value={newBooking.restaurantId.toString()}
+                            onValueChange={v => setNewBooking(prev => ({ ...prev, restaurantId: parseInt(v) }))}
+                          >
+                            <SelectTrigger data-testid="select-booking-restaurant">
+                              <SelectValue placeholder="Choisir un restaurant" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              {myRestaurants.map(r => (
+                                <SelectItem key={r.id} value={r.id.toString()}>{r.name}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                      )}
+                      <Button
+                        className="w-full"
+                        onClick={() => {
+                          const bookingData = {
+                            ...newBooking,
+                            restaurantId: myRestaurants.length === 1 ? myRestaurants[0].id : newBooking.restaurantId,
+                          };
+                          createBookingMutation.mutate(bookingData);
+                        }}
+                        disabled={createBookingMutation.isPending}
+                        data-testid="btn-submit-booking"
+                      >
+                        {createBookingMutation.isPending ? "Création..." : "Créer la réservation"}
+                      </Button>
+                    </div>
+                  </DialogContent>
+                </Dialog>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-white">
+          <CardHeader className="pb-4">
+            <div className="flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+              <div className="flex items-center gap-2 relative w-full md:w-auto">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  placeholder="Rechercher par nom, téléphone ou email..."
+                  value={searchQuery}
+                  onChange={e => setSearchQuery(e.target.value)}
+                  className="pl-9 w-full md:w-[350px]"
+                  data-testid="input-search-bookings"
+                />
+              </div>
+
+              <div className="flex items-center gap-2">
+                <Button
+                  variant={activeFilter === "in_service" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setActiveFilter(activeFilter === "in_service" ? "all" : "in_service")}
+                  className={activeFilter === "in_service" ? "bg-green-600 hover:bg-green-700" : ""}
+                  data-testid="filter-in-service"
+                >
+                  En cours de service
+                </Button>
+                <Button
+                  variant={activeFilter === "upcoming" ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setActiveFilter(activeFilter === "upcoming" ? "all" : "upcoming")}
+                  className={activeFilter === "upcoming" ? "bg-primary" : ""}
+                  data-testid="filter-upcoming"
+                >
+                  À venir
+                </Button>
+              </div>
+            </div>
+          </CardHeader>
+
+          <CardContent>
+            <div className="text-sm text-muted-foreground mb-4">
+              Résultats : {filteredBookings.length} réservation{filteredBookings.length !== 1 ? "s" : ""} ({filteredBookings.reduce((sum, b) => sum + b.guests, 0)} personne{filteredBookings.reduce((sum, b) => sum + b.guests, 0) !== 1 ? "s" : ""})
+            </div>
+
+            {bookingsLoading ? (
+              <div className="py-12 text-center text-muted-foreground">
+                Chargement des réservations...
+              </div>
+            ) : filteredBookings.length === 0 ? (
+              <div className="py-12 text-center">
+                <CalendarIcon className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                <p className="text-lg font-medium text-muted-foreground">Aucune réservation trouvée</p>
+                <p className="text-sm text-muted-foreground mt-1">
+                  {searchQuery ? "Essayez de modifier votre recherche" : "Aucune réservation pour cette date"}
+                </p>
+              </div>
             ) : (
-              <div className="grid gap-6">
-                {myRestaurants.map(restaurant => (
-                  <RestaurantManagement key={restaurant.id} restaurant={restaurant} />
+              <div className="space-y-3">
+                {filteredBookings.map(booking => (
+                  <div
+                    key={booking.id}
+                    className="flex flex-col md:flex-row md:items-center justify-between p-4 border rounded-lg hover:bg-gray-50 transition-colors"
+                    data-testid={`booking-row-${booking.id}`}
+                  >
+                    <div className="flex items-start md:items-center gap-4">
+                      <div className="flex flex-col items-center justify-center bg-primary/10 rounded-lg p-3 min-w-[60px]">
+                        <span className="text-lg font-bold text-primary">{booking.time}</span>
+                      </div>
+                      <div>
+                        <p className="font-semibold text-lg">{booking.firstName} {booking.lastName}</p>
+                        <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground mt-1">
+                          <span className="flex items-center gap-1">
+                            <Users className="h-4 w-4" />
+                            {booking.guests} pers.
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <Phone className="h-4 w-4" />
+                            {booking.phone}
+                          </span>
+                          <span className="flex items-center gap-1">
+                            <Mail className="h-4 w-4" />
+                            {booking.email}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                    {myRestaurants.length > 1 && (
+                      <Badge variant="secondary" className="mt-2 md:mt-0">
+                        {getRestaurantName(booking.restaurantId)}
+                      </Badge>
+                    )}
+                  </div>
                 ))}
               </div>
             )}
-          </TabsContent>
-
-          <TabsContent value="bookings" className="space-y-6">
-            {myRestaurants.length === 0 ? (
-              <Card>
-                <CardContent className="py-12 text-center">
-                  <Utensils className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-                  <p className="text-muted-foreground">
-                    Ajoutez d'abord un restaurant pour voir les réservations.
-                  </p>
-                </CardContent>
-              </Card>
-            ) : (
-              <ReservationsManager 
-                restaurants={myRestaurants} 
-                defaultRestaurantId={selectedRestaurantId ? parseInt(selectedRestaurantId) : undefined}
-              />
-            )}
-          </TabsContent>
-
-          </Tabs>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
 }
-
-function RestaurantManagement({ restaurant }: { restaurant: Restaurant }) {
-  const [isEditing, setIsEditing] = useState(false);
-  const [formData, setFormData] = useState({
-    name: restaurant.name,
-    description: restaurant.description,
-    cuisine: restaurant.cuisine,
-    location: restaurant.location,
-    priceRange: restaurant.priceRange,
-  });
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
-
-  const updateMutation = useMutation({
-    mutationFn: async (data: typeof formData) => {
-      await apiRequest("PUT", `/api/restaurants/${restaurant.id}`, data);
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["/api/my-restaurants"] });
-      setIsEditing(false);
-      toast({ title: "Restaurant mis à jour!" });
-    },
-    onError: () => {
-      toast({ title: "Erreur lors de la mise à jour", variant: "destructive" });
-    },
-  });
-
-  return (
-    <Card>
-      <CardHeader className="flex flex-row items-center justify-between">
-        <div>
-          <CardTitle className="flex items-center gap-2">
-            {restaurant.name}
-            <Badge variant="secondary">{restaurant.cuisine}</Badge>
-          </CardTitle>
-          <CardDescription className="flex items-center gap-2 mt-1">
-            <MapPin className="h-4 w-4" />
-            {restaurant.location}
-            <span className="mx-2">•</span>
-            <Star className="h-4 w-4 fill-yellow-400 text-yellow-400" />
-            {restaurant.rating}
-          </CardDescription>
-        </div>
-        <Button 
-          variant={isEditing ? "default" : "outline"} 
-          size="sm"
-          onClick={() => {
-            if (isEditing) {
-              updateMutation.mutate(formData);
-            } else {
-              setIsEditing(true);
-            }
-          }}
-          data-testid={`edit-restaurant-${restaurant.id}`}
-        >
-          {isEditing ? <><Check className="h-4 w-4 mr-2" /> Sauvegarder</> : <><Edit className="h-4 w-4 mr-2" /> Modifier</>}
-        </Button>
-      </CardHeader>
-      <CardContent>
-        {isEditing ? (
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="name">Nom</Label>
-              <Input 
-                id="name"
-                value={formData.name}
-                onChange={e => setFormData(prev => ({ ...prev, name: e.target.value }))}
-                data-testid="input-restaurant-name"
-              />
-            </div>
-            <div>
-              <Label htmlFor="description">Description</Label>
-              <Textarea 
-                id="description"
-                value={formData.description}
-                onChange={e => setFormData(prev => ({ ...prev, description: e.target.value }))}
-                data-testid="input-restaurant-description"
-              />
-            </div>
-            <div className="grid grid-cols-3 gap-4">
-              <div>
-                <Label htmlFor="cuisine">Cuisine</Label>
-                <Input 
-                  id="cuisine"
-                  value={formData.cuisine}
-                  onChange={e => setFormData(prev => ({ ...prev, cuisine: e.target.value }))}
-                />
-              </div>
-              <div>
-                <Label htmlFor="location">Lieu</Label>
-                <Input 
-                  id="location"
-                  value={formData.location}
-                  onChange={e => setFormData(prev => ({ ...prev, location: e.target.value }))}
-                />
-              </div>
-              <div>
-                <Label htmlFor="priceRange">Gamme de prix</Label>
-                <Input 
-                  id="priceRange"
-                  value={formData.priceRange}
-                  onChange={e => setFormData(prev => ({ ...prev, priceRange: e.target.value }))}
-                />
-              </div>
-            </div>
-            <Button variant="outline" onClick={() => setIsEditing(false)}>Annuler</Button>
-          </div>
-        ) : (
-          <div className="flex gap-6">
-            <img 
-              src={restaurant.image} 
-              alt={restaurant.name}
-              className="w-32 h-32 object-cover rounded-lg"
-            />
-            <div>
-              <p className="text-muted-foreground">{restaurant.description}</p>
-              <div className="flex flex-wrap gap-2 mt-4">
-                {restaurant.features.map((feature, i) => (
-                  <Badge key={i} variant="outline">{feature}</Badge>
-                ))}
-              </div>
-            </div>
-          </div>
-        )}
-      </CardContent>
-    </Card>
-  );
-}
-
