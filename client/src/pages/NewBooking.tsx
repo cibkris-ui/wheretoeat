@@ -4,17 +4,19 @@ import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation } from "wouter";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { 
   Calendar as CalendarIcon, 
   Users,
-  X
+  X,
+  ChevronLeft,
+  ChevronRight
 } from "lucide-react";
-import { format, parseISO } from "date-fns";
+import { format, parseISO, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths, getDay, isWeekend, isBefore, startOfDay } from "date-fns";
 import { fr } from "date-fns/locale";
 import type { Restaurant, Booking } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
@@ -39,6 +41,8 @@ export default function NewBooking() {
   const [selectedTime, setSelectedTime] = useState<string | null>(null);
   const [selectedRestaurant, setSelectedRestaurant] = useState<number | null>(null);
   const [serviceType, setServiceType] = useState<"Lunch" | "Dinner">("Dinner");
+  const [calendarMonth, setCalendarMonth] = useState(new Date());
+  const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   
   const [formData, setFormData] = useState({
     lastName: "",
@@ -230,25 +234,107 @@ export default function NewBooking() {
                     <CalendarIcon className="h-4 w-4" />
                     Date
                   </Label>
-                  <Select value={selectedDate} onValueChange={setSelectedDate}>
-                    <SelectTrigger className="mt-1 border-teal-600 focus:ring-teal-600" data-testid="select-date">
-                      <SelectValue>
-                        {format(parseISO(selectedDate), "EEE. d MMMM yyyy", { locale: fr })}
-                      </SelectValue>
-                    </SelectTrigger>
-                    <SelectContent>
-                      {[...Array(30)].map((_, i) => {
-                        const date = new Date();
-                        date.setDate(date.getDate() + i);
-                        const dateStr = format(date, "yyyy-MM-dd");
-                        return (
-                          <SelectItem key={dateStr} value={dateStr}>
-                            {format(date, "EEE. d MMMM yyyy", { locale: fr })}
-                          </SelectItem>
-                        );
-                      })}
-                    </SelectContent>
-                  </Select>
+                  <Popover open={isCalendarOpen} onOpenChange={setIsCalendarOpen}>
+                    <PopoverTrigger asChild>
+                      <button 
+                        className="w-full mt-1 flex items-center justify-between px-3 py-2 border-2 border-teal-600 rounded-md bg-white text-left hover:bg-gray-50"
+                        data-testid="select-date"
+                      >
+                        <span className="font-medium">
+                          {format(parseISO(selectedDate), "EEE. d MMMM yyyy", { locale: fr })}
+                        </span>
+                        <ChevronRight className="h-4 w-4 rotate-90 text-gray-400" />
+                      </button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-4" align="start">
+                      {/* Calendar header */}
+                      <div className="flex items-center justify-between mb-4">
+                        <button 
+                          onClick={() => setCalendarMonth(subMonths(calendarMonth, 1))}
+                          className="p-1 hover:bg-gray-100 rounded"
+                        >
+                          <ChevronLeft className="h-5 w-5 text-gray-600" />
+                        </button>
+                        <span className="font-medium text-gray-800">
+                          {format(calendarMonth, "MMMM yyyy", { locale: fr })}
+                        </span>
+                        <button 
+                          onClick={() => setCalendarMonth(addMonths(calendarMonth, 1))}
+                          className="p-1 hover:bg-gray-100 rounded"
+                        >
+                          <ChevronRight className="h-5 w-5 text-gray-600" />
+                        </button>
+                      </div>
+
+                      {/* Weekday headers */}
+                      <div className="grid grid-cols-7 gap-1 mb-2">
+                        {["lu", "ma", "me", "je", "ve", "sa", "di"].map(day => (
+                          <div key={day} className="text-center text-xs font-medium text-gray-500 py-1">
+                            {day}
+                          </div>
+                        ))}
+                      </div>
+
+                      {/* Calendar days */}
+                      <div className="grid grid-cols-7 gap-1">
+                        {(() => {
+                          const monthStart = startOfMonth(calendarMonth);
+                          const monthEnd = endOfMonth(calendarMonth);
+                          const days = eachDayOfInterval({ start: monthStart, end: monthEnd });
+                          const startDayOfWeek = getDay(monthStart);
+                          const emptyDays = startDayOfWeek === 0 ? 6 : startDayOfWeek - 1;
+                          const today = startOfDay(new Date());
+
+                          return (
+                            <>
+                              {[...Array(emptyDays)].map((_, i) => (
+                                <div key={`empty-${i}`} className="w-9 h-9" />
+                              ))}
+                              {days.map(day => {
+                                const dateStr = format(day, "yyyy-MM-dd");
+                                const isSelected = selectedDate === dateStr;
+                                const isPast = isBefore(day, today);
+                                const isWeekendDay = isWeekend(day);
+
+                                return (
+                                  <button
+                                    key={dateStr}
+                                    onClick={() => {
+                                      if (!isPast) {
+                                        setSelectedDate(dateStr);
+                                        setIsCalendarOpen(false);
+                                      }
+                                    }}
+                                    disabled={isPast}
+                                    className={`w-9 h-9 rounded text-sm flex items-center justify-center transition-colors ${
+                                      isSelected
+                                        ? "bg-teal-600 text-white"
+                                        : isPast
+                                        ? "text-gray-300 cursor-not-allowed"
+                                        : isWeekendDay
+                                        ? "text-gray-400 hover:bg-gray-100"
+                                        : "text-gray-700 hover:bg-teal-50 border border-teal-200"
+                                    }`}
+                                    data-testid={`calendar-day-${dateStr}`}
+                                  >
+                                    {format(day, "d")}
+                                  </button>
+                                );
+                              })}
+                            </>
+                          );
+                        })()}
+                      </div>
+
+                      {/* Multiple dates option */}
+                      <div className="mt-4 pt-4 border-t">
+                        <label className="flex items-center gap-2 text-sm text-gray-600">
+                          <input type="checkbox" className="rounded" disabled />
+                          Sélectionner plusieurs dates
+                        </label>
+                      </div>
+                    </PopoverContent>
+                  </Popover>
                 </div>
 
                 <div>
