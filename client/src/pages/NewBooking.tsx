@@ -72,7 +72,7 @@ const DINNER_SLOTS = [
   "21:00", "21:15", "21:30", "21:45"
 ];
 
-const CAPACITY_PER_SLOT = 40;
+const DEFAULT_CAPACITY = 40;
 
 export default function NewBooking() {
   const { isAuthenticated } = useAuth();
@@ -110,6 +110,8 @@ export default function NewBooking() {
   });
 
   const activeRestaurantId = selectedRestaurant || myRestaurants[0]?.id;
+  const activeRestaurant = myRestaurants.find(r => r.id === activeRestaurantId);
+  const restaurantCapacity = activeRestaurant?.capacity || DEFAULT_CAPACITY;
 
   const { data: existingBookings = [] } = useQuery<Booking[]>({
     queryKey: ["/api/restaurants", activeRestaurantId, "bookings"],
@@ -133,7 +135,7 @@ export default function NewBooking() {
     const totalGuests = bookingsAtTime.reduce((sum, b) => sum + b.guests, 0);
     return {
       reserved: totalGuests,
-      available: CAPACITY_PER_SLOT - totalGuests,
+      available: restaurantCapacity - totalGuests,
     };
   };
 
@@ -217,7 +219,7 @@ export default function NewBooking() {
             <h2 className="text-xl font-semibold capitalize text-gray-800">{dayName} - {serviceType}</h2>
             <div className="flex items-center justify-center gap-4 mt-2 text-sm">
               <span className="text-teal-600">Total réservé : {totalReserved} p.</span>
-              <span className="text-gray-500">Total réservable : {CAPACITY_PER_SLOT} p.</span>
+              <span className="text-gray-500">Total réservable : {restaurantCapacity} p.</span>
             </div>
           </div>
 
@@ -260,7 +262,7 @@ export default function NewBooking() {
                   <div className="text-sm font-medium">{time}</div>
                   <div className="text-xs flex items-center justify-center gap-1 mt-1">
                     <Users className="h-3 w-3" />
-                    <span>{info.reserved}/{CAPACITY_PER_SLOT}</span>
+                    <span>{info.reserved}/{restaurantCapacity}</span>
                   </div>
                 </button>
               );
@@ -468,7 +470,7 @@ export default function NewBooking() {
                                 <div className="text-sm font-medium">{time}</div>
                                 <div className="text-xs flex items-center justify-center gap-0.5 text-gray-500">
                                   <Users className="h-3 w-3" />
-                                  <span>{info.reserved}/{CAPACITY_PER_SLOT}</span>
+                                  <span>{info.reserved}/{restaurantCapacity}</span>
                                 </div>
                               </button>
                             );
@@ -503,7 +505,7 @@ export default function NewBooking() {
                                 <div className="text-sm font-medium">{time}</div>
                                 <div className="text-xs flex items-center justify-center gap-0.5 text-gray-500">
                                   <Users className="h-3 w-3" />
-                                  <span>{info.reserved}/{CAPACITY_PER_SLOT}</span>
+                                  <span>{info.reserved}/{restaurantCapacity}</span>
                                 </div>
                               </button>
                             );
