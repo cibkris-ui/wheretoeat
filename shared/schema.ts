@@ -127,6 +127,7 @@ export const bookings = pgTable("bookings", {
   clientId: text("client_id"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   arrivalTime: text("arrival_time"),
+  status: text("status").notNull().default("confirmed"),
 });
 
 export const insertBookingSchema = createInsertSchema(bookings).omit({

@@ -40,7 +40,9 @@ import {
   Utensils,
   Check,
   Sun,
-  Moon
+  Moon,
+  X,
+  AlertCircle
 } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { format, addDays, subDays, isToday, isSameDay, parseISO, startOfDay, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth } from "date-fns";
@@ -118,6 +120,34 @@ export default function Dashboard() {
     },
     onError: () => {
       toast({ title: "Erreur", description: "Impossible d'enregistrer l'arrivée.", variant: "destructive" });
+    },
+  });
+
+  const updateStatusMutation = useMutation({
+    mutationFn: async ({ bookingId, status }: { bookingId: number; status: string }) => {
+      const res = await fetch(`/api/bookings/${bookingId}/status`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ status }),
+      });
+      if (!res.ok) throw new Error("Erreur lors de la mise à jour");
+      return res.json();
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/all-bookings"] });
+      const statusLabels: Record<string, string> = {
+        cancelled: "Annulée",
+        noshow: "No Show",
+        confirmed: "Confirmée",
+      };
+      toast({ 
+        title: "Statut mis à jour", 
+        description: `La réservation a été marquée comme "${statusLabels[variables.status]}".`
+      });
+    },
+    onError: () => {
+      toast({ title: "Erreur", description: "Impossible de mettre à jour le statut.", variant: "destructive" });
     },
   });
 
@@ -593,23 +623,57 @@ export default function Dashboard() {
                       </div>
                     </div>
                     <div className="flex items-center gap-2 mt-2 md:mt-0">
-                      {booking.arrivalTime ? (
+                      {booking.status === "cancelled" ? (
+                        <Badge variant="destructive">
+                          <X className="h-3 w-3 mr-1" />
+                          Annulée
+                        </Badge>
+                      ) : booking.status === "noshow" ? (
+                        <Badge variant="secondary" className="bg-orange-500 text-white">
+                          <AlertCircle className="h-3 w-3 mr-1" />
+                          No Show
+                        </Badge>
+                      ) : booking.arrivalTime ? (
                         <Badge variant="default" className="bg-green-600">
                           <Check className="h-3 w-3 mr-1" />
                           Arrivé à {booking.arrivalTime}
                         </Badge>
                       ) : (
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          className="border-green-600 text-green-600 hover:bg-green-50"
-                          onClick={() => markArrivalMutation.mutate(booking.id)}
-                          disabled={markArrivalMutation.isPending}
-                          data-testid={`btn-arrival-${booking.id}`}
-                        >
-                          <Check className="h-4 w-4 mr-1" />
-                          Arrivé
-                        </Button>
+                        <>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="border-green-600 text-green-600 hover:bg-green-50"
+                            onClick={() => markArrivalMutation.mutate(booking.id)}
+                            disabled={markArrivalMutation.isPending || updateStatusMutation.isPending}
+                            data-testid={`btn-arrival-${booking.id}`}
+                          >
+                            <Check className="h-4 w-4 mr-1" />
+                            Arrivé
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="border-red-500 text-red-500 hover:bg-red-50"
+                            onClick={() => updateStatusMutation.mutate({ bookingId: booking.id, status: "cancelled" })}
+                            disabled={updateStatusMutation.isPending}
+                            data-testid={`btn-cancel-${booking.id}`}
+                          >
+                            <X className="h-4 w-4 mr-1" />
+                            Annuler
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="border-orange-500 text-orange-500 hover:bg-orange-50"
+                            onClick={() => updateStatusMutation.mutate({ bookingId: booking.id, status: "noshow" })}
+                            disabled={updateStatusMutation.isPending}
+                            data-testid={`btn-noshow-${booking.id}`}
+                          >
+                            <AlertCircle className="h-4 w-4 mr-1" />
+                            No Show
+                          </Button>
+                        </>
                       )}
                     </div>
                   </div>
