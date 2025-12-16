@@ -622,7 +622,7 @@ export default function Dashboard() {
                         </div>
                       </div>
                     </div>
-                    <div className="flex items-center gap-2 mt-2 md:mt-0">
+                    <div className="flex flex-col items-stretch gap-1 mt-2 md:mt-0">
                       {booking.status === "cancelled" ? (
                         <Badge variant="destructive">
                           <X className="h-3 w-3 mr-1" />
