@@ -38,7 +38,9 @@ import {
   LineChart,
   UserCircle,
   Utensils,
-  Check
+  Check,
+  Sun,
+  Moon
 } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { format, addDays, subDays, isToday, isSameDay, parseISO, startOfDay, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth } from "date-fns";
@@ -58,6 +60,7 @@ export default function Dashboard() {
   const [selectedRestaurant, setSelectedRestaurant] = useState<number | "all">("all");
   const [isInitialized, setIsInitialized] = useState(false);
   const [activeSection, setActiveSection] = useState<"reservations" | "restaurants" | "stats" | "settings">("reservations");
+  const [serviceFilter, setServiceFilter] = useState<"all" | "lunch" | "dinner">("all");
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -186,6 +189,18 @@ export default function Dashboard() {
       );
     }
 
+    if (serviceFilter === "lunch") {
+      bookings = bookings.filter(b => {
+        const hour = parseInt(b.time.split(":")[0]) || 0;
+        return hour >= 11 && hour < 15;
+      });
+    } else if (serviceFilter === "dinner") {
+      bookings = bookings.filter(b => {
+        const hour = parseInt(b.time.split(":")[0]) || 0;
+        return hour >= 18 && hour <= 23;
+      });
+    }
+
     return bookings.sort((a, b) => {
       const parseTime = (t: string) => {
         const parts = t.split(":");
@@ -193,7 +208,7 @@ export default function Dashboard() {
       };
       return parseTime(a.time) - parseTime(b.time);
     });
-  }, [allBookings, selectedRestaurant, selectedDate, activeFilter, searchQuery]);
+  }, [allBookings, selectedRestaurant, selectedDate, activeFilter, searchQuery, serviceFilter]);
 
   const getRestaurantName = (restaurantId: number) => {
     const restaurant = myRestaurants.find(r => r.id === restaurantId);
@@ -449,6 +464,34 @@ export default function Dashboard() {
                     Maintenant
                   </Button>
                 )}
+                <div className="flex items-center gap-1 ml-4 border-l pl-4">
+                  <Button
+                    variant={serviceFilter === "all" ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setServiceFilter("all")}
+                    data-testid="btn-filter-all"
+                  >
+                    Tous
+                  </Button>
+                  <Button
+                    variant={serviceFilter === "lunch" ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setServiceFilter("lunch")}
+                    data-testid="btn-filter-lunch"
+                  >
+                    <Sun className="h-4 w-4 mr-1" />
+                    Lunch
+                  </Button>
+                  <Button
+                    variant={serviceFilter === "dinner" ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setServiceFilter("dinner")}
+                    data-testid="btn-filter-dinner"
+                  >
+                    <Moon className="h-4 w-4 mr-1" />
+                    Dîner
+                  </Button>
+                </div>
               </div>
 
               <div className="flex items-center gap-2">
