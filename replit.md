@@ -75,28 +75,6 @@ Database tables:
 ### Fonts
 - Google Fonts: DM Serif Display (headers), Inter (UI text)
 
-## Interface TheFork Manager (Phase 1 - Terminée)
-
-### Dashboard restaurateur (/dashboard)
-- **Sidebar verticale verte** avec icônes: Réservations, Calendrier, Recherche, Statistiques, Paramètres, Notifications, Déconnexion
-- **Page Réservations**: Navigation par date, sélecteur de service (Lunch/Dinner), filtres (Actifs, En cours de service, À venir), barre de recherche, liste des réservations en tableau
-- **Vue Calendrier mensuel**: Affichage Lunch/Dinner par jour avec nombre de couverts, navigation par mois, dimanches marqués "Fermé"
-- **Section Statistiques**: Vue d'ensemble avec couverts totaux, annulations tardives, no-shows
-- **Section Paramètres**: Cartes pour profil restaurant, services, utilisateurs, module de réservation
-
-### Nouvelle réservation (/dashboard/nouvelle-reservation)
-- **Calendrier français** avec navigation par mois, jours de la semaine en français
-- **Sélecteur d'heure par service** (Lunch/Dinner) avec affichage capacité réservée/totale par créneau
-- **Créneaux pleins désactivés** automatiquement
-- **Sélecteur de durée dynamique** affichant l'heure de fin estimée
-- **Formulaire client** avec champs obligatoires, sélecteur de pays téléphone (+41, +33, +49, +39)
-- **Tags client** (VIP, Habitué, Standard, Occasionnel)
-
-### Support multi-restaurants
-- Sélecteur "Tous les restaurants" pour comptes multi-établissements
-- Affichage nom restaurant pour comptes mono-établissement
-- Agrégation des réservations dans les vues globales
-
 ## Fonctionnalités à ajouter
 
 ### Emails (en attente de clé API Resend)
