@@ -43,6 +43,7 @@ export default function NewBooking() {
   const [serviceType, setServiceType] = useState<"Lunch" | "Dinner">("Dinner");
   const [calendarMonth, setCalendarMonth] = useState(new Date());
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
+  const [isTimeOpen, setIsTimeOpen] = useState(false);
   
   const [formData, setFormData] = useState({
     lastName: "",
@@ -374,19 +375,97 @@ export default function NewBooking() {
                 </div>
 
                 <div>
-                  <Label className="text-gray-600 text-sm">Heure</Label>
-                  <Select value={selectedTime || ""} onValueChange={setSelectedTime}>
-                    <SelectTrigger className="mt-1 border-teal-600" data-testid="select-time">
-                      <SelectValue placeholder="Sélectionner">
-                        {selectedTime ? `${selectedTime} - ${serviceType}` : "Sélectionner"}
-                      </SelectValue>
-                    </SelectTrigger>
-                    <SelectContent>
-                      {currentSlots.map(t => (
-                        <SelectItem key={t} value={t}>{t} - {serviceType}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  <Label className="flex items-center gap-1 text-gray-600 text-sm">
+                    <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                      <circle cx="12" cy="12" r="10" />
+                      <polyline points="12,6 12,12 16,14" />
+                    </svg>
+                    Heure
+                  </Label>
+                  <Popover open={isTimeOpen} onOpenChange={setIsTimeOpen}>
+                    <PopoverTrigger asChild>
+                      <button 
+                        className="w-full mt-1 flex items-center justify-between px-3 py-2 border-2 border-teal-600 rounded-md bg-white text-left hover:bg-gray-50"
+                        data-testid="select-time"
+                      >
+                        <span className="font-medium">
+                          {selectedTime ? `${selectedTime} - ${serviceType}` : "Sélectionner"}
+                        </span>
+                        <ChevronRight className="h-4 w-4 rotate-90 text-gray-400" />
+                      </button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-80 p-4" align="start">
+                      {/* Lunch section */}
+                      <div className="mb-4">
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className="font-medium text-gray-700">Lunch</span>
+                          <span className="text-xs text-gray-400">0/40p</span>
+                        </div>
+                        <div className="grid grid-cols-4 gap-2">
+                          {LUNCH_SLOTS.map(time => {
+                            const info = getSlotInfo(time);
+                            const isSelected = selectedTime === time && serviceType === "Lunch";
+                            return (
+                              <button
+                                key={`lunch-${time}`}
+                                onClick={() => {
+                                  setSelectedTime(time);
+                                  setServiceType("Lunch");
+                                  setIsTimeOpen(false);
+                                }}
+                                className={`p-2 text-center rounded border transition-all ${
+                                  isSelected 
+                                    ? "bg-teal-600 text-white border-teal-600" 
+                                    : "bg-white hover:bg-teal-50 border-gray-200 hover:border-teal-300"
+                                }`}
+                              >
+                                <div className="text-sm font-medium">{time}</div>
+                                <div className="text-xs flex items-center justify-center gap-0.5 text-gray-500">
+                                  <Users className="h-3 w-3" />
+                                  <span>{info.reserved}/{CAPACITY_PER_SLOT}</span>
+                                </div>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+
+                      {/* Dinner section */}
+                      <div>
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className="font-medium text-gray-700">Dinner</span>
+                          <span className="text-xs text-gray-400">0/40p</span>
+                        </div>
+                        <div className="grid grid-cols-4 gap-2">
+                          {DINNER_SLOTS.map(time => {
+                            const info = getSlotInfo(time);
+                            const isSelected = selectedTime === time && serviceType === "Dinner";
+                            return (
+                              <button
+                                key={`dinner-${time}`}
+                                onClick={() => {
+                                  setSelectedTime(time);
+                                  setServiceType("Dinner");
+                                  setIsTimeOpen(false);
+                                }}
+                                className={`p-2 text-center rounded border transition-all ${
+                                  isSelected 
+                                    ? "bg-teal-600 text-white border-teal-600" 
+                                    : "bg-white hover:bg-teal-50 border-gray-200 hover:border-teal-300"
+                                }`}
+                              >
+                                <div className="text-sm font-medium">{time}</div>
+                                <div className="text-xs flex items-center justify-center gap-0.5 text-gray-500">
+                                  <Users className="h-3 w-3" />
+                                  <span>{info.reserved}/{CAPACITY_PER_SLOT}</span>
+                                </div>
+                              </button>
+                            );
+                          })}
+                        </div>
+                      </div>
+                    </PopoverContent>
+                  </Popover>
                 </div>
 
                 <div>
