@@ -42,6 +42,7 @@ export default function Dashboard() {
   const [searchQuery, setSearchQuery] = useState("");
   const [activeFilter, setActiveFilter] = useState<FilterType>("all");
   const [selectedRestaurant, setSelectedRestaurant] = useState<number | "all">("all");
+  const [isInitialized, setIsInitialized] = useState(false);
   const [isAddBookingOpen, setIsAddBookingOpen] = useState(false);
   const [newBooking, setNewBooking] = useState({
     firstName: "",
@@ -71,6 +72,14 @@ export default function Dashboard() {
     queryKey: ["/api/my-restaurants"],
     enabled: isAuthenticated,
   });
+
+  // Sélectionner le premier restaurant par défaut
+  useEffect(() => {
+    if (!isInitialized && myRestaurants.length > 0) {
+      setSelectedRestaurant(myRestaurants[0].id);
+      setIsInitialized(true);
+    }
+  }, [myRestaurants, isInitialized]);
 
   const restaurantIds = myRestaurants.map(r => r.id);
 
@@ -208,11 +217,38 @@ export default function Dashboard() {
     return null;
   }
 
+  const selectedRestaurantName = selectedRestaurant === "all" 
+    ? "Tous les restaurants" 
+    : myRestaurants.find(r => r.id === selectedRestaurant)?.name || "Restaurant";
+
   return (
     <div className="min-h-screen bg-gray-50">
       <Navbar />
       
       <div className="container py-6">
+        {/* Header avec sélection du restaurant */}
+        <div className="flex flex-wrap items-center gap-3 mb-6">
+          <Button
+            variant={selectedRestaurant === "all" ? "default" : "outline"}
+            onClick={() => setSelectedRestaurant("all")}
+            className={selectedRestaurant === "all" ? "bg-primary" : ""}
+            data-testid="btn-all-restaurants"
+          >
+            Tous les restaurants
+          </Button>
+          {myRestaurants.map(r => (
+            <Button
+              key={r.id}
+              variant={selectedRestaurant === r.id ? "default" : "outline"}
+              onClick={() => setSelectedRestaurant(r.id)}
+              className={selectedRestaurant === r.id ? "bg-primary" : ""}
+              data-testid={`btn-restaurant-${r.id}`}
+            >
+              {r.name}
+            </Button>
+          ))}
+        </div>
+
         <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
           <Card className="bg-white">
             <CardContent className="p-4">
@@ -312,23 +348,6 @@ export default function Dashboard() {
               </div>
 
               <div className="flex items-center gap-2">
-                {myRestaurants.length > 1 && (
-                  <Select
-                    value={selectedRestaurant.toString()}
-                    onValueChange={(v) => setSelectedRestaurant(v === "all" ? "all" : parseInt(v))}
-                  >
-                    <SelectTrigger className="w-[180px]" data-testid="select-restaurant">
-                      <SelectValue placeholder="Tous les restaurants" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="all">Tous les restaurants</SelectItem>
-                      {myRestaurants.map(r => (
-                        <SelectItem key={r.id} value={r.id.toString()}>{r.name}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                )}
-
                 <Dialog open={isAddBookingOpen} onOpenChange={setIsAddBookingOpen}>
                   <DialogTrigger asChild>
                     <Button className="bg-primary" data-testid="btn-add-booking">
