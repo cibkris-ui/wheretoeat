@@ -9,13 +9,56 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { 
   Calendar as CalendarIcon, 
   Users,
   X,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Tag,
+  Star,
+  AlertTriangle,
+  Wallet,
+  Heart,
+  MapPin,
+  Wine
 } from "lucide-react";
+
+const CLIENT_TAGS = {
+  fidelite: {
+    label: "Fidélité client",
+    tags: ["VIP", "Occasionnel", "Standard", "Habitué"]
+  },
+  risque: {
+    label: "Niveau de risque",
+    tags: ["Attention"]
+  },
+  budget: {
+    label: "Budget",
+    tags: ["Budget élevé", "Budget moyen", "Budget serré", "Sensible aux promotions"]
+  },
+  allergies: {
+    label: "Allergies et intolérances",
+    tags: ["Alcool", "Arachides", "Noix d'arbres", "Fruits à coque", "Lait", "Œufs", "Blé", "Poisson", "Soja", "Fruits de mer", "Allergie", "Allium", "Amande", "Avocat", "Poivron", "Céleri", "Fromage", "Chocolat", "Coriandre", "Crustacés", "Concombre", "Ail", "Noisette", "Kiwi", "Intolérance au lactose", "Agneau"]
+  },
+  regime: {
+    label: "Régimes alimentaires",
+    tags: ["Sans produits laitiers", "Sans gluten", "Casher", "Paléo", "Sans alcool", "Végétalien", "Végétarien", "Halal", "Diabétique", "Pescétarien"]
+  },
+  relation: {
+    label: "Relation avec le client",
+    tags: ["Ami/famille", "Influenceur", "Employé", "Célébrité", "Local", "Partenaire commercial", "Guide", "Ami du chef", "Ami du propriétaire", "Touriste"]
+  },
+  placement: {
+    label: "Préférence de placement",
+    tags: ["À la fenêtre", "Au bar", "Banquette", "Extérieur", "Espace fumeurs", "Espace non-fumeurs", "Table calme", "Accès en fauteuil roulant"]
+  },
+  autre: {
+    label: "Autre",
+    tags: ["Amateur de vin", "Avec animal", "Avec enfants"]
+  }
+};
 import { format, parseISO, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths, getDay, isWeekend, isBefore, startOfDay } from "date-fns";
 import { fr } from "date-fns/locale";
 import type { Restaurant, Booking } from "@shared/schema";
@@ -44,6 +87,8 @@ export default function NewBooking() {
   const [calendarMonth, setCalendarMonth] = useState(new Date());
   const [isCalendarOpen, setIsCalendarOpen] = useState(false);
   const [isTimeOpen, setIsTimeOpen] = useState(false);
+  const [isTagsDialogOpen, setIsTagsDialogOpen] = useState(false);
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
   
   const [formData, setFormData] = useState({
     lastName: "",
@@ -586,17 +631,28 @@ export default function NewBooking() {
 
                 <div>
                   <Label className="text-gray-600 text-sm">Tags de client</Label>
-                  <Select value={formData.tags} onValueChange={v => setFormData(prev => ({ ...prev, tags: v }))}>
-                    <SelectTrigger className="mt-1" data-testid="select-tags">
-                      <SelectValue placeholder="" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="vip">VIP</SelectItem>
-                      <SelectItem value="regular">Habitué</SelectItem>
-                      <SelectItem value="standard">Standard</SelectItem>
-                      <SelectItem value="occasional">Occasionnel</SelectItem>
-                    </SelectContent>
-                  </Select>
+                  <button
+                    type="button"
+                    onClick={() => setIsTagsDialogOpen(true)}
+                    className="w-full mt-1 flex items-center justify-between px-3 py-2 border rounded-md bg-white text-left hover:bg-gray-50"
+                    data-testid="select-tags"
+                  >
+                    <div className="flex flex-wrap gap-1">
+                      {selectedTags.length === 0 ? (
+                        <span className="text-gray-400">Sélectionner des mots-clés</span>
+                      ) : (
+                        selectedTags.slice(0, 3).map(tag => (
+                          <span key={tag} className="px-2 py-0.5 bg-teal-100 text-teal-700 text-xs rounded-full">
+                            {tag}
+                          </span>
+                        ))
+                      )}
+                      {selectedTags.length > 3 && (
+                        <span className="text-xs text-gray-500">+{selectedTags.length - 3}</span>
+                      )}
+                    </div>
+                    <Tag className="h-4 w-4 text-gray-400" />
+                  </button>
                 </div>
 
                 <Button 
@@ -636,6 +692,84 @@ export default function NewBooking() {
           </Button>
         </div>
       </div>
+
+      {/* Tags Dialog */}
+      <Dialog open={isTagsDialogOpen} onOpenChange={setIsTagsDialogOpen}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle className="text-xl">Sélectionnez des mots-clés client</DialogTitle>
+          </DialogHeader>
+          
+          <div className="mt-2">
+            <Input 
+              placeholder="Rechercher ou ajouter un mot-clé" 
+              className="mb-4"
+            />
+
+            <div className="space-y-6">
+              {Object.entries(CLIENT_TAGS).map(([key, category]) => (
+                <div key={key}>
+                  <div className="flex items-center justify-between mb-2">
+                    <h4 className="font-medium text-gray-700">{category.label}</h4>
+                    {category.tags.length > 5 && (
+                      <button className="text-sm text-teal-600 hover:underline">Voir moins</button>
+                    )}
+                  </div>
+                  <div className="flex flex-wrap gap-2">
+                    {category.tags.map(tag => {
+                      const isSelected = selectedTags.includes(tag);
+                      const isAllergy = key === "allergies";
+                      const isRisk = key === "risque";
+                      return (
+                        <button
+                          key={tag}
+                          onClick={() => {
+                            setSelectedTags(prev => 
+                              prev.includes(tag) 
+                                ? prev.filter(t => t !== tag)
+                                : [...prev, tag]
+                            );
+                          }}
+                          className={`px-3 py-1.5 rounded-full text-sm border transition-all flex items-center gap-1 ${
+                            isSelected
+                              ? isAllergy
+                                ? "bg-red-100 text-red-700 border-red-300"
+                                : isRisk
+                                ? "bg-orange-100 text-orange-700 border-orange-300"
+                                : "bg-teal-100 text-teal-700 border-teal-300"
+                              : "bg-white text-gray-600 border-gray-200 hover:border-teal-300"
+                          }`}
+                        >
+                          {isAllergy && <span className="text-red-500">🚫</span>}
+                          {isRisk && <AlertTriangle className="h-3 w-3" />}
+                          {key === "fidelite" && tag === "VIP" && <Star className="h-3 w-3 text-yellow-500" />}
+                          {key === "autre" && tag === "Amateur de vin" && <Wine className="h-3 w-3" />}
+                          {tag}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          <DialogFooter className="mt-6 flex justify-between">
+            <Button 
+              variant="ghost" 
+              onClick={() => setIsTagsDialogOpen(false)}
+            >
+              Annuler
+            </Button>
+            <Button 
+              onClick={() => setIsTagsDialogOpen(false)}
+              className="bg-teal-600 hover:bg-teal-700"
+            >
+              Appliquer les mots-clés
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
