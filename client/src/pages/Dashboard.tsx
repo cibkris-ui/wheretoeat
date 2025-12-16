@@ -24,7 +24,12 @@ import {
   Settings,
   Store,
   FileText,
-  LogOut
+  LogOut,
+  LayoutDashboard,
+  ClipboardList,
+  LineChart,
+  UserCircle,
+  Utensils
 } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { format, addDays, subDays, isToday, isSameDay, parseISO, startOfDay, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth } from "date-fns";
@@ -187,9 +192,9 @@ export default function Dashboard() {
     : myRestaurants.find(r => r.id === selectedRestaurant)?.name || "Restaurant";
 
   const sidebarItems = [
-    { id: "reservations" as const, icon: CalendarDays, label: "Réservations" },
-    { id: "restaurants" as const, icon: Store, label: "Mes restaurants" },
-    { id: "stats" as const, icon: BarChart3, label: "Statistiques" },
+    { id: "reservations" as const, icon: LayoutDashboard, label: "Réservations" },
+    { id: "restaurants" as const, icon: Utensils, label: "Mes restaurants" },
+    { id: "stats" as const, icon: LineChart, label: "Statistiques" },
     { id: "settings" as const, icon: Settings, label: "Paramètres" },
   ];
 
