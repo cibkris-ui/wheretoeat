@@ -1,3 +1,5 @@
+import { useEffect } from "react";
+import { useLocation } from "wouter";
 import { Navbar } from "@/components/layout/Navbar";
 import { RestaurantCard } from "@/components/RestaurantCard";
 import { Search, MapPin, Calendar, Clock, Users } from "lucide-react";
@@ -7,12 +9,28 @@ import heroImage from '@assets/generated_images/elegant_restaurant_dining_atmosp
 import { Separator } from "@/components/ui/separator";
 import { useQuery } from "@tanstack/react-query";
 import { fetchRestaurants } from "@/lib/api";
+import { useAuth } from "@/hooks/useAuth";
+import type { Restaurant } from "@shared/schema";
 
 export default function Home() {
+  const [, setLocation] = useLocation();
+  const { user, isAuthenticated, isLoading: authLoading } = useAuth();
+  
+  const { data: myRestaurants = [] } = useQuery<Restaurant[]>({
+    queryKey: ["/api/my-restaurants"],
+    enabled: isAuthenticated,
+  });
+
   const { data: restaurants, isLoading, error } = useQuery({
     queryKey: ["restaurants"],
     queryFn: fetchRestaurants,
   });
+
+  useEffect(() => {
+    if (!authLoading && isAuthenticated && myRestaurants.length > 0) {
+      setLocation("/dashboard");
+    }
+  }, [authLoading, isAuthenticated, myRestaurants, setLocation]);
 
   return (
     <div className="min-h-screen bg-background">
