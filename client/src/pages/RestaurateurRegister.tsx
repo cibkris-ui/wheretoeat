@@ -81,7 +81,15 @@ export default function RestaurateurRegister() {
       }
       return res.json();
     },
-    onSuccess: (data) => {
+    onSuccess: async (data) => {
+      const restaurantsRes = await fetch("/api/my-restaurants", { credentials: "include" });
+      if (restaurantsRes.ok) {
+        const restaurants = await restaurantsRes.json();
+        if (restaurants.length > 0) {
+          setLocation("/dashboard");
+          return;
+        }
+      }
       setIsLoggedIn(true);
       setLoggedInUserId(data.user.id);
       setLoginError("");
