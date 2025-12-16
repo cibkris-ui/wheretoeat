@@ -10,12 +10,11 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
-import { Calendar, Clock, Users, MapPin, Star, Utensils, Edit, Check, Plus } from "lucide-react";
-import { format } from "date-fns";
-import { fr } from "date-fns/locale";
-import type { Restaurant, Booking } from "@shared/schema";
+import { MapPin, Star, Utensils, Edit, Check, Plus } from "lucide-react";
+import type { Restaurant } from "@shared/schema";
 import { useState } from "react";
 import { apiRequest } from "@/lib/queryClient";
+import { ReservationsManager } from "@/components/ReservationsManager";
 
 export default function Dashboard() {
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
@@ -109,16 +108,14 @@ export default function Dashboard() {
             {myRestaurants.length === 0 ? (
               <Card>
                 <CardContent className="py-12 text-center">
-                  <Calendar className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+                  <Utensils className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
                   <p className="text-muted-foreground">
-                    Revendiquez d'abord un restaurant pour voir les réservations.
+                    Ajoutez d'abord un restaurant pour voir les réservations.
                   </p>
                 </CardContent>
               </Card>
             ) : (
-              myRestaurants.map(restaurant => (
-                <RestaurantBookings key={restaurant.id} restaurant={restaurant} />
-              ))
+              <ReservationsManager restaurants={myRestaurants} />
             )}
           </TabsContent>
 
@@ -256,78 +253,3 @@ function RestaurantManagement({ restaurant }: { restaurant: Restaurant }) {
   );
 }
 
-function RestaurantBookings({ restaurant }: { restaurant: Restaurant }) {
-  const { data: bookings = [], isLoading } = useQuery<Booking[]>({
-    queryKey: [`/api/restaurants/${restaurant.id}/bookings`],
-  });
-
-  const upcomingBookings = bookings.filter(b => new Date(b.date) >= new Date());
-  const pastBookings = bookings.filter(b => new Date(b.date) < new Date());
-
-  return (
-    <Card>
-      <CardHeader>
-        <CardTitle>{restaurant.name} - Réservations</CardTitle>
-        <CardDescription>
-          {bookings.length} réservation{bookings.length !== 1 ? 's' : ''} au total
-        </CardDescription>
-      </CardHeader>
-      <CardContent>
-        {isLoading ? (
-          <p>Chargement...</p>
-        ) : bookings.length === 0 ? (
-          <p className="text-muted-foreground text-center py-8">Aucune réservation pour le moment.</p>
-        ) : (
-          <div className="space-y-6">
-            {upcomingBookings.length > 0 && (
-              <div>
-                <h4 className="font-medium mb-3 text-primary">À venir ({upcomingBookings.length})</h4>
-                <div className="space-y-3">
-                  {upcomingBookings.map(booking => (
-                    <BookingCard key={booking.id} booking={booking} />
-                  ))}
-                </div>
-              </div>
-            )}
-            {pastBookings.length > 0 && (
-              <div>
-                <h4 className="font-medium mb-3 text-muted-foreground">Passées ({pastBookings.length})</h4>
-                <div className="space-y-3 opacity-60">
-                  {pastBookings.slice(0, 5).map(booking => (
-                    <BookingCard key={booking.id} booking={booking} />
-                  ))}
-                </div>
-              </div>
-            )}
-          </div>
-        )}
-      </CardContent>
-    </Card>
-  );
-}
-
-function BookingCard({ booking }: { booking: Booking }) {
-  return (
-    <div className="flex items-center justify-between p-4 border rounded-lg" data-testid={`booking-${booking.id}`}>
-      <div className="flex items-center gap-6">
-        <div className="flex items-center gap-2 text-sm">
-          <Calendar className="h-4 w-4 text-muted-foreground" />
-          {format(new Date(booking.date), "d MMMM yyyy", { locale: fr })}
-        </div>
-        <div className="flex items-center gap-2 text-sm">
-          <Clock className="h-4 w-4 text-muted-foreground" />
-          {booking.time}
-        </div>
-        <div className="flex items-center gap-2 text-sm">
-          <Users className="h-4 w-4 text-muted-foreground" />
-          {booking.guests} personne{booking.guests > 1 ? 's' : ''}
-        </div>
-      </div>
-      <div className="text-right">
-        <p className="font-medium">{booking.firstName} {booking.lastName}</p>
-        <p className="text-sm text-muted-foreground">{booking.email}</p>
-        <p className="text-sm text-muted-foreground">{booking.phone}</p>
-      </div>
-    </div>
-  );
-}
