@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
@@ -12,13 +12,16 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { MapPin, Star, Utensils, Edit, Check, Plus } from "lucide-react";
 import type { Restaurant } from "@shared/schema";
-import { useState } from "react";
 import { apiRequest } from "@/lib/queryClient";
 import { ReservationsManager } from "@/components/ReservationsManager";
+import { useSearch } from "wouter";
 
 export default function Dashboard() {
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   const { toast } = useToast();
+  const searchString = useSearch();
+  const searchParams = new URLSearchParams(searchString);
+  const selectedRestaurantId = searchParams.get("restaurant");
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -37,6 +40,8 @@ export default function Dashboard() {
     queryKey: ["/api/my-restaurants"],
     enabled: isAuthenticated,
   });
+  
+  const defaultTab = selectedRestaurantId ? "bookings" : "restaurants";
 
   if (authLoading) {
     return (
@@ -72,7 +77,7 @@ export default function Dashboard() {
           </Button>
         </div>
 
-        <Tabs defaultValue="restaurants" className="space-y-6">
+        <Tabs defaultValue={defaultTab} className="space-y-6">
           <TabsList>
             <TabsTrigger value="restaurants" data-testid="tab-restaurants">Mes restaurants ({myRestaurants.length})</TabsTrigger>
             <TabsTrigger value="bookings" data-testid="tab-bookings">Réservations</TabsTrigger>
@@ -115,7 +120,10 @@ export default function Dashboard() {
                 </CardContent>
               </Card>
             ) : (
-              <ReservationsManager restaurants={myRestaurants} />
+              <ReservationsManager 
+                restaurants={myRestaurants} 
+                defaultRestaurantId={selectedRestaurantId ? parseInt(selectedRestaurantId) : undefined}
+              />
             )}
           </TabsContent>
 

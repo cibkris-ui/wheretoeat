@@ -1,5 +1,5 @@
 import { Link } from "wouter";
-import { UtensilsCrossed, LogOut, LayoutDashboard, Store, Shield } from "lucide-react";
+import { UtensilsCrossed, LogOut, LayoutDashboard, Store, Shield, ChevronRight } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import {
@@ -8,11 +8,19 @@ import {
   DropdownMenuItem,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
+  DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { useQuery } from "@tanstack/react-query";
+import type { Restaurant } from "@shared/schema";
 
 export function Navbar() {
   const { user, isAuthenticated, isLoading } = useAuth();
+  
+  const { data: myRestaurants = [] } = useQuery<Restaurant[]>({
+    queryKey: ["/api/my-restaurants"],
+    enabled: isAuthenticated,
+  });
 
   return (
     <nav className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -59,6 +67,21 @@ export function Navbar() {
                     Tableau de bord
                   </Link>
                 </DropdownMenuItem>
+                {myRestaurants.length > 0 && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuLabel className="text-xs text-muted-foreground">Mes restaurants</DropdownMenuLabel>
+                    {myRestaurants.slice(0, 5).map(restaurant => (
+                      <DropdownMenuItem key={restaurant.id} asChild>
+                        <Link href={`/dashboard?restaurant=${restaurant.id}`} className="cursor-pointer" data-testid={`link-restaurant-${restaurant.id}`}>
+                          <ChevronRight className="mr-2 h-4 w-4" />
+                          {restaurant.name}
+                        </Link>
+                      </DropdownMenuItem>
+                    ))}
+                  </>
+                )}
+                <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
                   <Link href="/inscrire-restaurant" className="cursor-pointer" data-testid="link-register-restaurant">
                     <Store className="mr-2 h-4 w-4" />

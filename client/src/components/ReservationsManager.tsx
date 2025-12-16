@@ -11,15 +11,20 @@ import type { Restaurant, Booking } from "@shared/schema";
 
 interface ReservationsManagerProps {
   restaurants: Restaurant[];
+  defaultRestaurantId?: number;
 }
 
 type FilterType = "all" | "upcoming" | "in_service";
 
-export function ReservationsManager({ restaurants }: ReservationsManagerProps) {
+export function ReservationsManager({ restaurants, defaultRestaurantId }: ReservationsManagerProps) {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [searchQuery, setSearchQuery] = useState("");
   const [activeFilter, setActiveFilter] = useState<FilterType>("upcoming");
-  const [selectedRestaurant, setSelectedRestaurant] = useState<number | "all">("all");
+  const [selectedRestaurant, setSelectedRestaurant] = useState<number | "all">(
+    defaultRestaurantId && restaurants.some(r => r.id === defaultRestaurantId) 
+      ? defaultRestaurantId 
+      : "all"
+  );
 
   const restaurantIds = restaurants.map(r => r.id);
 
