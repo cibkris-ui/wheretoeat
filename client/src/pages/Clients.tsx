@@ -397,44 +397,39 @@ export default function Clients() {
                     )}
                   </div>
 
-                  {/* Vertical alphabet index - Elegant sidebar */}
-                  <div className="w-8 bg-white border-l shadow-inner flex flex-col items-center py-3 min-h-[500px]">
+                  {/* Vertical alphabet index - Address book tabs */}
+                  <div className="w-10 bg-gradient-to-b from-gray-50 to-gray-100 border-l flex flex-col items-center py-2 sticky top-0 h-fit">
                     <button
                       onClick={() => setSelectedLetter(null)}
-                      className={`w-6 h-6 rounded-full text-[9px] font-bold transition-all mb-2 flex items-center justify-center ${
+                      className={`w-8 h-6 rounded-l-md text-[10px] font-bold transition-all mb-1 ${
                         !selectedLetter 
-                          ? "bg-primary text-white shadow-lg ring-2 ring-primary/30" 
-                          : "text-gray-400 hover:text-primary hover:bg-primary/10"
+                          ? "bg-primary text-white shadow-md" 
+                          : "text-gray-500 hover:bg-white hover:shadow"
                       }`}
                       data-testid="letter-all"
                     >
-                      ●
+                      ALL
                     </button>
-                    <div className="w-px h-2 bg-gray-200 mb-1"></div>
-                    {alphabet.map(letter => {
-                      const hasClients = availableLetters.has(letter);
-                      const isSelected = selectedLetter === letter;
-                      return (
-                        <button
-                          key={letter}
-                          onClick={() => setSelectedLetter(letter)}
-                          disabled={!hasClients}
-                          className={`w-6 h-5 text-[11px] font-medium transition-all flex items-center justify-center relative ${
-                            isSelected 
-                              ? "text-white font-bold" 
-                              : hasClients
-                                ? "text-gray-600 hover:text-primary"
-                                : "text-gray-200"
-                          }`}
-                          data-testid={`letter-${letter}`}
-                        >
-                          {isSelected && (
-                            <span className="absolute inset-0 bg-primary rounded-full -z-10 animate-pulse"></span>
-                          )}
-                          {letter}
-                        </button>
-                      );
-                    })}
+                    {alphabet.map(letter => (
+                      <button
+                        key={letter}
+                        onClick={() => setSelectedLetter(letter)}
+                        disabled={!availableLetters.has(letter)}
+                        className={`w-8 h-5 rounded-l-md text-[11px] font-semibold transition-all relative ${
+                          selectedLetter === letter 
+                            ? "bg-primary text-white shadow-md z-10 scale-110" 
+                            : availableLetters.has(letter)
+                              ? "text-gray-700 hover:bg-white hover:shadow hover:scale-105"
+                              : "text-gray-300 cursor-not-allowed"
+                        }`}
+                        data-testid={`letter-${letter}`}
+                      >
+                        {letter}
+                        {availableLetters.has(letter) && selectedLetter !== letter && (
+                          <span className="absolute right-1 top-1/2 -translate-y-1/2 w-1.5 h-1.5 bg-primary/40 rounded-full"></span>
+                        )}
+                      </button>
+                    ))}
                   </div>
                 </div>
               </CardContent>
