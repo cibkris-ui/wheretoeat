@@ -381,12 +381,6 @@ export default function Statistics() {
 
         <div className="flex pt-0">
           <aside className="w-16 bg-white border-r flex flex-col items-center py-4 gap-2 fixed h-[calc(100vh-64px)] top-16 z-40">
-            <div className="mb-4">
-              <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
-                <LayoutGrid className="h-5 w-5 text-white" />
-              </div>
-            </div>
-            
             {sidebarItems.map(item => (
               <Tooltip key={item.id}>
                 <TooltipTrigger asChild>
