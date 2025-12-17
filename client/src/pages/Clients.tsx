@@ -62,6 +62,7 @@ export default function Clients() {
   const [selectedRestaurant, setSelectedRestaurant] = useState<number | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedClient, setSelectedClient] = useState<ClientDetail | null>(null);
+  const [selectedLetter, setSelectedLetter] = useState<string | null>(null);
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -111,6 +112,32 @@ export default function Clients() {
   };
 
   const selectedRestaurantData = myRestaurants.find(r => r.id === activeRestaurantId);
+
+  const alphabet = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
+
+  const filteredClients = useMemo(() => {
+    let result = [...clients];
+    if (selectedLetter) {
+      result = result.filter(c => 
+        c.lastName.toUpperCase().startsWith(selectedLetter) || 
+        c.firstName.toUpperCase().startsWith(selectedLetter)
+      );
+    }
+    return result.sort((a, b) => {
+      const nameA = `${a.lastName} ${a.firstName}`.toUpperCase();
+      const nameB = `${b.lastName} ${b.firstName}`.toUpperCase();
+      return nameA.localeCompare(nameB);
+    });
+  }, [clients, selectedLetter]);
+
+  const availableLetters = useMemo(() => {
+    const letters = new Set<string>();
+    clients.forEach(c => {
+      if (c.lastName) letters.add(c.lastName[0].toUpperCase());
+      if (c.firstName) letters.add(c.firstName[0].toUpperCase());
+    });
+    return letters;
+  }, [clients]);
 
   const sidebarItems = [
     { id: "reservations" as const, icon: LayoutDashboard, label: "Réservations", link: "/dashboard" },
@@ -291,11 +318,43 @@ export default function Clients() {
                   </div>
                 </div>
 
-                {/* Stats bar */}
-                <div className="flex items-center gap-6 px-4 py-3 bg-gray-50 border-b text-sm text-gray-600">
-                  <div className="flex items-center gap-2">
+                {/* Stats bar with alphabet index */}
+                <div className="flex items-center justify-between px-4 py-3 bg-gray-50 border-b">
+                  <div className="flex items-center gap-2 text-sm text-gray-600">
                     <Users className="h-4 w-4" />
-                    <span>{clients.length} clients</span>
+                    <span>{filteredClients.length} clients{selectedLetter ? ` (${selectedLetter})` : ""}</span>
+                  </div>
+                  
+                  {/* Alphabet index */}
+                  <div className="flex items-center gap-0.5">
+                    <button
+                      onClick={() => setSelectedLetter(null)}
+                      className={`w-6 h-6 rounded text-xs font-medium transition-colors ${
+                        !selectedLetter 
+                          ? "bg-primary text-white" 
+                          : "text-gray-500 hover:bg-gray-200"
+                      }`}
+                      data-testid="letter-all"
+                    >
+                      All
+                    </button>
+                    {alphabet.map(letter => (
+                      <button
+                        key={letter}
+                        onClick={() => setSelectedLetter(letter)}
+                        disabled={!availableLetters.has(letter)}
+                        className={`w-6 h-6 rounded text-xs font-medium transition-colors ${
+                          selectedLetter === letter 
+                            ? "bg-primary text-white" 
+                            : availableLetters.has(letter)
+                              ? "text-gray-700 hover:bg-gray-200"
+                              : "text-gray-300 cursor-not-allowed"
+                        }`}
+                        data-testid={`letter-${letter}`}
+                      >
+                        {letter}
+                      </button>
+                    ))}
                   </div>
                 </div>
 
@@ -304,13 +363,13 @@ export default function Clients() {
                   <div className="p-8 text-center text-gray-500">
                     Chargement...
                   </div>
-                ) : clients.length === 0 ? (
+                ) : filteredClients.length === 0 ? (
                   <div className="p-8 text-center text-gray-500">
-                    {searchQuery ? "Aucun client trouvé" : "Aucun client enregistré"}
+                    {searchQuery || selectedLetter ? "Aucun client trouvé" : "Aucun client enregistré"}
                   </div>
                 ) : (
                   <div className="divide-y">
-                    {clients.map(client => (
+                    {filteredClients.map(client => (
                       <div 
                         key={client.id}
                         className="flex items-center gap-4 p-4 hover:bg-gray-50 cursor-pointer"
