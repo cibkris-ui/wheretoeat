@@ -319,101 +319,119 @@ export default function Clients() {
                   </div>
                 </div>
 
-                {/* Alphabet index */}
-                <div className="flex items-center justify-center px-4 py-3 bg-gray-50 border-b">
-                  <div className="flex items-center gap-0.5">
+                {/* Address book style layout */}
+                <div className="flex">
+                  {/* Clients list */}
+                  <div className="flex-1 min-h-[500px] max-h-[calc(100vh-250px)] overflow-y-auto">
+                    {clientsLoading ? (
+                      <div className="p-8 text-center text-gray-500">
+                        Chargement...
+                      </div>
+                    ) : filteredClients.length === 0 ? (
+                      <div className="p-8 text-center text-gray-500">
+                        {searchQuery || selectedLetter ? "Aucun client trouvé" : "Aucun client enregistré"}
+                      </div>
+                    ) : (
+                      <div className="divide-y">
+                        {filteredClients.map((client, index) => {
+                          const currentLetter = client.lastName?.[0]?.toUpperCase() || "";
+                          const prevLetter = index > 0 ? filteredClients[index - 1]?.lastName?.[0]?.toUpperCase() : "";
+                          const showLetterHeader = currentLetter !== prevLetter;
+                          
+                          return (
+                            <div key={client.id}>
+                              {showLetterHeader && (
+                                <div className="bg-gray-100 px-4 py-2 sticky top-0 border-b">
+                                  <span className="text-lg font-bold text-primary">{currentLetter}</span>
+                                </div>
+                              )}
+                              <div 
+                                className="flex items-center gap-4 p-4 hover:bg-gray-50 cursor-pointer border-l-4 border-transparent hover:border-primary transition-colors"
+                                onClick={() => handleClientClick(client)}
+                                data-testid={`client-${client.id}`}
+                              >
+                                {/* Avatar with initial */}
+                                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary/20 to-primary/40 flex items-center justify-center flex-shrink-0 shadow-sm">
+                                  <span className="text-lg font-bold text-primary">
+                                    {client.lastName?.[0]?.toUpperCase() || client.firstName?.[0]?.toUpperCase() || "?"}
+                                  </span>
+                                </div>
+
+                                {/* Client info */}
+                                <div className="flex-1 min-w-0">
+                                  <p className="font-semibold text-gray-900">
+                                    <span className="text-primary">{client.lastName?.toUpperCase()}</span>
+                                    {" "}
+                                    <span className="font-normal">{client.firstName}</span>
+                                  </p>
+                                  <div className="flex items-center gap-4 mt-1 text-sm text-gray-500">
+                                    <span className="flex items-center gap-1">
+                                      <Phone className="h-3 w-3" />
+                                      {client.phone}
+                                    </span>
+                                    <span className="flex items-center gap-1">
+                                      <Mail className="h-3 w-3" />
+                                      {client.email}
+                                    </span>
+                                  </div>
+                                </div>
+
+                                {/* Stats */}
+                                <div className="flex items-center gap-4 text-sm">
+                                  <div className="text-center px-3 py-1 bg-gray-50 rounded">
+                                    <p className="font-bold text-primary">{client.visitCount}</p>
+                                    <p className="text-xs text-gray-500">visites</p>
+                                  </div>
+                                  <div className="text-center min-w-[80px]">
+                                    <p className="font-medium text-gray-700">{formatDate(client.lastVisit)}</p>
+                                    <p className="text-xs text-gray-500">dernière visite</p>
+                                  </div>
+                                </div>
+
+                                <ChevronRight className="h-5 w-5 text-gray-400" />
+                              </div>
+                            </div>
+                          );
+                        })}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Vertical alphabet index - Address book tabs */}
+                  <div className="w-10 bg-gradient-to-b from-gray-50 to-gray-100 border-l flex flex-col items-center py-2 sticky top-0 h-fit">
                     <button
                       onClick={() => setSelectedLetter(null)}
-                      className={`w-6 h-6 rounded text-xs font-medium transition-colors ${
+                      className={`w-8 h-6 rounded-l-md text-[10px] font-bold transition-all mb-1 ${
                         !selectedLetter 
-                          ? "bg-primary text-white" 
-                          : "text-gray-500 hover:bg-gray-200"
+                          ? "bg-primary text-white shadow-md" 
+                          : "text-gray-500 hover:bg-white hover:shadow"
                       }`}
                       data-testid="letter-all"
                     >
-                      All
+                      ALL
                     </button>
                     {alphabet.map(letter => (
                       <button
                         key={letter}
                         onClick={() => setSelectedLetter(letter)}
                         disabled={!availableLetters.has(letter)}
-                        className={`w-6 h-6 rounded text-xs font-medium transition-colors ${
+                        className={`w-8 h-5 rounded-l-md text-[11px] font-semibold transition-all relative ${
                           selectedLetter === letter 
-                            ? "bg-primary text-white" 
+                            ? "bg-primary text-white shadow-md z-10 scale-110" 
                             : availableLetters.has(letter)
-                              ? "text-gray-700 hover:bg-gray-200"
+                              ? "text-gray-700 hover:bg-white hover:shadow hover:scale-105"
                               : "text-gray-300 cursor-not-allowed"
                         }`}
                         data-testid={`letter-${letter}`}
                       >
                         {letter}
+                        {availableLetters.has(letter) && selectedLetter !== letter && (
+                          <span className="absolute right-1 top-1/2 -translate-y-1/2 w-1.5 h-1.5 bg-primary/40 rounded-full"></span>
+                        )}
                       </button>
                     ))}
                   </div>
                 </div>
-
-                {/* Clients list */}
-                {clientsLoading ? (
-                  <div className="p-8 text-center text-gray-500">
-                    Chargement...
-                  </div>
-                ) : filteredClients.length === 0 ? (
-                  <div className="p-8 text-center text-gray-500">
-                    {searchQuery || selectedLetter ? "Aucun client trouvé" : "Aucun client enregistré"}
-                  </div>
-                ) : (
-                  <div className="divide-y">
-                    {filteredClients.map(client => (
-                      <div 
-                        key={client.id}
-                        className="flex items-center gap-4 p-4 hover:bg-gray-50 cursor-pointer"
-                        onClick={() => handleClientClick(client)}
-                        data-testid={`client-${client.id}`}
-                      >
-                        {/* Avatar */}
-                        <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-                          <User className="h-5 w-5 text-primary" />
-                        </div>
-
-                        {/* Client info */}
-                        <div className="flex-1 min-w-0">
-                          <p className="font-medium text-gray-900">
-                            {client.firstName} {client.lastName}
-                          </p>
-                          <div className="flex items-center gap-4 mt-1 text-sm text-gray-500">
-                            <span className="flex items-center gap-1">
-                              <Phone className="h-3 w-3" />
-                              {client.phone}
-                            </span>
-                            <span className="flex items-center gap-1">
-                              <Mail className="h-3 w-3" />
-                              {client.email}
-                            </span>
-                          </div>
-                        </div>
-
-                        {/* Stats */}
-                        <div className="flex items-center gap-6 text-sm">
-                          <div className="text-center">
-                            <p className="font-semibold text-gray-900">{client.visitCount}</p>
-                            <p className="text-xs text-gray-500">visites</p>
-                          </div>
-                          <div className="text-center">
-                            <p className="font-semibold text-gray-900">{client.avgGuests || "-"}</p>
-                            <p className="text-xs text-gray-500">pers. moy.</p>
-                          </div>
-                          <div className="text-center min-w-[80px]">
-                            <p className="font-semibold text-gray-900">{formatDate(client.lastVisit)}</p>
-                            <p className="text-xs text-gray-500">dernière visite</p>
-                          </div>
-                        </div>
-
-                        <ChevronRight className="h-5 w-5 text-gray-400" />
-                      </div>
-                    ))}
-                  </div>
-                )}
               </CardContent>
             </Card>
           </main>
