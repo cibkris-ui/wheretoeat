@@ -213,69 +213,9 @@ export default function Notifications() {
 
   return (
     <TooltipProvider>
-      <div className="min-h-screen bg-gray-50 flex">
-        {/* Sidebar */}
-        <aside className="w-16 bg-white border-r flex flex-col items-center py-4 gap-2 fixed h-full z-40">
-          <div className="mb-4">
-            <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
-              <Utensils className="h-5 w-5 text-white" />
-            </div>
-          </div>
-          
-          {sidebarItems.map(item => (
-            <Tooltip key={item.id}>
-              <TooltipTrigger asChild>
-                {item.link ? (
-                  <Link href={item.link}>
-                    <button
-                      className="w-12 h-12 rounded-lg flex items-center justify-center transition-colors text-gray-500 hover:bg-gray-100"
-                      data-testid={`sidebar-${item.id}`}
-                    >
-                      <item.icon className="h-5 w-5" />
-                    </button>
-                  </Link>
-                ) : (
-                  <button
-                    className={`w-12 h-12 rounded-lg flex items-center justify-center transition-colors ${
-                      item.id === "notifications" 
-                        ? "bg-primary/10 text-primary" 
-                        : "text-gray-500 hover:bg-gray-100"
-                    }`}
-                    data-testid={`sidebar-${item.id}`}
-                  >
-                    <item.icon className="h-5 w-5" />
-                  </button>
-                )}
-              </TooltipTrigger>
-              <TooltipContent side="right">
-                <p>{item.label}</p>
-              </TooltipContent>
-            </Tooltip>
-          ))}
-          
-          <div className="mt-auto">
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <a
-                  href="/api/logout"
-                  className="w-12 h-12 rounded-lg flex items-center justify-center text-gray-500 hover:bg-red-50 hover:text-red-600 transition-colors"
-                  data-testid="sidebar-logout"
-                >
-                  <LogOut className="h-5 w-5" />
-                </a>
-              </TooltipTrigger>
-              <TooltipContent side="right">
-                <p>Déconnexion</p>
-              </TooltipContent>
-            </Tooltip>
-          </div>
-        </aside>
-
-        {/* Main content */}
-        <div className="flex-1 ml-16">
-          {/* Header */}
-          <div className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-            <div className="container flex h-16 items-center justify-between">
+      <div className="min-h-screen bg-gray-50">
+        <div className="sticky top-0 z-50 w-full border-b bg-white">
+          <div className="flex h-16 items-center justify-between px-6">
               <Link href="/" className="flex items-center gap-2 font-serif text-xl font-bold tracking-tight hover:opacity-90 transition-opacity cursor-pointer">
                 <div className="flex h-8 w-8 items-center justify-center rounded-sm bg-primary text-primary-foreground">
                   <Utensils className="h-5 w-5" />
@@ -346,11 +286,68 @@ export default function Notifications() {
                     </DropdownMenuContent>
                   </DropdownMenu>
                 )}
-              </div>
             </div>
           </div>
+        </div>
 
-          <main className="p-6">
+        <div className="flex">
+          <aside className="w-16 bg-white border-r flex flex-col items-center py-4 gap-2 fixed h-[calc(100vh-64px)] top-16 z-40">
+            <div className="mb-4">
+              <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
+                <Utensils className="h-5 w-5 text-white" />
+              </div>
+            </div>
+            
+            {sidebarItems.map(item => (
+              <Tooltip key={item.id}>
+                <TooltipTrigger asChild>
+                  {item.link ? (
+                    <Link href={item.link}>
+                      <button
+                        className="w-12 h-12 rounded-lg flex items-center justify-center transition-colors text-gray-500 hover:bg-gray-100"
+                        data-testid={`sidebar-${item.id}`}
+                      >
+                        <item.icon className="h-5 w-5" />
+                      </button>
+                    </Link>
+                  ) : (
+                    <button
+                      className={`w-12 h-12 rounded-lg flex items-center justify-center transition-colors ${
+                        item.id === "notifications" 
+                          ? "bg-primary/10 text-primary" 
+                          : "text-gray-500 hover:bg-gray-100"
+                      }`}
+                      data-testid={`sidebar-${item.id}`}
+                    >
+                      <item.icon className="h-5 w-5" />
+                    </button>
+                  )}
+                </TooltipTrigger>
+                <TooltipContent side="right">
+                  <p>{item.label}</p>
+                </TooltipContent>
+              </Tooltip>
+            ))}
+            
+            <div className="mt-auto">
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <a
+                    href="/api/logout"
+                    className="w-12 h-12 rounded-lg flex items-center justify-center text-gray-500 hover:bg-red-50 hover:text-red-600 transition-colors"
+                    data-testid="sidebar-logout"
+                  >
+                    <LogOut className="h-5 w-5" />
+                  </a>
+                </TooltipTrigger>
+                <TooltipContent side="right">
+                  <p>Déconnexion</p>
+                </TooltipContent>
+              </Tooltip>
+            </div>
+          </aside>
+
+          <main className="flex-1 ml-16 p-6">
             <Card className="bg-white">
               <CardContent className="p-0">
                 {/* Tabs header */}
