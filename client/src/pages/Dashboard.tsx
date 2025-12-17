@@ -265,7 +265,6 @@ export default function Dashboard() {
   const sidebarItems = [
     { id: "reservations" as const, icon: LayoutDashboard, label: "Réservations", link: null },
     { id: "calendar" as const, icon: CalendarDays, label: "Calendrier", link: "/dashboard/calendrier" },
-    { id: "restaurants" as const, icon: Utensils, label: "Mes restaurants", link: null },
     { id: "stats" as const, icon: LineChart, label: "Statistiques", link: null },
     { id: "settings" as const, icon: Settings, label: "Paramètres", link: null },
   ];
