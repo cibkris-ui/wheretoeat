@@ -119,8 +119,7 @@ export default function Clients() {
     let result = [...clients];
     if (selectedLetter) {
       result = result.filter(c => 
-        c.lastName.toUpperCase().startsWith(selectedLetter) || 
-        c.firstName.toUpperCase().startsWith(selectedLetter)
+        c.lastName.toUpperCase().startsWith(selectedLetter)
       );
     }
     return result.sort((a, b) => {
@@ -134,7 +133,6 @@ export default function Clients() {
     const letters = new Set<string>();
     clients.forEach(c => {
       if (c.lastName) letters.add(c.lastName[0].toUpperCase());
-      if (c.firstName) letters.add(c.firstName[0].toUpperCase());
     });
     return letters;
   }, [clients]);
@@ -302,7 +300,10 @@ export default function Clients() {
               <CardContent className="p-0">
                 {/* Header */}
                 <div className="flex items-center justify-between border-b px-4 py-4">
-                  <h1 className="text-lg font-semibold">Annuaire Clients</h1>
+                  <div className="flex items-center gap-3">
+                    <h1 className="text-lg font-semibold">Annuaire Clients</h1>
+                    <span className="text-sm text-gray-500">({clients.length} clients)</span>
+                  </div>
                   <div className="flex items-center gap-2">
                     <div className="relative">
                       <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
@@ -318,14 +319,8 @@ export default function Clients() {
                   </div>
                 </div>
 
-                {/* Stats bar with alphabet index */}
-                <div className="flex items-center justify-between px-4 py-3 bg-gray-50 border-b">
-                  <div className="flex items-center gap-2 text-sm text-gray-600">
-                    <Users className="h-4 w-4" />
-                    <span>{filteredClients.length} clients{selectedLetter ? ` (${selectedLetter})` : ""}</span>
-                  </div>
-                  
-                  {/* Alphabet index */}
+                {/* Alphabet index */}
+                <div className="flex items-center justify-center px-4 py-3 bg-gray-50 border-b">
                   <div className="flex items-center gap-0.5">
                     <button
                       onClick={() => setSelectedLetter(null)}
