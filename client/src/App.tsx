@@ -13,6 +13,7 @@ import Restaurants from "@/pages/Restaurants";
 import NewBooking from "@/pages/NewBooking";
 import Calendar from "@/pages/Calendar";
 import Notifications from "@/pages/Notifications";
+import Clients from "@/pages/Clients";
 
 function Router() {
   return (
@@ -24,6 +25,7 @@ function Router() {
       <Route path="/dashboard/nouvelle-reservation" component={NewBooking} />
       <Route path="/dashboard/calendrier" component={Calendar} />
       <Route path="/dashboard/notifications" component={Notifications} />
+      <Route path="/dashboard/clients" component={Clients} />
       <Route path="/inscrire-restaurant" component={RestaurateurRegister} />
       <Route path="/admin" component={Admin} />
       <Route component={NotFound} />

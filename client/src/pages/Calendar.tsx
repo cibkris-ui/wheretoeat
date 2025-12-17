@@ -228,6 +228,7 @@ export default function Calendar() {
     { id: "reservations" as const, icon: LayoutDashboard, label: "Réservations", link: "/dashboard" },
     { id: "calendar" as const, icon: CalendarDays, label: "Calendrier", link: null },
     { id: "notifications" as const, icon: Bell, label: "Notifications", link: "/dashboard/notifications" },
+    { id: "clients" as const, icon: Users, label: "Clients", link: "/dashboard/clients" },
     { id: "stats" as const, icon: LineChart, label: "Statistiques", link: null },
     { id: "settings" as const, icon: Settings, label: "Paramètres", link: null },
   ];
