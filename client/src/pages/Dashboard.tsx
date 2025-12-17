@@ -263,10 +263,11 @@ export default function Dashboard() {
     : myRestaurants.find(r => r.id === selectedRestaurant)?.name || "Restaurant";
 
   const sidebarItems = [
-    { id: "reservations" as const, icon: LayoutDashboard, label: "Réservations" },
-    { id: "restaurants" as const, icon: Utensils, label: "Mes restaurants" },
-    { id: "stats" as const, icon: LineChart, label: "Statistiques" },
-    { id: "settings" as const, icon: Settings, label: "Paramètres" },
+    { id: "reservations" as const, icon: LayoutDashboard, label: "Réservations", link: null },
+    { id: "calendar" as const, icon: CalendarDays, label: "Calendrier", link: "/dashboard/calendrier" },
+    { id: "restaurants" as const, icon: Utensils, label: "Mes restaurants", link: null },
+    { id: "stats" as const, icon: LineChart, label: "Statistiques", link: null },
+    { id: "settings" as const, icon: Settings, label: "Paramètres", link: null },
   ];
 
   return (
@@ -283,17 +284,28 @@ export default function Dashboard() {
           {sidebarItems.map(item => (
             <Tooltip key={item.id}>
               <TooltipTrigger asChild>
-                <button
-                  onClick={() => setActiveSection(item.id)}
-                  className={`w-12 h-12 rounded-lg flex items-center justify-center transition-colors ${
-                    activeSection === item.id 
-                      ? "bg-primary/10 text-primary" 
-                      : "text-gray-500 hover:bg-gray-100"
-                  }`}
-                  data-testid={`sidebar-${item.id}`}
-                >
-                  <item.icon className="h-5 w-5" />
-                </button>
+                {item.link ? (
+                  <Link href={item.link}>
+                    <button
+                      className="w-12 h-12 rounded-lg flex items-center justify-center transition-colors text-gray-500 hover:bg-gray-100"
+                      data-testid={`sidebar-${item.id}`}
+                    >
+                      <item.icon className="h-5 w-5" />
+                    </button>
+                  </Link>
+                ) : (
+                  <button
+                    onClick={() => setActiveSection(item.id as any)}
+                    className={`w-12 h-12 rounded-lg flex items-center justify-center transition-colors ${
+                      activeSection === item.id 
+                        ? "bg-primary/10 text-primary" 
+                        : "text-gray-500 hover:bg-gray-100"
+                    }`}
+                    data-testid={`sidebar-${item.id}`}
+                  >
+                    <item.icon className="h-5 w-5" />
+                  </button>
+                )}
               </TooltipTrigger>
               <TooltipContent side="right">
                 <p>{item.label}</p>

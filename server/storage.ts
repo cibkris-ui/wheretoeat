@@ -53,6 +53,7 @@ export interface IStorage {
   getClosedDaysByMonth(restaurantId: number, year: number, month: number): Promise<ClosedDay[]>;
   createClosedDay(closedDay: InsertClosedDay): Promise<ClosedDay>;
   deleteClosedDay(id: number): Promise<void>;
+  getClosedDay(id: number): Promise<ClosedDay | undefined>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -240,6 +241,11 @@ export class DatabaseStorage implements IStorage {
 
   async deleteClosedDay(id: number): Promise<void> {
     await db.delete(closedDays).where(eq(closedDays.id, id));
+  }
+
+  async getClosedDay(id: number): Promise<ClosedDay | undefined> {
+    const [closedDay] = await db.select().from(closedDays).where(eq(closedDays.id, id));
+    return closedDay;
   }
 }
 

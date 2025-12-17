@@ -11,6 +11,7 @@ import RestaurateurRegister from "@/pages/RestaurateurRegister";
 import Admin from "@/pages/Admin";
 import Restaurants from "@/pages/Restaurants";
 import NewBooking from "@/pages/NewBooking";
+import Calendar from "@/pages/Calendar";
 
 function Router() {
   return (
@@ -20,6 +21,7 @@ function Router() {
       <Route path="/restaurant/:id" component={RestaurantDetail} />
       <Route path="/dashboard" component={Dashboard} />
       <Route path="/dashboard/nouvelle-reservation" component={NewBooking} />
+      <Route path="/dashboard/calendrier" component={Calendar} />
       <Route path="/inscrire-restaurant" component={RestaurateurRegister} />
       <Route path="/admin" component={Admin} />
       <Route component={NotFound} />

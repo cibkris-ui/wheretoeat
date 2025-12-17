@@ -450,6 +450,21 @@ export async function registerRoutes(
         return res.status(400).json({ message: "Invalid closed day ID" });
       }
       
+      const closedDay = await storage.getClosedDay(closedDayId);
+      if (!closedDay) {
+        return res.status(404).json({ message: "Closed day not found" });
+      }
+      
+      const restaurant = await storage.getRestaurant(closedDay.restaurantId);
+      if (!restaurant) {
+        return res.status(404).json({ message: "Restaurant not found" });
+      }
+      
+      const userId = req.localUserId;
+      if (restaurant.ownerId !== userId) {
+        return res.status(403).json({ message: "Not authorized" });
+      }
+      
       await storage.deleteClosedDay(closedDayId);
       res.json({ success: true });
     } catch (error: any) {
