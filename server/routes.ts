@@ -377,6 +377,86 @@ export async function registerRoutes(
     }
   });
 
+  app.get("/api/restaurants/:id/closed-days", isAuthenticatedCombined, async (req: any, res) => {
+    try {
+      const restaurantId = parseInt(req.params.id);
+      if (isNaN(restaurantId)) {
+        return res.status(400).json({ message: "Invalid restaurant ID" });
+      }
+      
+      const restaurant = await storage.getRestaurant(restaurantId);
+      if (!restaurant) {
+        return res.status(404).json({ message: "Restaurant not found" });
+      }
+      
+      const userId = req.localUserId;
+      if (restaurant.ownerId !== userId) {
+        return res.status(403).json({ message: "Not authorized" });
+      }
+      
+      const { year, month } = req.query;
+      let closedDays;
+      if (year && month) {
+        closedDays = await storage.getClosedDaysByMonth(restaurantId, parseInt(year), parseInt(month));
+      } else {
+        closedDays = await storage.getClosedDays(restaurantId);
+      }
+      
+      res.json(closedDays);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.post("/api/restaurants/:id/closed-days", isAuthenticatedCombined, async (req: any, res) => {
+    try {
+      const restaurantId = parseInt(req.params.id);
+      if (isNaN(restaurantId)) {
+        return res.status(400).json({ message: "Invalid restaurant ID" });
+      }
+      
+      const restaurant = await storage.getRestaurant(restaurantId);
+      if (!restaurant) {
+        return res.status(404).json({ message: "Restaurant not found" });
+      }
+      
+      const userId = req.localUserId;
+      if (restaurant.ownerId !== userId) {
+        return res.status(403).json({ message: "Not authorized" });
+      }
+      
+      const { date, service, reason } = req.body;
+      if (!date) {
+        return res.status(400).json({ message: "Date is required" });
+      }
+      
+      const closedDay = await storage.createClosedDay({
+        restaurantId,
+        date,
+        service: service || "all",
+        reason: reason || null,
+      });
+      
+      res.status(201).json(closedDay);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.delete("/api/closed-days/:id", isAuthenticatedCombined, async (req: any, res) => {
+    try {
+      const closedDayId = parseInt(req.params.id);
+      if (isNaN(closedDayId)) {
+        return res.status(400).json({ message: "Invalid closed day ID" });
+      }
+      
+      await storage.deleteClosedDay(closedDayId);
+      res.json({ success: true });
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
   const restaurantRegistrationWithAccountSchema = z.object({
     email: z.string().email(),
     password: z.string().min(6),
