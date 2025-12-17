@@ -212,6 +212,27 @@ export default function Statistics() {
     const maxOccupation = Math.max(...dailyOccupation.map(d => d.occupationRate));
     const bestDay = dailyOccupation.find(d => d.occupationRate === maxOccupation && maxOccupation > 0);
 
+    const clientStats = activeCurrentBookings.reduce((acc, booking) => {
+      const key = booking.email.toLowerCase();
+      if (!acc[key]) {
+        acc[key] = {
+          email: booking.email,
+          firstName: booking.firstName,
+          lastName: booking.lastName,
+          phone: booking.phone,
+          totalCovers: 0,
+          reservationCount: 0,
+        };
+      }
+      acc[key].totalCovers += booking.guests;
+      acc[key].reservationCount += 1;
+      return acc;
+    }, {} as Record<string, { email: string; firstName: string; lastName: string; phone: string; totalCovers: number; reservationCount: number }>);
+
+    const topClients = Object.values(clientStats)
+      .sort((a, b) => b.totalCovers - a.totalCovers)
+      .slice(0, 10);
+
     return {
       totalCovers,
       totalReservations,
@@ -227,6 +248,7 @@ export default function Statistics() {
       dailyOccupation,
       bestDay,
       maxOccupation,
+      topClients,
     };
   }, [allBookings, selectedMonth, selectedRestaurant, capacity, serviceFilter]);
 
@@ -627,6 +649,85 @@ export default function Statistics() {
                       </div>
                     </div>
                   </div>
+                </CardContent>
+              </Card>
+
+              <Card className="bg-white mt-6">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <div className="flex items-center gap-2">
+                      <Users className="h-5 w-5 text-primary" />
+                      <h2 className="text-lg font-semibold">Top 10 clients du mois</h2>
+                    </div>
+                    <span className="text-sm text-gray-500 capitalize">
+                      {format(selectedMonth, "MMMM yyyy", { locale: fr })}
+                    </span>
+                  </div>
+
+                  {stats.topClients.length === 0 ? (
+                    <div className="text-center py-8 text-gray-500">
+                      Aucune réservation ce mois-ci
+                    </div>
+                  ) : (
+                    <div className="overflow-x-auto">
+                      <table className="w-full">
+                        <thead>
+                          <tr className="border-b text-left text-sm text-gray-500">
+                            <th className="pb-3 font-medium w-12">#</th>
+                            <th className="pb-3 font-medium">Client</th>
+                            <th className="pb-3 font-medium">Contact</th>
+                            <th className="pb-3 font-medium text-center">Réservations</th>
+                            <th className="pb-3 font-medium text-right">Couverts</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y">
+                          {stats.topClients.map((client, index) => (
+                            <tr key={client.email} className="hover:bg-gray-50" data-testid={`top-client-${index}`}>
+                              <td className="py-3">
+                                <div className={`w-8 h-8 rounded-full flex items-center justify-center text-sm font-bold ${
+                                  index === 0 ? "bg-yellow-100 text-yellow-700" :
+                                  index === 1 ? "bg-gray-200 text-gray-700" :
+                                  index === 2 ? "bg-orange-100 text-orange-700" :
+                                  "bg-gray-100 text-gray-600"
+                                }`}>
+                                  {index + 1}
+                                </div>
+                              </td>
+                              <td className="py-3">
+                                <div className="flex items-center gap-3">
+                                  <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
+                                    <span className="text-sm font-bold text-primary">
+                                      {client.lastName?.[0]?.toUpperCase() || client.firstName?.[0]?.toUpperCase() || "?"}
+                                    </span>
+                                  </div>
+                                  <div>
+                                    <p className="font-medium text-gray-900">
+                                      <span className="text-primary">{client.lastName?.toUpperCase()}</span>
+                                      {" "}
+                                      {client.firstName}
+                                    </p>
+                                  </div>
+                                </div>
+                              </td>
+                              <td className="py-3 text-sm text-gray-600">
+                                <div>{client.email}</div>
+                                <div className="text-gray-400">{client.phone}</div>
+                              </td>
+                              <td className="py-3 text-center">
+                                <span className="inline-flex items-center px-2 py-1 rounded-full text-xs font-medium bg-gray-100">
+                                  {client.reservationCount} visite{client.reservationCount > 1 ? "s" : ""}
+                                </span>
+                              </td>
+                              <td className="py-3 text-right">
+                                <span className="text-xl font-bold text-primary">{client.totalCovers}</span>
+                                <span className="text-sm text-gray-500 ml-1">couverts</span>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             </>
