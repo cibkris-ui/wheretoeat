@@ -1,0 +1,753 @@
+import { useState, useMemo, useEffect } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { Link } from "wouter";
+import { useAuth } from "@/hooks/useAuth";
+import { useToast } from "@/hooks/use-toast";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+  DropdownMenuLabel,
+} from "@/components/ui/dropdown-menu";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { 
+  Calendar as CalendarIcon, 
+  ChevronLeft, 
+  ChevronRight, 
+  Users, 
+  TrendingUp,
+  TrendingDown,
+  LayoutDashboard,
+  LineChart,
+  UserCircle,
+  Bell,
+  LogOut,
+  Lightbulb,
+  AlertTriangle,
+  UserX,
+  Sun,
+  Moon,
+  Utensils
+} from "lucide-react";
+import { format, startOfMonth, endOfMonth, subMonths, parseISO, eachDayOfInterval, isSameMonth, startOfDay, isSameDay } from "date-fns";
+import { fr } from "date-fns/locale";
+import type { Restaurant, Booking } from "@shared/schema";
+import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
+import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Legend, ReferenceLine } from "recharts";
+
+type TabType = "overview" | "reservations";
+
+export default function Statistics() {
+  const { user, isAuthenticated, isLoading: authLoading } = useAuth();
+  const { toast } = useToast();
+
+  const [selectedMonth, setSelectedMonth] = useState(new Date());
+  const [selectedRestaurant, setSelectedRestaurant] = useState<number | "all">("all");
+  const [isInitialized, setIsInitialized] = useState(false);
+  const [activeTab, setActiveTab] = useState<TabType>("overview");
+  const [serviceFilter, setServiceFilter] = useState<"all" | "lunch" | "dinner">("all");
+
+  useEffect(() => {
+    if (!authLoading && !isAuthenticated) {
+      toast({
+        title: "Connexion requise",
+        description: "Vous devez être connecté pour accéder aux statistiques.",
+        variant: "destructive",
+      });
+      setTimeout(() => {
+        window.location.href = "/api/login";
+      }, 500);
+    }
+  }, [isAuthenticated, authLoading, toast]);
+
+  const { data: myRestaurants = [] } = useQuery<Restaurant[]>({
+    queryKey: ["/api/my-restaurants"],
+    enabled: isAuthenticated,
+  });
+
+  useEffect(() => {
+    if (!isInitialized && myRestaurants.length > 0) {
+      setSelectedRestaurant(myRestaurants[0].id);
+      setIsInitialized(true);
+    }
+  }, [myRestaurants, isInitialized]);
+
+  const restaurantIds = myRestaurants.map(r => r.id);
+
+  const { data: allBookings = [], isLoading: bookingsLoading } = useQuery<Booking[]>({
+    queryKey: ["/api/all-bookings", restaurantIds],
+    queryFn: async () => {
+      const bookingsPromises = restaurantIds.map(id =>
+        fetch(`/api/restaurants/${id}/bookings`, { credentials: "include" })
+          .then(res => res.ok ? res.json() : [])
+      );
+      const results = await Promise.all(bookingsPromises);
+      return results.flat();
+    },
+    enabled: restaurantIds.length > 0,
+  });
+
+  const selectedRestaurantData = useMemo(() => {
+    if (selectedRestaurant === "all") return null;
+    return myRestaurants.find(r => r.id === selectedRestaurant);
+  }, [selectedRestaurant, myRestaurants]);
+
+  const capacity = useMemo(() => {
+    if (selectedRestaurant === "all") {
+      return myRestaurants.reduce((sum, r) => sum + (r.capacity || 40), 0) || 40;
+    }
+    return selectedRestaurantData?.capacity || 40;
+  }, [selectedRestaurant, selectedRestaurantData, myRestaurants]);
+
+  const navigateMonth = (direction: "prev" | "next") => {
+    if (direction === "prev") {
+      setSelectedMonth(prev => subMonths(prev, 1));
+    } else {
+      setSelectedMonth(prev => new Date(prev.getFullYear(), prev.getMonth() + 1, 1));
+    }
+  };
+
+  const stats = useMemo(() => {
+    const monthStart = startOfMonth(selectedMonth);
+    const monthEnd = endOfMonth(selectedMonth);
+    const prevMonthStart = startOfMonth(subMonths(selectedMonth, 1));
+    const prevMonthEnd = endOfMonth(subMonths(selectedMonth, 1));
+
+    let bookings = [...allBookings];
+    if (selectedRestaurant !== "all") {
+      bookings = bookings.filter(b => b.restaurantId === selectedRestaurant);
+    }
+
+    const currentMonthBookings = bookings.filter(b => {
+      const d = parseISO(b.date);
+      return d >= monthStart && d <= monthEnd;
+    });
+
+    const prevMonthBookings = bookings.filter(b => {
+      const d = parseISO(b.date);
+      return d >= prevMonthStart && d <= prevMonthEnd;
+    });
+
+    const activeStatuses = ["confirmed", "completed"];
+    const activeCurrentBookings = currentMonthBookings.filter(b => activeStatuses.includes(b.status));
+    const activePrevBookings = prevMonthBookings.filter(b => activeStatuses.includes(b.status));
+
+    const totalCovers = activeCurrentBookings.reduce((sum, b) => sum + b.guests, 0);
+    const totalReservations = activeCurrentBookings.length;
+    const prevCovers = activePrevBookings.reduce((sum, b) => sum + b.guests, 0);
+
+    const lateCancellations = currentMonthBookings.filter(b => b.status === "cancelled").length;
+    const lateCancellationCovers = currentMonthBookings.filter(b => b.status === "cancelled").reduce((sum, b) => sum + b.guests, 0);
+    const prevLateCancellations = prevMonthBookings.filter(b => b.status === "cancelled").reduce((sum, b) => sum + b.guests, 0);
+
+    const noShows = currentMonthBookings.filter(b => b.status === "noshow").length;
+    const noShowCovers = currentMonthBookings.filter(b => b.status === "noshow").reduce((sum, b) => sum + b.guests, 0);
+    const prevNoShows = prevMonthBookings.filter(b => b.status === "noshow").reduce((sum, b) => sum + b.guests, 0);
+
+    const calcChange = (current: number, prev: number) => {
+      if (prev === 0) return current > 0 ? 100 : 0;
+      return Math.round(((current - prev) / prev) * 100);
+    };
+
+    const lunchBookings = activeCurrentBookings.filter(b => {
+      const hour = parseInt(b.time.split(":")[0]) || 0;
+      return hour >= 11 && hour < 15;
+    });
+    const dinnerBookings = activeCurrentBookings.filter(b => {
+      const hour = parseInt(b.time.split(":")[0]) || 0;
+      return hour >= 18 && hour <= 23;
+    });
+
+    const lunchCovers = lunchBookings.reduce((sum, b) => sum + b.guests, 0);
+    const dinnerCovers = dinnerBookings.reduce((sum, b) => sum + b.guests, 0);
+
+    const daysInMonth = eachDayOfInterval({ start: monthStart, end: monthEnd });
+    const today = startOfDay(new Date());
+
+    const dailyOccupation = daysInMonth.map(day => {
+      const dayBookings = activeCurrentBookings.filter(b => isSameDay(parseISO(b.date), day));
+      
+      let filteredBookings = dayBookings;
+      if (serviceFilter === "lunch") {
+        filteredBookings = dayBookings.filter(b => {
+          const hour = parseInt(b.time.split(":")[0]) || 0;
+          return hour >= 11 && hour < 15;
+        });
+      } else if (serviceFilter === "dinner") {
+        filteredBookings = dayBookings.filter(b => {
+          const hour = parseInt(b.time.split(":")[0]) || 0;
+          return hour >= 18 && hour <= 23;
+        });
+      }
+
+      const totalGuests = filteredBookings.reduce((sum, b) => sum + b.guests, 0);
+      const onlineGuests = filteredBookings.reduce((sum, b) => sum + b.guests, 0);
+      const occupationRate = capacity > 0 ? Math.min(100, Math.round((totalGuests / capacity) * 100)) : 0;
+      
+      const isPast = day < today;
+      const isToday = isSameDay(day, today);
+
+      return {
+        date: format(day, "d", { locale: fr }),
+        fullDate: format(day, "d MMM", { locale: fr }),
+        online: onlineGuests,
+        offline: 0,
+        unoccupied: Math.max(0, capacity - totalGuests),
+        occupationRate,
+        isPast,
+        isToday,
+      };
+    });
+
+    const maxOccupation = Math.max(...dailyOccupation.map(d => d.occupationRate));
+    const bestDay = dailyOccupation.find(d => d.occupationRate === maxOccupation && maxOccupation > 0);
+
+    return {
+      totalCovers,
+      totalReservations,
+      coversChange: calcChange(totalCovers, prevCovers),
+      lateCancellations,
+      lateCancellationCovers,
+      lateCancellationsChange: calcChange(lateCancellationCovers, prevLateCancellations),
+      noShows,
+      noShowCovers,
+      noShowsChange: calcChange(noShowCovers, prevNoShows),
+      lunchCovers,
+      dinnerCovers,
+      dailyOccupation,
+      bestDay,
+      maxOccupation,
+    };
+  }, [allBookings, selectedMonth, selectedRestaurant, capacity, serviceFilter]);
+
+  const serviceChartData = [
+    { name: "Dîner", value: stats.dinnerCovers, color: "#14b8a6" },
+    { name: "Déjeuner", value: stats.lunchCovers, color: "#f472b6" },
+  ];
+
+  const chartConfig = {
+    dinner: { label: "Dîner", color: "#14b8a6" },
+    lunch: { label: "Déjeuner", color: "#f472b6" },
+    online: { label: "Couverts en ligne", color: "#dc2626" },
+    offline: { label: "Couverts hors ligne", color: "#14b8a6" },
+    unoccupied: { label: "Non occupés", color: "#e5e7eb" },
+  };
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin w-8 h-8 border-4 border-primary border-t-transparent rounded-full" />
+      </div>
+    );
+  }
+
+  if (!isAuthenticated) {
+    return null;
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <div className="flex flex-col">
+        <div className="bg-white border-b sticky top-0 z-50">
+          <div className="flex items-center justify-between px-6 py-3">
+            <div className="flex items-center gap-8">
+              <Link href="/" className="flex items-center gap-1">
+                <span className="text-xl font-bold tracking-tight">
+                  WHERE<span className="text-primary">TO</span>EAT.CH
+                </span>
+              </Link>
+
+              <nav className="flex items-center gap-1">
+                <Link href="/dashboard">
+                  <Button variant="ghost" size="sm" className="gap-2 text-gray-600">
+                    <LayoutDashboard className="h-4 w-4" />
+                    Réservations
+                  </Button>
+                </Link>
+                <Link href="/dashboard/calendrier">
+                  <Button variant="ghost" size="sm" className="gap-2 text-gray-600">
+                    <CalendarIcon className="h-4 w-4" />
+                    Calendrier
+                  </Button>
+                </Link>
+                <Link href="/dashboard/statistiques">
+                  <Button variant="ghost" size="sm" className="gap-2 bg-primary/10 text-primary">
+                    <LineChart className="h-4 w-4" />
+                    Statistiques
+                  </Button>
+                </Link>
+                <Link href="/dashboard/clients">
+                  <Button variant="ghost" size="sm" className="gap-2 text-gray-600">
+                    <Users className="h-4 w-4" />
+                    Clients
+                  </Button>
+                </Link>
+                <Link href="/dashboard/notifications">
+                  <Button variant="ghost" size="sm" className="gap-2 text-gray-600">
+                    <Bell className="h-4 w-4" />
+                    Notifications
+                  </Button>
+                </Link>
+              </nav>
+            </div>
+
+            <div className="flex items-center gap-4">
+              <Select
+                value={selectedRestaurant === "all" ? "all" : selectedRestaurant.toString()}
+                onValueChange={(value) => setSelectedRestaurant(value === "all" ? "all" : parseInt(value))}
+              >
+                <SelectTrigger className="w-[200px]" data-testid="restaurant-select">
+                  <SelectValue placeholder="Sélectionner un restaurant" />
+                </SelectTrigger>
+                <SelectContent>
+                  {myRestaurants.length > 1 && (
+                    <SelectItem value="all">Tous les restaurants</SelectItem>
+                  )}
+                  {myRestaurants.map(r => (
+                    <SelectItem key={r.id} value={r.id.toString()}>{r.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+
+              {user && (
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="sm" className="gap-2">
+                      <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
+                        <UserCircle className="h-5 w-5 text-primary" />
+                      </div>
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-56">
+                    <div className="flex items-center gap-2 p-2">
+                      <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
+                        <UserCircle className="h-5 w-5 text-primary" />
+                      </div>
+                      <div className="flex flex-col">
+                        <span className="text-sm font-medium">{user.firstName} {user.lastName}</span>
+                        <span className="text-xs text-muted-foreground">{user.email}</span>
+                      </div>
+                    </div>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem asChild>
+                      <a href="/api/logout" className="cursor-pointer text-red-600">
+                        <LogOut className="mr-2 h-4 w-4" />
+                        Déconnexion
+                      </a>
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              )}
+            </div>
+          </div>
+        </div>
+
+        <main className="p-6">
+          <div className="flex items-center justify-between mb-6">
+            <div className="flex items-center gap-4">
+              <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
+                <button
+                  onClick={() => setActiveTab("overview")}
+                  className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                    activeTab === "overview" ? "bg-white shadow text-primary" : "text-gray-600 hover:text-gray-900"
+                  }`}
+                  data-testid="tab-overview"
+                >
+                  Vue d'ensemble
+                </button>
+                <button
+                  onClick={() => setActiveTab("reservations")}
+                  className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                    activeTab === "reservations" ? "bg-white shadow text-primary" : "text-gray-600 hover:text-gray-900"
+                  }`}
+                  data-testid="tab-reservations"
+                >
+                  Réservations
+                </button>
+              </div>
+            </div>
+
+            <div className="flex items-center gap-2">
+              <Button variant="ghost" size="icon" onClick={() => navigateMonth("prev")} data-testid="prev-month">
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <span className="text-sm font-medium min-w-[140px] text-center capitalize">
+                {format(selectedMonth, "MMMM yyyy", { locale: fr })}
+              </span>
+              <Button variant="ghost" size="icon" onClick={() => navigateMonth("next")} data-testid="next-month">
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+
+          {activeTab === "overview" && (
+            <>
+              <h1 className="text-2xl font-semibold mb-6">Statistiques - Vue d'ensemble</h1>
+              
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <Card className="bg-white">
+                  <CardContent className="p-6">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <div className="flex items-center gap-2 text-gray-600 mb-2">
+                          <Users className="h-4 w-4" />
+                          <span className="text-sm font-medium">Couverts</span>
+                        </div>
+                        <p className="text-xs text-gray-500 mb-4">
+                          {format(selectedMonth, "MMM yyyy", { locale: fr })}
+                        </p>
+                        <p className="text-4xl font-bold text-gray-900">{stats.totalCovers}</p>
+                        <p className="text-sm text-gray-500 mt-1">
+                          <span className="inline-flex items-center">
+                            <CalendarIcon className="h-3 w-3 mr-1" />
+                            {stats.totalReservations} réservations
+                          </span>
+                        </p>
+                        <div className={`flex items-center gap-1 mt-3 text-sm ${stats.coversChange >= 0 ? "text-green-600" : "text-red-600"}`}>
+                          {stats.coversChange >= 0 ? <TrendingUp className="h-4 w-4" /> : <TrendingDown className="h-4 w-4" />}
+                          <span>{stats.coversChange >= 0 ? "+" : ""}{stats.coversChange}%</span>
+                          <span className="text-gray-500">vs mois précédent</span>
+                        </div>
+                      </div>
+                    </div>
+                    
+                    <div className="mt-4 p-3 bg-teal-50 rounded-lg border border-teal-100">
+                      <div className="flex items-start gap-2">
+                        <Lightbulb className="h-4 w-4 text-teal-600 mt-0.5" />
+                        <div className="text-xs text-teal-700">
+                          <p>{stats.coversChange}% de couverts par rapport au mois précédent.</p>
+                          <a href="#" className="text-teal-600 font-medium hover:underline mt-1 block">
+                            AUGMENTEZ VOTRE VISIBILITÉ &gt;
+                          </a>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="bg-white">
+                  <CardContent className="p-6">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <div className="flex items-center gap-2 text-gray-600 mb-2">
+                          <AlertTriangle className="h-4 w-4" />
+                          <span className="text-sm font-medium">Annulations tardives</span>
+                          <span className="text-xs text-gray-400">en nombre de couverts</span>
+                        </div>
+                        <p className="text-4xl font-bold text-gray-900 mt-4">{stats.lateCancellationCovers}</p>
+                        <p className="text-sm text-gray-500 mt-1">
+                          {((stats.lateCancellationCovers / (stats.totalCovers || 1)) * 100).toFixed(0)}% du nombre total de couverts réservés
+                        </p>
+                        <p className="text-sm text-gray-500">
+                          <CalendarIcon className="h-3 w-3 inline mr-1" />
+                          {stats.lateCancellations} réservation{stats.lateCancellations > 1 ? "s" : ""}
+                        </p>
+                        <div className={`flex items-center gap-1 mt-3 text-sm ${stats.lateCancellationsChange <= 0 ? "text-green-600" : "text-red-600"}`}>
+                          {stats.lateCancellationsChange <= 0 ? <TrendingDown className="h-4 w-4" /> : <TrendingUp className="h-4 w-4" />}
+                          <span>{stats.lateCancellationsChange >= 0 ? "+" : ""}{stats.lateCancellationsChange}%</span>
+                          <span className="text-gray-500">vs mois précédent</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="mt-4 p-3 bg-amber-50 rounded-lg border border-amber-100">
+                      <div className="flex items-start gap-2">
+                        <Lightbulb className="h-4 w-4 text-amber-600 mt-0.5" />
+                        <div className="text-xs text-amber-700">
+                          <p>Réduisez les annulations tardives en demandant une confirmation.</p>
+                          <a href="#" className="text-amber-600 font-medium hover:underline mt-1 block">
+                            RÉDUISEZ LE NOMBRE D'ANNULATIONS TARDIVES &gt;
+                          </a>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="bg-white">
+                  <CardContent className="p-6">
+                    <div className="flex items-start justify-between">
+                      <div>
+                        <div className="flex items-center gap-2 text-gray-600 mb-2">
+                          <UserX className="h-4 w-4" />
+                          <span className="text-sm font-medium">No-shows</span>
+                          <span className="text-xs text-gray-400">en nombre de couverts</span>
+                        </div>
+                        <p className="text-4xl font-bold text-gray-900 mt-4">{stats.noShowCovers}</p>
+                        <p className="text-sm text-gray-500 mt-1">
+                          {((stats.noShowCovers / (stats.totalCovers || 1)) * 100).toFixed(0)}% du nombre total de couverts réservés
+                        </p>
+                        <p className="text-sm text-gray-500">
+                          <CalendarIcon className="h-3 w-3 inline mr-1" />
+                          {stats.noShows} réservation{stats.noShows > 1 ? "s" : ""}
+                        </p>
+                        <div className={`flex items-center gap-1 mt-3 text-sm ${stats.noShowsChange <= 0 ? "text-green-600" : "text-red-600"}`}>
+                          {stats.noShowsChange <= 0 ? <TrendingDown className="h-4 w-4" /> : <TrendingUp className="h-4 w-4" />}
+                          <span>{stats.noShowsChange >= 0 ? "+" : ""}{stats.noShowsChange}%</span>
+                          <span className="text-gray-500">vs mois précédent</span>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="mt-4 p-3 bg-pink-50 rounded-lg border border-pink-100">
+                      <div className="flex items-start gap-2">
+                        <Lightbulb className="h-4 w-4 text-pink-600 mt-0.5" />
+                        <div className="text-xs text-pink-700">
+                          <p>Aucun changement pour les no-shows par rapport au mois précédent.</p>
+                          <a href="#" className="text-pink-600 font-medium hover:underline mt-1 block">
+                            LUTTEZ CONTRE LES NO-SHOWS &gt;
+                          </a>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+
+              <Card className="bg-white">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between mb-4">
+                    <div>
+                      <h2 className="text-lg font-semibold">Occupation</h2>
+                      <p className="text-sm text-gray-500">
+                        Occupation quotidienne du{" "}
+                        <span className="font-medium">{format(startOfMonth(selectedMonth), "d MMMM yyyy", { locale: fr })}</span>
+                        {" "}au{" "}
+                        <span className="font-medium">{format(endOfMonth(selectedMonth), "d MMMM yyyy", { locale: fr })}</span>
+                      </p>
+                    </div>
+                    <Select value={serviceFilter} onValueChange={(v) => setServiceFilter(v as typeof serviceFilter)}>
+                      <SelectTrigger className="w-[180px]" data-testid="service-filter">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="all">Tous les services</SelectItem>
+                        <SelectItem value="lunch">Déjeuner</SelectItem>
+                        <SelectItem value="dinner">Dîner</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
+                  <div className="h-[300px]">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={stats.dailyOccupation} margin={{ top: 20, right: 30, left: 0, bottom: 5 }}>
+                        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e5e7eb" />
+                        <XAxis 
+                          dataKey="date" 
+                          tick={{ fontSize: 11, fill: "#6b7280" }}
+                          tickLine={false}
+                          axisLine={{ stroke: "#e5e7eb" }}
+                        />
+                        <YAxis 
+                          tick={{ fontSize: 11, fill: "#6b7280" }}
+                          tickLine={false}
+                          axisLine={false}
+                          tickFormatter={(value) => `${value}%`}
+                          domain={[0, 100]}
+                        />
+                        <ChartTooltip
+                          content={({ active, payload }) => {
+                            if (active && payload && payload.length) {
+                              const data = payload[0].payload;
+                              return (
+                                <div className="bg-white p-3 shadow-lg rounded-lg border">
+                                  <p className="font-medium">{data.fullDate}</p>
+                                  <p className="text-sm text-teal-600">{data.online} couverts en ligne</p>
+                                  <p className="text-sm text-gray-500">{data.unoccupied} places disponibles</p>
+                                  <p className="text-sm font-medium mt-1">{data.occupationRate}% d'occupation</p>
+                                </div>
+                              );
+                            }
+                            return null;
+                          }}
+                        />
+                        {stats.maxOccupation > 0 && (
+                          <ReferenceLine 
+                            y={stats.maxOccupation} 
+                            stroke="#f97316" 
+                            strokeDasharray="5 5" 
+                            strokeWidth={2}
+                          />
+                        )}
+                        <Bar 
+                          dataKey="occupationRate" 
+                          stackId="a"
+                          fill="#e5e7eb"
+                          radius={[4, 4, 0, 0]}
+                        />
+                        <Bar 
+                          dataKey={(d) => d.online > 0 ? d.online / capacity * 100 : 0} 
+                          stackId="b"
+                          fill="#14b8a6"
+                          radius={[4, 4, 0, 0]}
+                        />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </div>
+
+                  <div className="flex items-center justify-center gap-6 mt-4 text-sm">
+                    <div className="flex items-center gap-2">
+                      <div className="w-4 h-4 bg-teal-500 rounded" />
+                      <span className="text-gray-600">Couverts hors ligne</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-4 h-4 bg-red-500 rounded" />
+                      <span className="text-gray-600">Couverts en ligne</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="w-4 h-4 bg-gray-200 rounded" />
+                      <span className="text-gray-600">Non occupés</span>
+                    </div>
+                    {stats.bestDay && (
+                      <div className="flex items-center gap-2">
+                        <div className="w-4 h-0.5 bg-orange-500 border-dashed" style={{ borderStyle: 'dashed' }} />
+                        <span className="text-gray-600">Meilleur taux d'occupation ({stats.bestDay.fullDate})</span>
+                      </div>
+                    )}
+                  </div>
+
+                  <div className="mt-4 p-3 bg-amber-50 rounded-lg border border-amber-100">
+                    <div className="flex items-start gap-2">
+                      <Lightbulb className="h-4 w-4 text-amber-600 mt-0.5" />
+                      <div className="text-xs text-amber-700">
+                        <p>Optimisez votre taux d'occupation en proposant des offres promotionnelles.</p>
+                        <a href="#" className="text-amber-600 font-medium hover:underline mt-1 block">
+                          OPTIMISEZ VOTRE TAUX D'OCCUPATION &gt;
+                        </a>
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </>
+          )}
+
+          {activeTab === "reservations" && (
+            <>
+              <h1 className="text-2xl font-semibold mb-6">Performances des réservations</h1>
+
+              <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+                <Card className="bg-white">
+                  <CardContent className="p-6">
+                    <div className="flex items-center gap-2 text-gray-600 mb-2">
+                      <Users className="h-4 w-4" />
+                      <span className="text-sm font-medium">Couverts</span>
+                    </div>
+                    <p className="text-xs text-gray-500 mb-4">
+                      {format(selectedMonth, "MMM yyyy", { locale: fr })}
+                    </p>
+                    <p className="text-4xl font-bold text-gray-900">{stats.totalCovers}</p>
+                    <p className="text-sm text-gray-500 mt-1">
+                      <CalendarIcon className="h-3 w-3 inline mr-1" />
+                      {stats.totalReservations} réservations
+                    </p>
+                    <div className={`flex items-center gap-1 mt-3 text-sm ${stats.coversChange >= 0 ? "text-green-600" : "text-red-600"}`}>
+                      {stats.coversChange >= 0 ? <TrendingUp className="h-4 w-4" /> : <TrendingDown className="h-4 w-4" />}
+                      <span>{stats.coversChange >= 0 ? "+" : ""}{stats.coversChange}%</span>
+                      <span className="text-gray-500">vs mois précédent</span>
+                    </div>
+
+                    <div className="mt-4 p-3 bg-teal-50 rounded-lg border border-teal-100">
+                      <div className="flex items-start gap-2">
+                        <Lightbulb className="h-4 w-4 text-teal-600 mt-0.5" />
+                        <div className="text-xs text-teal-700">
+                          <p>{stats.coversChange}% de couverts par rapport au mois précédent.</p>
+                          <a href="#" className="text-teal-600 font-medium hover:underline mt-1 block">
+                            AUGMENTEZ VOTRE VISIBILITÉ &gt;
+                          </a>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="bg-white">
+                  <CardContent className="p-6">
+                    <div className="flex items-center gap-2 text-gray-600 mb-4">
+                      <span className="text-sm font-medium">Couverts par canal</span>
+                    </div>
+                    <div className="flex items-center justify-center">
+                      <div className="w-[180px] h-[180px]">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <PieChart>
+                            <Pie
+                              data={[{ name: "WhereToEat", value: stats.totalCovers, color: "#0ea5e9" }]}
+                              cx="50%"
+                              cy="50%"
+                              innerRadius={50}
+                              outerRadius={80}
+                              dataKey="value"
+                              stroke="none"
+                            >
+                              <Cell fill="#0ea5e9" />
+                            </Pie>
+                          </PieChart>
+                        </ResponsiveContainer>
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-center gap-2 mt-4">
+                      <div className="w-3 h-3 bg-sky-500 rounded-full" />
+                      <span className="text-sm text-gray-600">WhereToEat</span>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                <Card className="bg-white">
+                  <CardContent className="p-6">
+                    <div className="flex items-center gap-2 text-gray-600 mb-4">
+                      <span className="text-sm font-medium">Couverts par service</span>
+                    </div>
+                    <div className="flex items-center justify-center">
+                      <div className="w-[180px] h-[180px]">
+                        <ResponsiveContainer width="100%" height="100%">
+                          <PieChart>
+                            <Pie
+                              data={serviceChartData.filter(d => d.value > 0)}
+                              cx="50%"
+                              cy="50%"
+                              innerRadius={50}
+                              outerRadius={80}
+                              dataKey="value"
+                              stroke="none"
+                            >
+                              {serviceChartData.map((entry, index) => (
+                                <Cell key={`cell-${index}`} fill={entry.color} />
+                              ))}
+                            </Pie>
+                          </PieChart>
+                        </ResponsiveContainer>
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-center gap-4 mt-4">
+                      <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 bg-teal-500 rounded-full" />
+                        <span className="text-sm text-gray-600">Dîner</span>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <div className="w-3 h-3 bg-pink-400 rounded-full" />
+                        <span className="text-sm text-gray-600">Déjeuner</span>
+                      </div>
+                    </div>
+                    <p className="text-center text-xs text-gray-500 mt-4">
+                      Dernière mise à jour: {format(new Date(), "d MMM yyyy", { locale: fr })}
+                    </p>
+                  </CardContent>
+                </Card>
+              </div>
+            </>
+          )}
+        </main>
+      </div>
+    </div>
+  );
+}

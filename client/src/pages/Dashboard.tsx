@@ -268,7 +268,7 @@ export default function Dashboard() {
     { id: "calendar" as const, icon: CalendarDays, label: "Calendrier", link: "/dashboard/calendrier" },
     { id: "notifications" as const, icon: Bell, label: "Notifications", link: "/dashboard/notifications" },
     { id: "clients" as const, icon: Users, label: "Clients", link: "/dashboard/clients" },
-    { id: "stats" as const, icon: LineChart, label: "Statistiques", link: null },
+    { id: "stats" as const, icon: LineChart, label: "Statistiques", link: "/dashboard/statistiques" },
     { id: "settings" as const, icon: Settings, label: "Paramètres", link: null },
   ];
 
