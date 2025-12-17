@@ -143,7 +143,7 @@ export default function Clients() {
     { id: "notifications" as const, icon: Bell, label: "Notifications", link: "/dashboard/notifications" },
     { id: "clients" as const, icon: Users, label: "Clients", link: null },
     { id: "stats" as const, icon: LineChart, label: "Statistiques", link: null },
-    { id: "settings" as const, icon: Settings, label: "Paramètres", link: null },
+    { id: "settings" as const, icon: Settings, label: "Paramètres", link: "/dashboard/parametres" },
   ];
 
   const formatDate = (dateStr: string | null) => {

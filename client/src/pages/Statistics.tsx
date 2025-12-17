@@ -290,7 +290,7 @@ export default function Statistics() {
     { id: "notifications" as const, icon: Bell, label: "Notifications", link: "/dashboard/notifications" },
     { id: "clients" as const, icon: Users, label: "Clients", link: "/dashboard/clients" },
     { id: "stats" as const, icon: LineChart, label: "Statistiques", link: null },
-    { id: "settings" as const, icon: Settings, label: "Paramètres", link: null },
+    { id: "settings" as const, icon: Settings, label: "Paramètres", link: "/dashboard/parametres" },
   ];
 
   return (

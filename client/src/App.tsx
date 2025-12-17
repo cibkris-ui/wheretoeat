@@ -15,6 +15,7 @@ import Calendar from "@/pages/Calendar";
 import Notifications from "@/pages/Notifications";
 import Clients from "@/pages/Clients";
 import Statistics from "@/pages/Statistics";
+import Settings from "@/pages/Settings";
 
 function Router() {
   return (
@@ -28,6 +29,7 @@ function Router() {
       <Route path="/dashboard/notifications" component={Notifications} />
       <Route path="/dashboard/clients" component={Clients} />
       <Route path="/dashboard/statistiques" component={Statistics} />
+      <Route path="/dashboard/parametres" component={Settings} />
       <Route path="/inscrire-restaurant" component={RestaurateurRegister} />
       <Route path="/admin" component={Admin} />
       <Route component={NotFound} />
