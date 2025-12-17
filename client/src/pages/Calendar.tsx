@@ -223,143 +223,208 @@ export default function Calendar() {
     );
   }
 
+  const sidebarItems = [
+    { id: "reservations" as const, icon: LayoutDashboard, label: "Réservations", link: "/dashboard" },
+    { id: "calendar" as const, icon: CalendarDays, label: "Calendrier", link: null },
+    { id: "stats" as const, icon: LineChart, label: "Statistiques", link: null },
+    { id: "settings" as const, icon: Settings, label: "Paramètres", link: null },
+  ];
+
   return (
-    <div className="min-h-screen bg-gray-50 flex">
-      <aside className="w-16 bg-white border-r flex flex-col items-center py-4 gap-2">
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Link href="/dashboard">
-                <Button variant="ghost" size="icon" className="rounded-xl">
-                  <LayoutDashboard className="h-5 w-5" />
-                </Button>
-              </Link>
-            </TooltipTrigger>
-            <TooltipContent side="right">Réservations</TooltipContent>
-          </Tooltip>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button variant="default" size="icon" className="rounded-xl bg-primary">
-                <CalendarDays className="h-5 w-5" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="right">Calendrier</TooltipContent>
-          </Tooltip>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button variant="ghost" size="icon" className="rounded-xl">
-                <LineChart className="h-5 w-5" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="right">Statistiques</TooltipContent>
-          </Tooltip>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button variant="ghost" size="icon" className="rounded-xl">
-                <Settings className="h-5 w-5" />
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="right">Paramètres</TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-      </aside>
-
-      <main className="flex-1 p-6">
-        <div className="flex items-center justify-between mb-6">
-          <div className="flex items-center gap-4">
-            <Button variant="outline" size="icon" onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}>
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-            <h1 className="text-xl font-semibold min-w-[180px] text-center">
-              {format(currentMonth, "MMMM yyyy", { locale: fr })}
-            </h1>
-            <Button variant="outline" size="icon" onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}>
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-            <Button 
-              variant="ghost" 
-              size="sm" 
-              onClick={() => setCurrentMonth(new Date())}
-              className="text-primary"
-            >
-              Maintenant
-            </Button>
-            <div className="flex items-center gap-1 ml-4 border-l pl-4">
-              <Button
-                variant={serviceFilter === "all" ? "default" : "outline"}
-                size="sm"
-                onClick={() => setServiceFilter("all")}
-              >
-                Tous les services
-              </Button>
-              <Button
-                variant={serviceFilter === "lunch" ? "default" : "outline"}
-                size="sm"
-                onClick={() => setServiceFilter("lunch")}
-              >
-                <Sun className="h-4 w-4 mr-1" />
-                Lunch
-              </Button>
-              <Button
-                variant={serviceFilter === "dinner" ? "default" : "outline"}
-                size="sm"
-                onClick={() => setServiceFilter("dinner")}
-              >
-                <Moon className="h-4 w-4 mr-1" />
-                Dîner
-              </Button>
+    <TooltipProvider>
+      <div className="min-h-screen bg-gray-50 flex">
+        {/* Sidebar */}
+        <aside className="w-16 bg-white border-r flex flex-col items-center py-4 gap-2 fixed h-full z-40">
+          <div className="mb-4">
+            <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
+              <Utensils className="h-5 w-5 text-white" />
             </div>
           </div>
-          <div className="flex items-center gap-6">
-            <div className="flex items-center gap-2 text-sm">
-              <Utensils className="h-4 w-4 text-muted-foreground" />
-              <span>Couverts : <strong>{totalCovers}p</strong></span>
-            </div>
-            <div className="flex items-center gap-2 text-sm">
-              <CalendarDays className="h-4 w-4 text-muted-foreground" />
-              <span>Réservations : <strong>{totalReservations}</strong></span>
-            </div>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="outline" className="gap-2">
-                  <Store className="h-4 w-4" />
-                  {selectedRestaurantData?.name || "Sélectionner"}
-                  <ChevronLeft className="h-4 w-4 rotate-[-90deg]" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuLabel>Mes restaurants</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                {myRestaurants.map(r => (
-                  <DropdownMenuItem 
-                    key={r.id} 
-                    onClick={() => setSelectedRestaurant(r.id)}
-                    className={r.id === activeRestaurantId ? "bg-primary/10" : ""}
+          
+          {sidebarItems.map(item => (
+            <Tooltip key={item.id}>
+              <TooltipTrigger asChild>
+                {item.link ? (
+                  <Link href={item.link}>
+                    <button
+                      className="w-12 h-12 rounded-lg flex items-center justify-center transition-colors text-gray-500 hover:bg-gray-100"
+                      data-testid={`sidebar-${item.id}`}
+                    >
+                      <item.icon className="h-5 w-5" />
+                    </button>
+                  </Link>
+                ) : (
+                  <button
+                    className={`w-12 h-12 rounded-lg flex items-center justify-center transition-colors ${
+                      item.id === "calendar" 
+                        ? "bg-primary/10 text-primary" 
+                        : "text-gray-500 hover:bg-gray-100"
+                    }`}
+                    data-testid={`sidebar-${item.id}`}
                   >
-                    {r.name}
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="rounded-full">
-                  <UserCircle className="h-6 w-6" />
-                </Button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end">
-                <DropdownMenuLabel>{user?.firstName || user?.email}</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem onClick={() => window.location.href = "/api/logout"}>
-                  <LogOut className="h-4 w-4 mr-2" />
-                  Déconnexion
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
+                    <item.icon className="h-5 w-5" />
+                  </button>
+                )}
+              </TooltipTrigger>
+              <TooltipContent side="right">
+                <p>{item.label}</p>
+              </TooltipContent>
+            </Tooltip>
+          ))}
+          
+          <div className="mt-auto">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <a
+                  href="/api/logout"
+                  className="w-12 h-12 rounded-lg flex items-center justify-center text-gray-500 hover:bg-red-50 hover:text-red-600 transition-colors"
+                  data-testid="sidebar-logout"
+                >
+                  <LogOut className="h-5 w-5" />
+                </a>
+              </TooltipTrigger>
+              <TooltipContent side="right">
+                <p>Déconnexion</p>
+              </TooltipContent>
+            </Tooltip>
           </div>
-        </div>
+        </aside>
 
-        <Card className="bg-white">
+        {/* Main content */}
+        <div className="flex-1 ml-16">
+          {/* Header with restaurant selector */}
+          <div className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+            <div className="container flex h-16 items-center justify-between">
+              <Link href="/" className="flex items-center gap-2 font-serif text-xl font-bold tracking-tight hover:opacity-90 transition-opacity cursor-pointer">
+                <div className="flex h-8 w-8 items-center justify-center rounded-sm bg-primary text-primary-foreground">
+                  <Utensils className="h-5 w-5" />
+                </div>
+                <span>WHERE<span className="text-primary mx-0.5">TO</span>EAT.CH</span>
+              </Link>
+              
+              <div className="flex items-center gap-3">
+                {/* Restaurant selector dropdown */}
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="outline" className="flex items-center gap-2" data-testid="restaurant-selector">
+                      <Store className="h-4 w-4" />
+                      <span className="max-w-[200px] truncate">{selectedRestaurantData?.name || "Sélectionner"}</span>
+                      <ChevronRight className="h-4 w-4 rotate-90" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end" className="w-56">
+                    <DropdownMenuLabel>Mes restaurants</DropdownMenuLabel>
+                    <DropdownMenuSeparator />
+                    {myRestaurants.map(r => (
+                      <DropdownMenuItem 
+                        key={r.id}
+                        onClick={() => setSelectedRestaurant(r.id)}
+                        className={selectedRestaurant === r.id ? "bg-primary/10" : ""}
+                        data-testid={`dropdown-restaurant-${r.id}`}
+                      >
+                        <Utensils className="mr-2 h-4 w-4" />
+                        {r.name}
+                        {selectedRestaurant === r.id && (
+                          <span className="ml-auto text-primary">✓</span>
+                        )}
+                      </DropdownMenuItem>
+                    ))}
+                  </DropdownMenuContent>
+                </DropdownMenu>
+
+                {/* User avatar */}
+                {user && (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" className="relative h-9 w-9 rounded-full" data-testid="user-menu">
+                        <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center">
+                          <UserCircle className="h-5 w-5 text-primary" />
+                        </div>
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-56">
+                      <div className="flex items-center gap-2 p-2">
+                        <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
+                          <UserCircle className="h-5 w-5 text-primary" />
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="text-sm font-medium">{user.firstName} {user.lastName}</span>
+                          <span className="text-xs text-muted-foreground">{user.email}</span>
+                        </div>
+                      </div>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem asChild>
+                        <a href="/api/logout" className="cursor-pointer text-red-600">
+                          <LogOut className="mr-2 h-4 w-4" />
+                          Déconnexion
+                        </a>
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                )}
+              </div>
+            </div>
+          </div>
+
+          <main className="p-6">
+            <div className="flex items-center justify-between mb-6">
+              <div className="flex items-center gap-4">
+                <Button variant="outline" size="icon" onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}>
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <h1 className="text-xl font-semibold min-w-[180px] text-center">
+                  {format(currentMonth, "MMMM yyyy", { locale: fr })}
+                </h1>
+                <Button variant="outline" size="icon" onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}>
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+                <Button 
+                  variant="ghost" 
+                  size="sm" 
+                  onClick={() => setCurrentMonth(new Date())}
+                  className="text-primary"
+                >
+                  Maintenant
+                </Button>
+                <div className="flex items-center gap-1 ml-4 border-l pl-4">
+                  <Button
+                    variant={serviceFilter === "all" ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setServiceFilter("all")}
+                  >
+                    Tous les services
+                  </Button>
+                  <Button
+                    variant={serviceFilter === "lunch" ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setServiceFilter("lunch")}
+                  >
+                    <Sun className="h-4 w-4 mr-1" />
+                    Lunch
+                  </Button>
+                  <Button
+                    variant={serviceFilter === "dinner" ? "default" : "outline"}
+                    size="sm"
+                    onClick={() => setServiceFilter("dinner")}
+                  >
+                    <Moon className="h-4 w-4 mr-1" />
+                    Dîner
+                  </Button>
+                </div>
+              </div>
+              <div className="flex items-center gap-6">
+                <div className="flex items-center gap-2 text-sm">
+                  <Utensils className="h-4 w-4 text-muted-foreground" />
+                  <span>Couverts : <strong>{totalCovers}p</strong></span>
+                </div>
+                <div className="flex items-center gap-2 text-sm">
+                  <CalendarDays className="h-4 w-4 text-muted-foreground" />
+                  <span>Réservations : <strong>{totalReservations}</strong></span>
+                </div>
+              </div>
+            </div>
+
+            <Card className="bg-white">
           <CardContent className="p-0">
             <div className="grid grid-cols-7 border-b">
               {weekDays.map(day => (
@@ -434,7 +499,6 @@ export default function Calendar() {
             </div>
           </CardContent>
         </Card>
-      </main>
 
       <Dialog open={showDayDialog} onOpenChange={setShowDayDialog}>
         <DialogContent className="max-w-md">
@@ -526,6 +590,9 @@ export default function Calendar() {
           )}
         </DialogContent>
       </Dialog>
-    </div>
+          </main>
+        </div>
+      </div>
+    </TooltipProvider>
   );
 }
