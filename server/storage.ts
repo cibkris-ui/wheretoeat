@@ -1,4 +1,4 @@
-import { eq, and } from "drizzle-orm";
+import { eq, and, or, ilike, desc, sql } from "drizzle-orm";
 import { db } from "./db";
 import { 
   type User, 
@@ -12,12 +12,15 @@ import {
   type CuisineCategory,
   type ClosedDay,
   type InsertClosedDay,
+  type Client,
+  type InsertClient,
   users,
   restaurants,
   bookings,
   restaurantRegistrations,
   cuisineCategories,
-  closedDays
+  closedDays,
+  clients
 } from "@shared/schema";
 
 export interface IStorage {
@@ -54,6 +57,11 @@ export interface IStorage {
   createClosedDay(closedDay: InsertClosedDay): Promise<ClosedDay>;
   deleteClosedDay(id: number): Promise<void>;
   getClosedDay(id: number): Promise<ClosedDay | undefined>;
+  
+  getClientsByRestaurant(restaurantId: number, search?: string): Promise<Client[]>;
+  getClient(id: number): Promise<Client | undefined>;
+  getClientBookings(clientId: number, restaurantId: number): Promise<Booking[]>;
+  upsertClientFromBooking(restaurantId: number, firstName: string, lastName: string, email: string, phone: string): Promise<Client>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -246,6 +254,68 @@ export class DatabaseStorage implements IStorage {
   async getClosedDay(id: number): Promise<ClosedDay | undefined> {
     const [closedDay] = await db.select().from(closedDays).where(eq(closedDays.id, id));
     return closedDay;
+  }
+
+  async getClientsByRestaurant(restaurantId: number, search?: string): Promise<Client[]> {
+    if (search) {
+      const searchPattern = `%${search}%`;
+      return await db.select().from(clients).where(
+        and(
+          eq(clients.restaurantId, restaurantId),
+          or(
+            ilike(clients.firstName, searchPattern),
+            ilike(clients.lastName, searchPattern),
+            ilike(clients.email, searchPattern),
+            ilike(clients.phone, searchPattern)
+          )
+        )
+      ).orderBy(desc(clients.updatedAt));
+    }
+    return await db.select().from(clients).where(eq(clients.restaurantId, restaurantId)).orderBy(desc(clients.updatedAt));
+  }
+
+  async getClient(id: number): Promise<Client | undefined> {
+    const [client] = await db.select().from(clients).where(eq(clients.id, id));
+    return client;
+  }
+
+  async getClientBookings(clientId: number, restaurantId: number): Promise<Booking[]> {
+    const client = await this.getClient(clientId);
+    if (!client) return [];
+    
+    return await db.select().from(bookings).where(
+      and(
+        eq(bookings.restaurantId, restaurantId),
+        eq(bookings.email, client.email)
+      )
+    ).orderBy(desc(bookings.date));
+  }
+
+  async upsertClientFromBooking(restaurantId: number, firstName: string, lastName: string, email: string, phone: string): Promise<Client> {
+    const normalizedEmail = email.toLowerCase().trim();
+    const [existing] = await db.select().from(clients).where(
+      and(
+        eq(clients.restaurantId, restaurantId),
+        eq(sql`LOWER(${clients.email})`, normalizedEmail)
+      )
+    );
+    
+    if (existing) {
+      const [updated] = await db.update(clients)
+        .set({ firstName, lastName, phone, updatedAt: new Date() })
+        .where(eq(clients.id, existing.id))
+        .returning();
+      return updated;
+    }
+    
+    const [newClient] = await db.insert(clients).values({
+      restaurantId,
+      firstName,
+      lastName,
+      email: normalizedEmail,
+      phone
+    }).returning();
+    return newClient;
   }
 }
 

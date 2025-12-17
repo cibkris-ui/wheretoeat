@@ -472,6 +472,87 @@ export async function registerRoutes(
     }
   });
 
+  app.get("/api/restaurants/:id/clients", isAuthenticatedCombined, async (req: any, res) => {
+    try {
+      const restaurantId = parseInt(req.params.id);
+      if (isNaN(restaurantId)) {
+        return res.status(400).json({ message: "Invalid restaurant ID" });
+      }
+      
+      const restaurant = await storage.getRestaurant(restaurantId);
+      if (!restaurant) {
+        return res.status(404).json({ message: "Restaurant not found" });
+      }
+      
+      const userId = req.localUserId;
+      if (restaurant.ownerId !== userId) {
+        return res.status(403).json({ message: "Not authorized" });
+      }
+      
+      const search = req.query.search as string | undefined;
+      const clients = await storage.getClientsByRestaurant(restaurantId, search);
+      
+      const clientsWithStats = await Promise.all(clients.map(async (client) => {
+        const clientBookings = await storage.getClientBookings(client.id, restaurantId);
+        const visitCount = clientBookings.length;
+        const lastVisit = clientBookings.length > 0 ? clientBookings[0].date : null;
+        const avgGuests = visitCount > 0 
+          ? Math.round(clientBookings.reduce((sum, b) => sum + b.guests, 0) / visitCount)
+          : 0;
+        
+        return {
+          ...client,
+          visitCount,
+          lastVisit,
+          avgGuests
+        };
+      }));
+      
+      res.json(clientsWithStats);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.get("/api/clients/:id", isAuthenticatedCombined, async (req: any, res) => {
+    try {
+      const clientId = parseInt(req.params.id);
+      if (isNaN(clientId)) {
+        return res.status(400).json({ message: "Invalid client ID" });
+      }
+      
+      const client = await storage.getClient(clientId);
+      if (!client) {
+        return res.status(404).json({ message: "Client not found" });
+      }
+      
+      const restaurant = await storage.getRestaurant(client.restaurantId);
+      if (!restaurant) {
+        return res.status(404).json({ message: "Restaurant not found" });
+      }
+      
+      const userId = req.localUserId;
+      if (restaurant.ownerId !== userId) {
+        return res.status(403).json({ message: "Not authorized" });
+      }
+      
+      const clientBookings = await storage.getClientBookings(clientId, client.restaurantId);
+      const visitCount = clientBookings.length;
+      const avgGuests = visitCount > 0 
+        ? Math.round(clientBookings.reduce((sum, b) => sum + b.guests, 0) / visitCount)
+        : 0;
+      
+      res.json({
+        ...client,
+        visitCount,
+        avgGuests,
+        bookings: clientBookings
+      });
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
   const restaurantRegistrationWithAccountSchema = z.object({
     email: z.string().email(),
     password: z.string().min(6),
