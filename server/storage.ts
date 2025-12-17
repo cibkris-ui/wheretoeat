@@ -10,11 +10,14 @@ import {
   type RestaurantRegistration,
   type InsertRegistration,
   type CuisineCategory,
+  type ClosedDay,
+  type InsertClosedDay,
   users,
   restaurants,
   bookings,
   restaurantRegistrations,
-  cuisineCategories
+  cuisineCategories,
+  closedDays
 } from "@shared/schema";
 
 export interface IStorage {
@@ -45,6 +48,11 @@ export interface IStorage {
   getAllRegistrations(): Promise<RestaurantRegistration[]>;
   getRegistration(id: number): Promise<RestaurantRegistration | undefined>;
   updateRegistrationStatus(id: number, status: string, adminNotes?: string): Promise<RestaurantRegistration | undefined>;
+  
+  getClosedDays(restaurantId: number): Promise<ClosedDay[]>;
+  getClosedDaysByMonth(restaurantId: number, year: number, month: number): Promise<ClosedDay[]>;
+  createClosedDay(closedDay: InsertClosedDay): Promise<ClosedDay>;
+  deleteClosedDay(id: number): Promise<void>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -207,6 +215,31 @@ export class DatabaseStorage implements IStorage {
       .where(eq(restaurantRegistrations.id, id))
       .returning();
     return updated;
+  }
+
+  async getClosedDays(restaurantId: number): Promise<ClosedDay[]> {
+    return await db.select().from(closedDays).where(eq(closedDays.restaurantId, restaurantId));
+  }
+
+  async getClosedDaysByMonth(restaurantId: number, year: number, month: number): Promise<ClosedDay[]> {
+    const { like } = await import("drizzle-orm");
+    const monthStr = month.toString().padStart(2, '0');
+    const pattern = `${year}-${monthStr}%`;
+    return await db.select().from(closedDays).where(
+      and(
+        eq(closedDays.restaurantId, restaurantId),
+        like(closedDays.date, pattern)
+      )
+    );
+  }
+
+  async createClosedDay(closedDay: InsertClosedDay): Promise<ClosedDay> {
+    const [newClosedDay] = await db.insert(closedDays).values(closedDay).returning();
+    return newClosedDay;
+  }
+
+  async deleteClosedDay(id: number): Promise<void> {
+    await db.delete(closedDays).where(eq(closedDays.id, id));
   }
 }
 
