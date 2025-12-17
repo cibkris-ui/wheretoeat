@@ -35,10 +35,13 @@ import {
   Lightbulb,
   AlertTriangle,
   UserX,
-  Sun,
-  Moon,
+  LayoutGrid,
+  CalendarDays,
+  Settings,
+  Store,
   Utensils
 } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { format, startOfMonth, endOfMonth, subMonths, parseISO, eachDayOfInterval, isSameMonth, startOfDay, isSameDay } from "date-fns";
 import { fr } from "date-fns/locale";
 import type { Restaurant, Booking } from "@shared/schema";
@@ -277,104 +280,163 @@ export default function Statistics() {
     return null;
   }
 
+  const selectedRestaurantName = selectedRestaurant === "all" 
+    ? "Tous les restaurants" 
+    : myRestaurants.find(r => r.id === selectedRestaurant)?.name || "Restaurant";
+
+  const sidebarItems = [
+    { id: "reservations" as const, icon: LayoutDashboard, label: "Réservations", link: "/dashboard" },
+    { id: "calendar" as const, icon: CalendarDays, label: "Calendrier", link: "/dashboard/calendrier" },
+    { id: "notifications" as const, icon: Bell, label: "Notifications", link: "/dashboard/notifications" },
+    { id: "clients" as const, icon: Users, label: "Clients", link: "/dashboard/clients" },
+    { id: "stats" as const, icon: LineChart, label: "Statistiques", link: null },
+    { id: "settings" as const, icon: Settings, label: "Paramètres", link: null },
+  ];
+
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="flex flex-col">
-        <div className="bg-white border-b sticky top-0 z-50">
-          <div className="flex items-center justify-between px-6 py-3">
-            <div className="flex items-center gap-8">
-              <Link href="/" className="flex items-center gap-1">
-                <span className="text-xl font-bold tracking-tight">
-                  WHERE<span className="text-primary">TO</span>EAT.CH
-                </span>
-              </Link>
-
-              <nav className="flex items-center gap-1">
-                <Link href="/dashboard">
-                  <Button variant="ghost" size="sm" className="gap-2 text-gray-600">
-                    <LayoutDashboard className="h-4 w-4" />
-                    Réservations
-                  </Button>
-                </Link>
-                <Link href="/dashboard/calendrier">
-                  <Button variant="ghost" size="sm" className="gap-2 text-gray-600">
-                    <CalendarIcon className="h-4 w-4" />
-                    Calendrier
-                  </Button>
-                </Link>
-                <Link href="/dashboard/statistiques">
-                  <Button variant="ghost" size="sm" className="gap-2 bg-primary/10 text-primary">
-                    <LineChart className="h-4 w-4" />
-                    Statistiques
-                  </Button>
-                </Link>
-                <Link href="/dashboard/clients">
-                  <Button variant="ghost" size="sm" className="gap-2 text-gray-600">
-                    <Users className="h-4 w-4" />
-                    Clients
-                  </Button>
-                </Link>
-                <Link href="/dashboard/notifications">
-                  <Button variant="ghost" size="sm" className="gap-2 text-gray-600">
-                    <Bell className="h-4 w-4" />
-                    Notifications
-                  </Button>
-                </Link>
-              </nav>
+    <TooltipProvider>
+      <div className="min-h-screen bg-gray-50 flex">
+        <aside className="w-16 bg-white border-r flex flex-col items-center py-4 gap-2 fixed h-full z-40">
+          <div className="mb-4">
+            <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
+              <LayoutGrid className="h-5 w-5 text-white" />
             </div>
+          </div>
+          
+          {sidebarItems.map(item => (
+            <Tooltip key={item.id}>
+              <TooltipTrigger asChild>
+                {item.link ? (
+                  <Link href={item.link}>
+                    <button
+                      className="w-12 h-12 rounded-lg flex items-center justify-center transition-colors text-gray-500 hover:bg-gray-100"
+                      data-testid={`sidebar-${item.id}`}
+                    >
+                      <item.icon className="h-5 w-5" />
+                    </button>
+                  </Link>
+                ) : (
+                  <button
+                    className={`w-12 h-12 rounded-lg flex items-center justify-center transition-colors ${
+                      item.id === "stats" 
+                        ? "bg-primary/10 text-primary" 
+                        : "text-gray-500 hover:bg-gray-100"
+                    }`}
+                    data-testid={`sidebar-${item.id}`}
+                  >
+                    <item.icon className="h-5 w-5" />
+                  </button>
+                )}
+              </TooltipTrigger>
+              <TooltipContent side="right">
+                <p>{item.label}</p>
+              </TooltipContent>
+            </Tooltip>
+          ))}
+          
+          <div className="mt-auto">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <a
+                  href="/api/logout"
+                  className="w-12 h-12 rounded-lg flex items-center justify-center text-gray-500 hover:bg-red-50 hover:text-red-600 transition-colors"
+                  data-testid="sidebar-logout"
+                >
+                  <LogOut className="h-5 w-5" />
+                </a>
+              </TooltipTrigger>
+              <TooltipContent side="right">
+                <p>Déconnexion</p>
+              </TooltipContent>
+            </Tooltip>
+          </div>
+        </aside>
 
-            <div className="flex items-center gap-4">
-              <Select
-                value={selectedRestaurant === "all" ? "all" : selectedRestaurant.toString()}
-                onValueChange={(value) => setSelectedRestaurant(value === "all" ? "all" : parseInt(value))}
-              >
-                <SelectTrigger className="w-[200px]" data-testid="restaurant-select">
-                  <SelectValue placeholder="Sélectionner un restaurant" />
-                </SelectTrigger>
-                <SelectContent>
-                  {myRestaurants.length > 1 && (
-                    <SelectItem value="all">Tous les restaurants</SelectItem>
-                  )}
-                  {myRestaurants.map(r => (
-                    <SelectItem key={r.id} value={r.id.toString()}>{r.name}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-
-              {user && (
+        <div className="flex-1 ml-16">
+          <div className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+            <div className="container flex h-16 items-center justify-between">
+              <Link href="/" className="flex items-center gap-2 font-serif text-xl font-bold tracking-tight hover:opacity-90 transition-opacity cursor-pointer">
+                <div className="flex h-8 w-8 items-center justify-center rounded-sm bg-primary text-primary-foreground">
+                  <Utensils className="h-5 w-5" />
+                </div>
+                <span>WHERE<span className="text-primary mx-0.5">TO</span>EAT.CH</span>
+              </Link>
+              
+              <div className="flex items-center gap-3">
                 <DropdownMenu>
                   <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="sm" className="gap-2">
-                      <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
-                        <UserCircle className="h-5 w-5 text-primary" />
-                      </div>
+                    <Button variant="outline" className="flex items-center gap-2" data-testid="restaurant-selector">
+                      <Store className="h-4 w-4" />
+                      <span className="max-w-[200px] truncate">{selectedRestaurantName}</span>
+                      <ChevronRight className="h-4 w-4 rotate-90" />
                     </Button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-56">
-                    <div className="flex items-center gap-2 p-2">
-                      <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
-                        <UserCircle className="h-5 w-5 text-primary" />
-                      </div>
-                      <div className="flex flex-col">
-                        <span className="text-sm font-medium">{user.firstName} {user.lastName}</span>
-                        <span className="text-xs text-muted-foreground">{user.email}</span>
-                      </div>
-                    </div>
+                    <DropdownMenuLabel>Mes restaurants</DropdownMenuLabel>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem asChild>
-                      <a href="/api/logout" className="cursor-pointer text-red-600">
-                        <LogOut className="mr-2 h-4 w-4" />
-                        Déconnexion
-                      </a>
-                    </DropdownMenuItem>
+                    {myRestaurants.length > 1 && (
+                      <DropdownMenuItem 
+                        onClick={() => setSelectedRestaurant("all")}
+                        className={selectedRestaurant === "all" ? "bg-primary/10" : ""}
+                      >
+                        <Utensils className="mr-2 h-4 w-4" />
+                        Tous les restaurants
+                        {selectedRestaurant === "all" && (
+                          <span className="ml-auto text-primary">✓</span>
+                        )}
+                      </DropdownMenuItem>
+                    )}
+                    {myRestaurants.map(r => (
+                      <DropdownMenuItem 
+                        key={r.id}
+                        onClick={() => setSelectedRestaurant(r.id)}
+                        className={selectedRestaurant === r.id ? "bg-primary/10" : ""}
+                        data-testid={`dropdown-restaurant-${r.id}`}
+                      >
+                        <Utensils className="mr-2 h-4 w-4" />
+                        {r.name}
+                        {selectedRestaurant === r.id && (
+                          <span className="ml-auto text-primary">✓</span>
+                        )}
+                      </DropdownMenuItem>
+                    ))}
                   </DropdownMenuContent>
                 </DropdownMenu>
-              )}
+
+                {user && (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" className="relative h-9 w-9 rounded-full" data-testid="user-menu">
+                        <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center">
+                          <UserCircle className="h-5 w-5 text-primary" />
+                        </div>
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-56">
+                      <div className="flex items-center gap-2 p-2">
+                        <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
+                          <UserCircle className="h-5 w-5 text-primary" />
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="text-sm font-medium">{user.firstName} {user.lastName}</span>
+                          <span className="text-xs text-muted-foreground">{user.email}</span>
+                        </div>
+                      </div>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem asChild>
+                        <a href="/api/logout" className="cursor-pointer text-red-600">
+                          <LogOut className="mr-2 h-4 w-4" />
+                          Déconnexion
+                        </a>
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                )}
+              </div>
             </div>
           </div>
-        </div>
 
-        <main className="p-6">
+          <main className="p-6">
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-4">
               <div className="flex items-center gap-1 bg-gray-100 rounded-lg p-1">
@@ -862,8 +924,9 @@ export default function Statistics() {
               </Card>
             </>
           )}
-        </main>
+          </main>
+        </div>
       </div>
-    </div>
+    </TooltipProvider>
   );
 }
