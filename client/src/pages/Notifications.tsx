@@ -6,7 +6,13 @@ import { useToast } from "@/hooks/use-toast";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Badge } from "@/components/ui/badge";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -29,7 +35,12 @@ import {
   Bell,
   Plus,
   X,
-  Check
+  Check,
+  Phone,
+  Mail,
+  Users,
+  Clock,
+  MessageSquare
 } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -55,6 +66,7 @@ export default function Notifications() {
   const [showUnreadOnly, setShowUnreadOnly] = useState(false);
   const [selectedRestaurant, setSelectedRestaurant] = useState<number | null>(null);
   const [readNotifications, setReadNotifications] = useState<Set<number>>(new Set());
+  const [selectedNotification, setSelectedNotification] = useState<Notification | null>(null);
 
   const { data: myRestaurants = [] } = useQuery<Restaurant[]>({
     queryKey: ["/api/my-restaurants"],
@@ -408,7 +420,10 @@ export default function Notifications() {
                       <div 
                         key={notification.id}
                         className="flex items-start gap-4 p-4 hover:bg-gray-50 cursor-pointer"
-                        onClick={() => markAsRead(notification.id)}
+                        onClick={() => {
+                          markAsRead(notification.id);
+                          setSelectedNotification(notification);
+                        }}
                         data-testid={`notification-${notification.id}`}
                       >
                         {/* Unread indicator */}
@@ -452,6 +467,107 @@ export default function Notifications() {
             </Card>
           </main>
         </div>
+
+        {/* Booking detail dialog */}
+        <Dialog open={!!selectedNotification} onOpenChange={() => setSelectedNotification(null)}>
+          <DialogContent className="max-w-lg">
+            {selectedNotification && (
+              <>
+                <DialogHeader>
+                  <DialogTitle className="flex items-center gap-2">
+                    {selectedNotification.type === "cancellation" ? (
+                      <Badge variant="destructive">Annulée</Badge>
+                    ) : (
+                      <Badge className="bg-teal-500">Nouvelle réservation</Badge>
+                    )}
+                  </DialogTitle>
+                </DialogHeader>
+                
+                <div className="space-y-4">
+                  {/* Client info */}
+                  <div className="bg-gray-50 rounded-lg p-4">
+                    <h3 className="font-semibold text-lg mb-3">
+                      {selectedNotification.booking.firstName} {selectedNotification.booking.lastName}
+                    </h3>
+                    <div className="space-y-2 text-sm">
+                      <div className="flex items-center gap-2 text-gray-600">
+                        <Phone className="h-4 w-4" />
+                        <a href={`tel:${selectedNotification.booking.phone}`} className="hover:text-primary">
+                          {selectedNotification.booking.phone}
+                        </a>
+                      </div>
+                      <div className="flex items-center gap-2 text-gray-600">
+                        <Mail className="h-4 w-4" />
+                        <a href={`mailto:${selectedNotification.booking.email}`} className="hover:text-primary">
+                          {selectedNotification.booking.email}
+                        </a>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Booking details */}
+                  <div className="grid grid-cols-3 gap-4">
+                    <div className="bg-gray-50 rounded-lg p-3 text-center">
+                      <CalendarDays className="h-5 w-5 mx-auto mb-1 text-gray-500" />
+                      <p className="text-sm font-semibold">
+                        {formatBookingDate(selectedNotification.booking.date)}
+                      </p>
+                    </div>
+                    <div className="bg-gray-50 rounded-lg p-3 text-center">
+                      <Clock className="h-5 w-5 mx-auto mb-1 text-gray-500" />
+                      <p className="text-sm font-semibold">
+                        {selectedNotification.booking.time}
+                      </p>
+                    </div>
+                    <div className="bg-gray-50 rounded-lg p-3 text-center">
+                      <Users className="h-5 w-5 mx-auto mb-1 text-gray-500" />
+                      <p className="text-sm font-semibold">
+                        {selectedNotification.booking.guests} pers.
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Restaurant */}
+                  <div className="flex items-center gap-2 text-sm text-gray-600">
+                    <Utensils className="h-4 w-4" />
+                    <span>{selectedNotification.restaurantName}</span>
+                  </div>
+
+                  {/* Special request */}
+                  {selectedNotification.booking.specialRequest && (
+                    <div className="bg-amber-50 rounded-lg p-3">
+                      <div className="flex items-start gap-2">
+                        <MessageSquare className="h-4 w-4 text-amber-600 mt-0.5" />
+                        <div>
+                          <p className="text-xs font-medium text-amber-700 mb-1">Demande spéciale</p>
+                          <p className="text-sm text-amber-900">
+                            {selectedNotification.booking.specialRequest}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Actions */}
+                  <div className="flex gap-2 pt-2">
+                    <Link href={`/dashboard?date=${selectedNotification.booking.date}`} className="flex-1">
+                      <Button variant="outline" className="w-full">
+                        Voir dans le planning
+                      </Button>
+                    </Link>
+                    <Button 
+                      variant="default" 
+                      className="flex-1"
+                      onClick={() => setSelectedNotification(null)}
+                    >
+                      Fermer
+                    </Button>
+                  </div>
+                </div>
+              </>
+            )}
+          </DialogContent>
+        </Dialog>
       </div>
     </TooltipProvider>
   );
