@@ -36,7 +36,8 @@ import {
   LineChart,
   Settings,
   Sun,
-  Moon
+  Moon,
+  Bell
 } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { format, addMonths, subMonths, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isToday, getDay, parseISO } from "date-fns";
@@ -226,6 +227,7 @@ export default function Calendar() {
   const sidebarItems = [
     { id: "reservations" as const, icon: LayoutDashboard, label: "Réservations", link: "/dashboard" },
     { id: "calendar" as const, icon: CalendarDays, label: "Calendrier", link: null },
+    { id: "notifications" as const, icon: Bell, label: "Notifications", link: "/dashboard/notifications" },
     { id: "stats" as const, icon: LineChart, label: "Statistiques", link: null },
     { id: "settings" as const, icon: Settings, label: "Paramètres", link: null },
   ];
