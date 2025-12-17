@@ -138,6 +138,29 @@ export const insertBookingSchema = createInsertSchema(bookings).omit({
 export type InsertBooking = z.infer<typeof insertBookingSchema>;
 export type Booking = typeof bookings.$inferSelect;
 
+// Restaurant clients (derived from bookings)
+export const clients = pgTable("clients", {
+  id: serial("id").primaryKey(),
+  restaurantId: integer("restaurant_id").notNull().references(() => restaurants.id),
+  firstName: text("first_name").notNull(),
+  lastName: text("last_name").notNull(),
+  email: text("email").notNull(),
+  phone: text("phone").notNull(),
+  notes: text("notes"),
+  tags: text("tags").array(),
+  createdAt: timestamp("created_at").notNull().defaultNow(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertClientSchema = createInsertSchema(clients).omit({
+  id: true,
+  createdAt: true,
+  updatedAt: true,
+});
+
+export type InsertClient = z.infer<typeof insertClientSchema>;
+export type Client = typeof clients.$inferSelect;
+
 // Closed days for restaurants
 export const closedDays = pgTable("closed_days", {
   id: serial("id").primaryKey(),
