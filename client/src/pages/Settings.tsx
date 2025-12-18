@@ -86,11 +86,12 @@ export default function Settings() {
     {
       id: "profile",
       icon: Building2,
-      title: "Profil du restaurant",
+      title: "Contacts",
       items: [
-        { id: "contacts", label: "Contacts", icon: Phone },
-        { id: "profil", label: "Profil", icon: FileText },
-        { id: "photos", label: "Photos", icon: Image },
+        { id: "info-base", label: "Informations de base", icon: Building2 },
+        { id: "localisation", label: "Localisation", icon: MapPin },
+        { id: "info-legales", label: "Informations légales", icon: FileText },
+        { id: "site-internet", label: "Site internet", icon: Globe },
       ]
     },
     {
@@ -299,341 +300,228 @@ export default function Settings() {
                     <ChevronLeft className="h-4 w-4" />
                     Retour
                   </Button>
-                  <h1 className="text-2xl font-bold">Profil du restaurant</h1>
+                  <h1 className="text-2xl font-bold">Contacts</h1>
                 </div>
 
-                <div className="flex gap-4 mb-6 border-b">
-                  <button
-                    onClick={() => setProfileSubSection("contacts")}
-                    className={`pb-3 px-1 text-sm font-medium border-b-2 transition-colors ${
-                      profileSubSection === "contacts" 
-                        ? "border-primary text-primary" 
-                        : "border-transparent text-gray-500 hover:text-gray-700"
-                    }`}
-                    data-testid="tab-contacts"
-                  >
-                    Contacts
-                  </button>
-                  <button
-                    onClick={() => setProfileSubSection("profil")}
-                    className={`pb-3 px-1 text-sm font-medium border-b-2 transition-colors ${
-                      profileSubSection === "profil" 
-                        ? "border-primary text-primary" 
-                        : "border-transparent text-gray-500 hover:text-gray-700"
-                    }`}
-                    data-testid="tab-profil"
-                  >
-                    Profil
-                  </button>
-                  <button
-                    onClick={() => setProfileSubSection("photos")}
-                    className={`pb-3 px-1 text-sm font-medium border-b-2 transition-colors ${
-                      profileSubSection === "photos" 
-                        ? "border-primary text-primary" 
-                        : "border-transparent text-gray-500 hover:text-gray-700"
-                    }`}
-                    data-testid="tab-photos"
-                  >
-                    Photos
-                  </button>
-                </div>
-
-                {profileSubSection === "contacts" && (
-                  <div className="space-y-6 max-w-4xl">
-                    <h2 className="text-2xl font-bold">Contacts</h2>
-
-                    <Card className="bg-white border shadow-sm">
-                      <CardContent className="p-0">
-                        <div className="px-6 py-4 border-b bg-gray-50/50">
-                          <h3 className="text-sm font-medium text-gray-600 flex items-center gap-2">
-                            <Building2 className="h-4 w-4" />
-                            Informations de base
-                          </h3>
-                        </div>
-                        <div className="p-6">
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-6">
-                            <div className="space-y-1">
-                              <Label className="text-sm text-gray-500 flex items-center gap-1">
-                                Nom du restaurant
-                                <HelpCircle className="h-3 w-3 text-gray-400" />
-                              </Label>
-                              <p className="text-base font-medium text-gray-900">
-                                {selectedRestaurantData?.name || "Le Miranda"}
-                              </p>
-                            </div>
-                            <div className="space-y-1">
-                              <Label className="text-sm text-gray-500 flex items-center gap-1">
-                                Langue préférée du restaurant
-                                <span className="text-red-500">*</span>
-                              </Label>
-                              <Select defaultValue="en">
-                                <SelectTrigger className="w-full border-gray-200" data-testid="select-language">
-                                  <SelectValue />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="fr">Français</SelectItem>
-                                  <SelectItem value="en">English - UK</SelectItem>
-                                  <SelectItem value="de">Deutsch</SelectItem>
-                                  <SelectItem value="it">Italiano</SelectItem>
-                                </SelectContent>
-                              </Select>
-                            </div>
-                            <div className="space-y-1">
-                              <Label className="text-sm text-gray-500 flex items-center gap-1">
-                                Adresse e-mail publique du restaurant
-                                <span className="text-red-500">*</span>
-                              </Label>
-                              <p className="text-base text-gray-900">
-                                infosamyaziza@gmail.com
-                              </p>
-                            </div>
-                            <div className="space-y-1">
-                              <Label className="text-sm text-gray-500">Téléphone du restaurant (public)</Label>
-                              <div className="flex items-center gap-2">
-                                <span className="text-lg">🇨🇭</span>
-                                <span className="text-gray-500">+41</span>
-                                <span className="text-gray-400">▼</span>
-                                <span className="text-base text-gray-900 ml-2">78 305 31 51</span>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-
-                    <Card className="bg-white border shadow-sm">
-                      <CardContent className="p-0">
-                        <div className="px-6 py-4 border-b bg-gray-50/50">
-                          <h3 className="text-sm font-medium text-gray-600 flex items-center gap-2">
-                            <FileText className="h-4 w-4" />
-                            Informations légales
-                          </h3>
-                        </div>
-                        <div className="p-6">
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-6">
-                            <div className="space-y-1">
-                              <Label className="text-sm text-gray-500 flex items-center gap-1">
-                                Registre du Commerce (RC)
-                                <HelpCircle className="h-3 w-3 text-gray-400" />
-                              </Label>
-                              <p className="text-base text-gray-900">
-                                Registre du commerce du Canton de Genève
-                              </p>
-                            </div>
-                            <div className="space-y-1">
-                              <Label className="text-sm text-gray-500 flex items-center gap-1">
-                                N° registre commerce
-                                <HelpCircle className="h-3 w-3 text-gray-400" />
-                              </Label>
-                              <p className="text-base text-gray-900">
-                                CHE-177.597.349
-                              </p>
-                            </div>
-                          </div>
-                          <div className="mt-6 flex items-start gap-3">
-                            <input 
-                              type="checkbox" 
-                              id="certify-legal" 
-                              className="mt-0.5 h-4 w-4 rounded border-gray-300 text-primary"
-                              defaultChecked
-                              data-testid="checkbox-certify"
-                            />
-                            <Label htmlFor="certify-legal" className="text-sm text-gray-600 font-normal leading-relaxed">
-                              Je certifie que je ne proposerai que des produits ou services conformes aux règles applicables du droit de l'Union européenne.
-                            </Label>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-
-                    <Card className="bg-white border shadow-sm">
-                      <CardContent className="p-0">
-                        <div className="px-6 py-4 border-b bg-gray-50/50">
-                          <h3 className="text-sm font-medium text-gray-600 flex items-center gap-2">
-                            <Globe className="h-4 w-4" />
-                            Site internet
-                          </h3>
-                        </div>
-                        <div className="p-6">
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-6">
-                            <div className="space-y-1">
-                              <Label className="text-sm text-gray-500">Site internet du restaurant</Label>
-                              <p className="text-base text-gray-400 italic">
-                                Site internet du restaurant
-                              </p>
-                            </div>
-                            <div className="space-y-1">
-                              <Label className="text-sm text-gray-500 flex items-center gap-1">
-                                Lien vers la politique de confidentialité
-                                <HelpCircle className="h-3 w-3 text-gray-400" />
-                              </Label>
-                              <p className="text-base text-gray-900">
-                                https://example.com/privacy-policy
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-
-                    <Card className="bg-white border shadow-sm">
-                      <CardContent className="p-0">
-                        <div className="px-6 py-4 border-b bg-gray-50/50">
-                          <h3 className="text-sm font-medium text-gray-600 flex items-center gap-2">
-                            <MapPin className="h-4 w-4" />
-                            Localisation
-                          </h3>
-                        </div>
-                        <div className="p-6">
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div className="bg-gray-100 rounded-lg h-64 flex items-center justify-center border overflow-hidden">
-                              <div className="w-full h-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
-                                <div className="text-center text-gray-500">
-                                  <MapPin className="h-8 w-8 mx-auto mb-2 text-red-500" />
-                                  <p className="text-xs text-gray-400">Google Maps</p>
-                                </div>
-                              </div>
-                            </div>
-                            <div className="flex flex-col justify-center">
-                              <Label className="text-sm text-gray-500 flex items-center gap-1 mb-2">
-                                Adresse de votre restaurant
-                                <HelpCircle className="h-3 w-3 text-gray-400" />
-                              </Label>
-                              <p className="text-lg font-medium text-gray-900">
-                                {selectedRestaurantData?.address || "Rue du Grand-Bureau 16"} {selectedRestaurantData?.location || "1227 Genève"}
-                              </p>
-                            </div>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-
-                    <div className="flex justify-end gap-3 pt-4 pb-6">
-                      <Button 
-                        variant="outline" 
-                        onClick={() => setActiveSection("overview")}
-                        className="px-6"
-                      >
-                        ANNULER
-                      </Button>
-                      <Button 
-                        onClick={() => toast({ title: "Modifications enregistrées" })}
-                        className="px-6 bg-primary hover:bg-primary/90"
-                        data-testid="save-contacts"
-                      >
-                        ENREGISTRER
-                      </Button>
-                    </div>
-                  </div>
-                )}
-
-                {profileSubSection === "profil" && (
-                  <div className="space-y-6 max-w-3xl">
-                    <Card className="bg-white">
-                      <CardContent className="p-6 space-y-6">
-                        <h3 className="font-semibold flex items-center gap-2 text-gray-700">
-                          <Building2 className="h-5 w-5" />
-                          Informations générales
+                <div className="space-y-6 max-w-4xl">
+                  <Card className="bg-white border shadow-sm">
+                    <CardContent className="p-0">
+                      <div className="px-6 py-4 border-b bg-gray-50/50">
+                        <h3 className="text-sm font-medium text-gray-600 flex items-center gap-2">
+                          <Building2 className="h-4 w-4" />
+                          Informations de base
                         </h3>
-                        
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div className="space-y-2">
-                            <Label htmlFor="cuisine">Type de cuisine</Label>
-                            <Input 
-                              id="cuisine" 
-                              defaultValue={selectedRestaurantData?.cuisine || ""} 
-                              data-testid="input-cuisine"
-                            />
+                      </div>
+                      <div className="p-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-6">
+                          <div className="space-y-1">
+                            <Label className="text-sm text-gray-500 flex items-center gap-1">
+                              Nom du restaurant
+                              <HelpCircle className="h-3 w-3 text-gray-400" />
+                            </Label>
+                            <p className="text-base font-medium text-gray-900">
+                              {selectedRestaurantData?.name || "Le Miranda"}
+                            </p>
                           </div>
-                          <div className="space-y-2">
-                            <Label htmlFor="price-range">Gamme de prix</Label>
-                            <Select defaultValue={selectedRestaurantData?.priceRange || "$$"}>
-                              <SelectTrigger data-testid="select-price-range">
+                          <div className="space-y-1">
+                            <Label className="text-sm text-gray-500 flex items-center gap-1">
+                              Langue préférée du restaurant
+                              <span className="text-red-500">*</span>
+                            </Label>
+                            <Select defaultValue="en">
+                              <SelectTrigger className="w-full border-gray-200" data-testid="select-language">
                                 <SelectValue />
                               </SelectTrigger>
                               <SelectContent>
-                                <SelectItem value="$">$ - Économique</SelectItem>
-                                <SelectItem value="$$">$$ - Modéré</SelectItem>
-                                <SelectItem value="$$$">$$$ - Haut de gamme</SelectItem>
-                                <SelectItem value="$$$$">$$$$ - Luxe</SelectItem>
+                                <SelectItem value="fr">Français</SelectItem>
+                                <SelectItem value="en">English - UK</SelectItem>
+                                <SelectItem value="de">Deutsch</SelectItem>
+                                <SelectItem value="it">Italiano</SelectItem>
                               </SelectContent>
                             </Select>
                           </div>
-                        </div>
-
-                        <div className="space-y-2">
-                          <Label htmlFor="description">Description</Label>
-                          <textarea 
-                            id="description"
-                            className="w-full min-h-[120px] px-3 py-2 rounded-md border border-input bg-background text-sm"
-                            defaultValue={selectedRestaurantData?.description || ""}
-                            placeholder="Décrivez votre restaurant, son ambiance, sa spécialité..."
-                            data-testid="input-description"
-                          />
-                        </div>
-
-                        <div className="pt-4 border-t flex justify-end gap-3">
-                          <Button variant="outline" onClick={() => setActiveSection("overview")}>
-                            Annuler
-                          </Button>
-                          <Button 
-                            onClick={() => toast({ title: "Profil enregistré" })}
-                            data-testid="save-profil"
-                          >
-                            Enregistrer
-                          </Button>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </div>
-                )}
-
-                {profileSubSection === "photos" && (
-                  <div className="space-y-6 max-w-3xl">
-                    <Card className="bg-white">
-                      <CardContent className="p-6">
-                        <h3 className="font-semibold flex items-center gap-2 mb-6 text-gray-700">
-                          <Image className="h-5 w-5" />
-                          Photos du restaurant
-                        </h3>
-                        
-                        <div className="border-2 border-dashed border-gray-200 rounded-lg p-8 text-center">
-                          <Image className="h-12 w-12 mx-auto text-gray-300 mb-4" />
-                          <p className="text-gray-600 mb-2">Glissez vos photos ici ou cliquez pour télécharger</p>
-                          <p className="text-sm text-gray-400 mb-4">Format JPG, PNG. Max 5 Mo par image.</p>
-                          <Button variant="outline" data-testid="btn-upload-photos">
-                            Choisir des fichiers
-                          </Button>
-                        </div>
-
-                        {selectedRestaurantData?.image && (
-                          <div className="mt-6">
-                            <Label className="mb-2 block">Photo actuelle</Label>
-                            <div className="w-40 h-28 rounded-lg overflow-hidden bg-gray-100">
-                              <img 
-                                src={selectedRestaurantData.image} 
-                                alt={selectedRestaurantData.name}
-                                className="w-full h-full object-cover"
+                          <div className="space-y-1">
+                            <Label className="text-sm text-gray-500 flex items-center gap-1">
+                              Adresse e-mail publique du restaurant
+                              <span className="text-red-500">*</span>
+                            </Label>
+                            <Input 
+                              type="email"
+                              defaultValue="infosamyaziza@gmail.com"
+                              className="border-gray-200"
+                              data-testid="input-email"
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <Label className="text-sm text-gray-500">Téléphone du restaurant (public)</Label>
+                            <div className="flex gap-2">
+                              <Select defaultValue="+41">
+                                <SelectTrigger className="w-24 border-gray-200" data-testid="select-country-code">
+                                  <SelectValue />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="+41">🇨🇭 +41</SelectItem>
+                                  <SelectItem value="+33">🇫🇷 +33</SelectItem>
+                                  <SelectItem value="+49">🇩🇪 +49</SelectItem>
+                                </SelectContent>
+                              </Select>
+                              <Input 
+                                defaultValue="78 305 31 51"
+                                className="flex-1 border-gray-200"
+                                data-testid="input-phone"
                               />
                             </div>
                           </div>
-                        )}
-
-                        <div className="pt-4 border-t mt-6 flex justify-end gap-3">
-                          <Button variant="outline" onClick={() => setActiveSection("overview")}>
-                            Annuler
-                          </Button>
-                          <Button 
-                            onClick={() => toast({ title: "Photos enregistrées" })}
-                            data-testid="save-photos"
-                          >
-                            Enregistrer
-                          </Button>
                         </div>
-                      </CardContent>
-                    </Card>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card className="bg-white border shadow-sm">
+                    <CardContent className="p-0">
+                      <div className="px-6 py-4 border-b bg-gray-50/50">
+                        <h3 className="text-sm font-medium text-gray-600 flex items-center gap-2">
+                          <MapPin className="h-4 w-4" />
+                          Localisation
+                        </h3>
+                      </div>
+                      <div className="p-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                          <div className="bg-gray-100 rounded-lg h-64 flex items-center justify-center border overflow-hidden">
+                            <div className="w-full h-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
+                              <div className="text-center text-gray-500">
+                                <MapPin className="h-8 w-8 mx-auto mb-2 text-red-500" />
+                                <p className="text-xs text-gray-400">Google Maps</p>
+                              </div>
+                            </div>
+                          </div>
+                          <div className="flex flex-col justify-center space-y-4">
+                            <div className="space-y-2">
+                              <Label className="text-sm text-gray-500 flex items-center gap-1">
+                                Adresse de votre restaurant
+                                <HelpCircle className="h-3 w-3 text-gray-400" />
+                              </Label>
+                              <Input 
+                                defaultValue={selectedRestaurantData?.address || "Rue du Grand-Bureau 16"}
+                                className="border-gray-200"
+                                data-testid="input-address"
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label className="text-sm text-gray-500">Code postal et ville</Label>
+                              <Input 
+                                defaultValue={selectedRestaurantData?.location || "1227 Genève"}
+                                className="border-gray-200"
+                                data-testid="input-city"
+                              />
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card className="bg-white border shadow-sm">
+                    <CardContent className="p-0">
+                      <div className="px-6 py-4 border-b bg-gray-50/50">
+                        <h3 className="text-sm font-medium text-gray-600 flex items-center gap-2">
+                          <FileText className="h-4 w-4" />
+                          Informations légales
+                        </h3>
+                      </div>
+                      <div className="p-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-6">
+                          <div className="space-y-1">
+                            <Label className="text-sm text-gray-500 flex items-center gap-1">
+                              Registre du Commerce (RC)
+                              <HelpCircle className="h-3 w-3 text-gray-400" />
+                            </Label>
+                            <Input 
+                              defaultValue="Registre du commerce du Canton de Genève"
+                              className="border-gray-200"
+                              data-testid="input-registre-commerce"
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <Label className="text-sm text-gray-500 flex items-center gap-1">
+                              N° registre commerce
+                              <HelpCircle className="h-3 w-3 text-gray-400" />
+                            </Label>
+                            <Input 
+                              defaultValue="CHE-177.597.349"
+                              placeholder="CHE-XXX.XXX.XXX"
+                              className="border-gray-200"
+                              data-testid="input-numero-registre"
+                            />
+                          </div>
+                        </div>
+                        <div className="mt-6 flex items-start gap-3">
+                          <input 
+                            type="checkbox" 
+                            id="certify-legal" 
+                            className="mt-0.5 h-4 w-4 rounded border-gray-300 text-primary"
+                            defaultChecked
+                            data-testid="checkbox-certify"
+                          />
+                          <Label htmlFor="certify-legal" className="text-sm text-gray-600 font-normal leading-relaxed">
+                            Je certifie que je ne proposerai que des produits ou services conformes aux règles applicables du droit de l'Union européenne.
+                          </Label>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <Card className="bg-white border shadow-sm">
+                    <CardContent className="p-0">
+                      <div className="px-6 py-4 border-b bg-gray-50/50">
+                        <h3 className="text-sm font-medium text-gray-600 flex items-center gap-2">
+                          <Globe className="h-4 w-4" />
+                          Site internet
+                        </h3>
+                      </div>
+                      <div className="p-6">
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-6">
+                          <div className="space-y-1">
+                            <Label className="text-sm text-gray-500">Site internet du restaurant</Label>
+                            <Input 
+                              placeholder="https://www.mon-restaurant.ch"
+                              className="border-gray-200"
+                              data-testid="input-website"
+                            />
+                          </div>
+                          <div className="space-y-1">
+                            <Label className="text-sm text-gray-500 flex items-center gap-1">
+                              Lien vers la politique de confidentialité
+                              <HelpCircle className="h-3 w-3 text-gray-400" />
+                            </Label>
+                            <Input 
+                              defaultValue="https://example.com/privacy-policy"
+                              className="border-gray-200"
+                              data-testid="input-privacy-policy"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+
+                  <div className="flex justify-end gap-3 pt-4 pb-6">
+                    <Button 
+                      variant="outline" 
+                      onClick={() => setActiveSection("overview")}
+                      className="px-6"
+                    >
+                      ANNULER
+                    </Button>
+                    <Button 
+                      onClick={() => toast({ title: "Modifications enregistrées" })}
+                      className="px-6 bg-primary hover:bg-primary/90"
+                      data-testid="save-contacts"
+                    >
+                      ENREGISTRER
+                    </Button>
                   </div>
-                )}
+                </div>
               </>
             )}
 
