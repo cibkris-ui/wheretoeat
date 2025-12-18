@@ -540,194 +540,204 @@ export default function Settings() {
 
                 {profileSubSection === "profil" && (
                   <div className="space-y-6 max-w-4xl">
-                    <h2 className="text-2xl font-bold">Profil</h2>
+                    <div className="flex items-center justify-between">
+                      <h2 className="text-2xl font-bold">Profil de mon restaurant sur WhereToEat</h2>
+                    </div>
+                    
+                    <Button 
+                      className="bg-primary hover:bg-primary/90 text-white"
+                      data-testid="btn-view-page"
+                    >
+                      VOIR MA PAGE SUR WHERETOEAT
+                    </Button>
 
-                    <Card className="bg-white border shadow-sm">
-                      <CardContent className="p-0">
-                        <div className="px-6 py-4 border-b bg-gray-50/50">
-                          <h3 className="text-sm font-medium text-gray-600 flex items-center gap-2">
-                            <Utensils className="h-4 w-4" />
-                            Type de restaurant
-                          </h3>
-                        </div>
-                        <div className="p-6">
-                          <p className="text-sm text-gray-500 mb-4">
-                            Sélectionnez le type qui décrit le mieux votre établissement. Ces informations aident les clients à trouver votre restaurant.
-                          </p>
-                          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                            {[
-                              { id: "gastronomique", label: "Gastronomique", icon: "🍽️" },
-                              { id: "bistrot", label: "Bistrot", icon: "🍷" },
-                              { id: "brasserie", label: "Brasserie", icon: "🍺" },
-                              { id: "cafe", label: "Café-Restaurant", icon: "☕" },
-                              { id: "pizzeria", label: "Pizzeria", icon: "🍕" },
-                              { id: "sushi", label: "Sushi Bar", icon: "🍣" },
-                              { id: "steakhouse", label: "Steakhouse", icon: "🥩" },
-                              { id: "vegetarien", label: "Végétarien/Vegan", icon: "🥗" },
-                              { id: "fastcasual", label: "Fast Casual", icon: "🍔" },
-                            ].map((type) => (
-                              <label
-                                key={type.id}
-                                className="flex items-center gap-3 p-3 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors"
-                              >
-                                <input
-                                  type="radio"
-                                  name="restaurant-type"
-                                  value={type.id}
-                                  className="h-4 w-4 text-primary"
-                                  data-testid={`radio-type-${type.id}`}
-                                />
-                                <span className="text-xl">{type.icon}</span>
-                                <span className="text-sm font-medium">{type.label}</span>
-                              </label>
-                            ))}
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
+                    <div className="border-b border-primary pb-2 flex items-center justify-between">
+                      <h3 className="text-lg font-medium">Informations sur mon restaurant</h3>
+                      <Select defaultValue="fr">
+                        <SelectTrigger className="w-32 border-gray-300" data-testid="select-profile-language">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="fr">FRANÇAIS</SelectItem>
+                          <SelectItem value="en">ENGLISH</SelectItem>
+                          <SelectItem value="de">DEUTSCH</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
 
-                    <Card className="bg-white border shadow-sm">
-                      <CardContent className="p-0">
-                        <div className="px-6 py-4 border-b bg-gray-50/50">
-                          <h3 className="text-sm font-medium text-gray-600 flex items-center gap-2">
-                            <Globe className="h-4 w-4" />
-                            Type de cuisine
-                          </h3>
-                        </div>
-                        <div className="p-6">
-                          <p className="text-sm text-gray-500 mb-4">
-                            Quel type de cuisine proposez-vous ? Sélectionnez toutes les options qui s'appliquent.
-                          </p>
-                          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                            {[
-                              "Française", "Italienne", "Japonaise", "Chinoise",
-                              "Thaïlandaise", "Indienne", "Libanaise", "Mexicaine",
-                              "Suisse", "Méditerranéenne", "Américaine", "Africaine",
-                              "Fusion", "Fruits de mer", "Viande grillée", "Végétarienne"
-                            ].map((cuisine) => (
-                              <label
-                                key={cuisine}
-                                className="flex items-center gap-2 p-2 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors"
-                              >
-                                <input
-                                  type="checkbox"
-                                  className="h-4 w-4 rounded text-primary"
-                                  data-testid={`checkbox-cuisine-${cuisine.toLowerCase()}`}
-                                />
-                                <span className="text-sm">{cuisine}</span>
-                              </label>
-                            ))}
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
+                    <div className="space-y-6">
+                      <div className="flex items-center gap-2 text-gray-600">
+                        <span className="text-lg">≡</span>
+                        <span className="font-medium">Détails</span>
+                      </div>
 
-                    <Card className="bg-white border shadow-sm">
-                      <CardContent className="p-0">
-                        <div className="px-6 py-4 border-b bg-gray-50/50">
-                          <h3 className="text-sm font-medium text-gray-600 flex items-center gap-2">
-                            <Building2 className="h-4 w-4" />
-                            Ambiance & Style
-                          </h3>
-                        </div>
-                        <div className="p-6">
-                          <p className="text-sm text-gray-500 mb-4">
-                            Décrivez l'ambiance de votre restaurant pour attirer les bons clients.
-                          </p>
-                          <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
-                            {[
-                              { id: "romantique", label: "Romantique", icon: "💕" },
-                              { id: "familial", label: "Familial", icon: "👨‍👩‍👧‍👦" },
-                              { id: "affaires", label: "Repas d'affaires", icon: "💼" },
-                              { id: "decontracte", label: "Décontracté", icon: "😎" },
-                              { id: "branche", label: "Branché", icon: "✨" },
-                              { id: "traditionnel", label: "Traditionnel", icon: "🏛️" },
-                              { id: "moderne", label: "Moderne", icon: "🎨" },
-                              { id: "terrasse", label: "Terrasse", icon: "☀️" },
-                              { id: "vue", label: "Belle vue", icon: "🏔️" },
-                            ].map((ambiance) => (
-                              <label
-                                key={ambiance.id}
-                                className="flex items-center gap-3 p-3 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors"
-                              >
-                                <input
-                                  type="checkbox"
-                                  className="h-4 w-4 rounded text-primary"
-                                  data-testid={`checkbox-ambiance-${ambiance.id}`}
-                                />
-                                <span className="text-xl">{ambiance.icon}</span>
-                                <span className="text-sm font-medium">{ambiance.label}</span>
-                              </label>
-                            ))}
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-
-                    <Card className="bg-white border shadow-sm">
-                      <CardContent className="p-0">
-                        <div className="px-6 py-4 border-b bg-gray-50/50">
-                          <h3 className="text-sm font-medium text-gray-600 flex items-center gap-2">
-                            <CreditCard className="h-4 w-4" />
-                            Gamme de prix
-                          </h3>
-                        </div>
-                        <div className="p-6">
-                          <p className="text-sm text-gray-500 mb-4">
-                            Prix moyen par personne (hors boissons)
-                          </p>
-                          <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-                            {[
-                              { id: "$", label: "Économique", price: "< 25 CHF" },
-                              { id: "$$", label: "Modéré", price: "25-50 CHF" },
-                              { id: "$$$", label: "Haut de gamme", price: "50-100 CHF" },
-                              { id: "$$$$", label: "Luxe", price: "> 100 CHF" },
-                            ].map((range) => (
-                              <label
-                                key={range.id}
-                                className="flex flex-col items-center gap-2 p-4 border rounded-lg cursor-pointer hover:bg-gray-50 transition-colors text-center"
-                              >
-                                <input
-                                  type="radio"
-                                  name="price-range"
-                                  value={range.id}
-                                  defaultChecked={range.id === (selectedRestaurantData?.priceRange || "$$")}
-                                  className="h-4 w-4 text-primary"
-                                  data-testid={`radio-price-${range.id}`}
-                                />
-                                <span className="text-lg font-bold text-primary">{range.id}</span>
-                                <span className="text-sm font-medium">{range.label}</span>
-                                <span className="text-xs text-gray-400">{range.price}</span>
-                              </label>
-                            ))}
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-
-                    <Card className="bg-white border shadow-sm">
-                      <CardContent className="p-0">
-                        <div className="px-6 py-4 border-b bg-gray-50/50">
-                          <h3 className="text-sm font-medium text-gray-600 flex items-center gap-2">
-                            <FileText className="h-4 w-4" />
-                            Description
-                          </h3>
-                        </div>
-                        <div className="p-6">
-                          <p className="text-sm text-gray-500 mb-4">
-                            Présentez votre restaurant aux clients potentiels
-                          </p>
-                          <textarea 
-                            className="w-full min-h-[150px] px-4 py-3 rounded-lg border border-gray-200 bg-white text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary"
-                            defaultValue={selectedRestaurantData?.description || ""}
-                            placeholder="Décrivez votre restaurant, son histoire, sa spécialité, ce qui le rend unique..."
-                            data-testid="textarea-description"
+                      <div className="space-y-4">
+                        <div className="space-y-1">
+                          <Label className="text-sm text-gray-600">Chef exécutif</Label>
+                          <Input 
+                            placeholder="Nom du chef"
+                            className="border-0 border-b border-gray-200 rounded-none px-0 focus-visible:ring-0 focus-visible:border-gray-400"
+                            data-testid="input-chef"
                           />
                         </div>
-                      </CardContent>
-                    </Card>
 
-                    <div className="flex justify-end gap-3 pt-4 pb-6">
+                        <div className="space-y-1">
+                          <Label className="text-sm text-gray-600">Transports en commun</Label>
+                          <Input 
+                            placeholder="Station de métro, gare la plus proche..."
+                            className="border-0 border-b border-gray-200 rounded-none px-0 focus-visible:ring-0 focus-visible:border-gray-400"
+                            data-testid="input-transport"
+                          />
+                        </div>
+
+                        <div className="space-y-1">
+                          <Label className="text-sm text-gray-600">Parking à proximité</Label>
+                          <Input 
+                            placeholder="Parking le plus proche, public ou privé..."
+                            className="border-0 border-b border-gray-200 rounded-none px-0 focus-visible:ring-0 focus-visible:border-gray-400"
+                            data-testid="input-parking"
+                          />
+                        </div>
+
+                        <div className="space-y-1">
+                          <Label className="text-sm text-gray-600">Fermetures annuelles</Label>
+                          <Input 
+                            placeholder="Période de fermeture du restaurant"
+                            className="border-0 border-b border-gray-200 rounded-none px-0 focus-visible:ring-0 focus-visible:border-gray-400"
+                            data-testid="input-fermetures"
+                          />
+                        </div>
+
+                        <div className="space-y-1">
+                          <Label className="text-sm text-gray-600">Informations supplémentaires</Label>
+                          <Input 
+                            placeholder="Comment se rendre au restaurant..."
+                            className="border-0 border-b border-gray-200 rounded-none px-0 focus-visible:ring-0 focus-visible:border-gray-400"
+                            data-testid="input-infos-supplementaires"
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="space-y-6 pt-6">
+                      <div className="flex items-center gap-2 text-gray-600">
+                        <span className="text-lg">≡</span>
+                        <span className="font-medium">Type de cuisine, services proposés...</span>
+                      </div>
+
+                      <div className="space-y-4">
+                        <div className="space-y-2">
+                          <Label className="text-sm text-gray-600">Cartes bancaires acceptées</Label>
+                          <div className="flex flex-wrap gap-2 pb-2 border-b border-gray-200">
+                            <span className="inline-flex items-center gap-1 px-3 py-1 bg-gray-100 rounded-full text-sm">
+                              Carte Mastercard <button className="ml-1 text-gray-500 hover:text-gray-700">×</button>
+                            </span>
+                            <span className="inline-flex items-center gap-1 px-3 py-1 bg-gray-100 rounded-full text-sm">
+                              Carte Visa <button className="ml-1 text-gray-500 hover:text-gray-700">×</button>
+                            </span>
+                            <Select>
+                              <SelectTrigger className="w-8 h-8 border-0 p-0" data-testid="select-add-card">
+                                <span className="text-gray-400">▼</span>
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="amex">American Express</SelectItem>
+                                <SelectItem value="twint">TWINT</SelectItem>
+                                <SelectItem value="postfinance">PostFinance</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label className="text-sm text-gray-600">Régime alimentaire</Label>
+                          <div className="flex flex-wrap gap-2 pb-2 border-b border-gray-200">
+                            <span className="inline-flex items-center gap-1 px-3 py-1 bg-gray-100 rounded-full text-sm">
+                              Options végétariennes <button className="ml-1 text-gray-500 hover:text-gray-700">×</button>
+                            </span>
+                            <Select>
+                              <SelectTrigger className="w-8 h-8 border-0 p-0" data-testid="select-add-regime">
+                                <span className="text-gray-400">▼</span>
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="vegan">Options vegan</SelectItem>
+                                <SelectItem value="sans-gluten">Sans gluten</SelectItem>
+                                <SelectItem value="halal">Halal</SelectItem>
+                                <SelectItem value="casher">Casher</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label className="text-sm text-gray-600">Services proposés</Label>
+                          <div className="flex flex-wrap gap-2 pb-2 border-b border-gray-200">
+                            <span className="inline-flex items-center gap-1 px-3 py-1 bg-gray-100 rounded-full text-sm">
+                              Anglais parlé <button className="ml-1 text-gray-500 hover:text-gray-700">×</button>
+                            </span>
+                            <span className="inline-flex items-center gap-1 px-3 py-1 bg-gray-100 rounded-full text-sm">
+                              Français parlé <button className="ml-1 text-gray-500 hover:text-gray-700">×</button>
+                            </span>
+                            <span className="inline-flex items-center gap-1 px-3 py-1 bg-gray-100 rounded-full text-sm">
+                              Wifi <button className="ml-1 text-gray-500 hover:text-gray-700">×</button>
+                            </span>
+                            <Select>
+                              <SelectTrigger className="w-8 h-8 border-0 p-0" data-testid="select-add-service">
+                                <span className="text-gray-400">▼</span>
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="terrasse">Terrasse</SelectItem>
+                                <SelectItem value="climatisation">Climatisation</SelectItem>
+                                <SelectItem value="accessible">Accessible PMR</SelectItem>
+                                <SelectItem value="parking">Parking privé</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label className="text-sm text-gray-600">Cadre et ambiance</Label>
+                          <div className="pb-2 border-b border-gray-200">
+                            <Select>
+                              <SelectTrigger className="border-0 px-0 h-auto focus:ring-0" data-testid="select-ambiance">
+                                <SelectValue placeholder="Sélectionner" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="romantique">Romantique</SelectItem>
+                                <SelectItem value="familial">Familial</SelectItem>
+                                <SelectItem value="affaires">Repas d'affaires</SelectItem>
+                                <SelectItem value="branche">Branché</SelectItem>
+                                <SelectItem value="traditionnel">Traditionnel</SelectItem>
+                                <SelectItem value="moderne">Moderne</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+
+                        <div className="space-y-2">
+                          <Label className="text-sm text-gray-600">Cuisine</Label>
+                          <div className="flex flex-wrap gap-2 pb-2 border-b border-gray-200">
+                            <span className="inline-flex items-center gap-1 px-3 py-1 bg-gray-100 rounded-full text-sm">
+                              Méditerranéen <button className="ml-1 text-gray-500 hover:text-gray-700">×</button>
+                            </span>
+                            <Select>
+                              <SelectTrigger className="w-8 h-8 border-0 p-0" data-testid="select-add-cuisine">
+                                <span className="text-gray-400">▼</span>
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="francaise">Française</SelectItem>
+                                <SelectItem value="italienne">Italienne</SelectItem>
+                                <SelectItem value="japonaise">Japonaise</SelectItem>
+                                <SelectItem value="suisse">Suisse</SelectItem>
+                                <SelectItem value="indienne">Indienne</SelectItem>
+                                <SelectItem value="libanaise">Libanaise</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex justify-end gap-3 pt-6 pb-6">
                       <Button 
                         variant="outline" 
                         onClick={() => setActiveSection("overview")}
