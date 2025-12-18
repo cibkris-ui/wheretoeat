@@ -334,17 +334,31 @@ export default function Settings() {
                                 Adresse e-mail publique du restaurant
                                 <span className="text-red-500">*</span>
                               </Label>
-                              <p className="text-base text-gray-900">
-                                infosamyaziza@gmail.com
-                              </p>
+                              <Input 
+                                type="email"
+                                defaultValue="infosamyaziza@gmail.com"
+                                className="border-gray-200"
+                                data-testid="input-email"
+                              />
                             </div>
                             <div className="space-y-1">
                               <Label className="text-sm text-gray-500">Téléphone du restaurant (public)</Label>
                               <div className="flex items-center gap-2">
-                                <span className="text-lg">🇨🇭</span>
-                                <span className="text-gray-500">+41</span>
-                                <span className="text-gray-400">▼</span>
-                                <span className="text-base text-gray-900 ml-2">78 305 31 51</span>
+                                <Select defaultValue="+41">
+                                  <SelectTrigger className="w-24 border-gray-200" data-testid="select-country-code">
+                                    <SelectValue />
+                                  </SelectTrigger>
+                                  <SelectContent>
+                                    <SelectItem value="+41">🇨🇭 +41</SelectItem>
+                                    <SelectItem value="+33">🇫🇷 +33</SelectItem>
+                                    <SelectItem value="+49">🇩🇪 +49</SelectItem>
+                                  </SelectContent>
+                                </Select>
+                                <Input 
+                                  defaultValue="78 305 31 51"
+                                  className="flex-1 border-gray-200"
+                                  data-testid="input-phone"
+                                />
                               </div>
                             </div>
                           </div>
@@ -367,18 +381,23 @@ export default function Settings() {
                                 Registre du Commerce (RC)
                                 <HelpCircle className="h-3 w-3 text-gray-400" />
                               </Label>
-                              <p className="text-base text-gray-900">
-                                Registre du commerce du Canton de Genève
-                              </p>
+                              <Input 
+                                defaultValue="Registre du commerce du Canton de Genève"
+                                className="border-gray-200"
+                                data-testid="input-registre-commerce"
+                              />
                             </div>
                             <div className="space-y-1">
                               <Label className="text-sm text-gray-500 flex items-center gap-1">
                                 N° registre commerce
                                 <HelpCircle className="h-3 w-3 text-gray-400" />
                               </Label>
-                              <p className="text-base text-gray-900">
-                                CHE-177.597.349
-                              </p>
+                              <Input 
+                                defaultValue="CHE-177.597.349"
+                                placeholder="CHE-XXX.XXX.XXX"
+                                className="border-gray-200"
+                                data-testid="input-numero-registre"
+                              />
                             </div>
                           </div>
                           <div className="mt-6 flex items-start gap-3">
@@ -409,18 +428,22 @@ export default function Settings() {
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-6">
                             <div className="space-y-1">
                               <Label className="text-sm text-gray-500">Site internet du restaurant</Label>
-                              <p className="text-base text-gray-400 italic">
-                                Site internet du restaurant
-                              </p>
+                              <Input 
+                                placeholder="https://www.mon-restaurant.ch"
+                                className="border-gray-200"
+                                data-testid="input-website"
+                              />
                             </div>
                             <div className="space-y-1">
                               <Label className="text-sm text-gray-500 flex items-center gap-1">
                                 Lien vers la politique de confidentialité
                                 <HelpCircle className="h-3 w-3 text-gray-400" />
                               </Label>
-                              <p className="text-base text-gray-900">
-                                https://example.com/privacy-policy
-                              </p>
+                              <Input 
+                                defaultValue="https://example.com/privacy-policy"
+                                className="border-gray-200"
+                                data-testid="input-privacy-policy"
+                              />
                             </div>
                           </div>
                         </div>
@@ -445,14 +468,26 @@ export default function Settings() {
                                 </div>
                               </div>
                             </div>
-                            <div className="flex flex-col justify-center">
-                              <Label className="text-sm text-gray-500 flex items-center gap-1 mb-2">
-                                Adresse de votre restaurant
-                                <HelpCircle className="h-3 w-3 text-gray-400" />
-                              </Label>
-                              <p className="text-lg font-medium text-gray-900">
-                                {selectedRestaurantData?.address || "Rue du Grand-Bureau 16"} {selectedRestaurantData?.location || "1227 Genève"}
-                              </p>
+                            <div className="flex flex-col justify-center space-y-4">
+                              <div className="space-y-1">
+                                <Label className="text-sm text-gray-500 flex items-center gap-1">
+                                  Adresse de votre restaurant
+                                  <HelpCircle className="h-3 w-3 text-gray-400" />
+                                </Label>
+                                <Input 
+                                  defaultValue={selectedRestaurantData?.address || "Rue du Grand-Bureau 16"}
+                                  className="border-gray-200"
+                                  data-testid="input-address"
+                                />
+                              </div>
+                              <div className="space-y-1">
+                                <Label className="text-sm text-gray-500">Code postal et ville</Label>
+                                <Input 
+                                  defaultValue={selectedRestaurantData?.location || "1227 Genève"}
+                                  className="border-gray-200"
+                                  data-testid="input-city"
+                                />
+                              </div>
                             </div>
                           </div>
                         </div>
