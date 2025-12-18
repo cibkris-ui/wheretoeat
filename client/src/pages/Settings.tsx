@@ -56,6 +56,7 @@ import type { Restaurant } from "@shared/schema";
 
 type SettingsSection = "overview" | "profile" | "services" | "users" | "legal";
 type ProfileSubSection = "contacts" | "profil" | "photos";
+type ServicesSubSection = "service-hours" | "capacity" | "time-slots";
 
 export default function Settings() {
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
@@ -63,6 +64,7 @@ export default function Settings() {
 
   const [activeSection, setActiveSection] = useState<SettingsSection>("overview");
   const [profileSubSection, setProfileSubSection] = useState<ProfileSubSection>("contacts");
+  const [servicesSubSection, setServicesSubSection] = useState<ServicesSubSection>("service-hours");
   const [selectedRestaurant, setSelectedRestaurant] = useState<number | null>(null);
   const [addressField, setAddressField] = useState("");
   const [cityField, setCityField] = useState("");
@@ -290,6 +292,9 @@ export default function Settings() {
                                 setActiveSection(category.id as SettingsSection);
                                 if (category.id === "profile" && (item.id === "contacts" || item.id === "profil" || item.id === "photos")) {
                                   setProfileSubSection(item.id as ProfileSubSection);
+                                }
+                                if (category.id === "services" && (item.id === "service-hours" || item.id === "capacity" || item.id === "time-slots")) {
+                                  setServicesSubSection(item.id as ServicesSubSection);
                                 }
                               }}
                               className="w-full flex items-center gap-2 py-2 px-3 text-left text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-50 rounded-md transition-colors"
@@ -808,206 +813,226 @@ export default function Settings() {
 
             {activeSection === "services" && (
               <>
-                <div className="flex items-center gap-4 mb-6">
-                  <Button 
-                    variant="ghost" 
-                    size="sm"
-                    onClick={() => setActiveSection("overview")}
-                    className="flex items-center gap-2"
-                  >
-                    <ChevronLeft className="h-4 w-4" />
-                    Retour
-                  </Button>
-                  <h1 className="text-2xl font-bold">Services</h1>
-                </div>
+                {servicesSubSection === "service-hours" && (
+                  <div className="space-y-6 max-w-4xl">
+                    <h2 className="text-2xl font-bold">Horaires de service</h2>
 
-                <div className="space-y-6 max-w-3xl">
-                  <Card className="bg-white">
-                    <CardContent className="p-6">
-                      <h3 className="font-semibold flex items-center gap-2 mb-4">
-                        <Clock className="h-5 w-5 text-gray-500" />
-                        Heures de service
-                      </h3>
-                      
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <div className="space-y-2">
-                          <Label className="flex items-center gap-1">
-                            <Clock className="h-4 w-4 text-gray-400" />
-                            À partir de
-                          </Label>
-                          <Select defaultValue="18:00">
-                            <SelectTrigger data-testid="select-start-time">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {["11:00", "11:30", "12:00", "18:00", "18:30", "19:00"].map(time => (
-                                <SelectItem key={time} value={time}>{time}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
+                    <Card className="bg-white border shadow-sm">
+                      <CardContent className="p-0">
+                        <div className="px-6 py-4 border-b bg-gray-50/50">
+                          <h3 className="text-sm font-medium text-gray-600 flex items-center gap-2">
+                            <Clock className="h-4 w-4" />
+                            Heures d'ouverture
+                          </h3>
                         </div>
-                        <div className="space-y-2">
-                          <Label className="flex items-center gap-1">
-                            <Clock className="h-4 w-4 text-gray-400" />
-                            Jusqu'à
-                          </Label>
-                          <Select defaultValue="22:00">
-                            <SelectTrigger data-testid="select-end-time">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {["14:00", "14:30", "15:00", "21:00", "21:30", "22:00", "22:30", "23:00"].map(time => (
-                                <SelectItem key={time} value={time}>{time}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div className="space-y-2">
-                          <Label className="flex items-center gap-1">
-                            <Clock className="h-4 w-4 text-gray-400" />
-                            Dernière réservation
-                          </Label>
-                          <Select defaultValue="21:45">
-                            <SelectTrigger data-testid="select-last-booking">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              {["13:30", "14:00", "20:30", "21:00", "21:30", "21:45"].map(time => (
-                                <SelectItem key={time} value={time}>{time}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  <Card className="bg-white">
-                    <CardContent className="p-6">
-                      <h3 className="font-semibold flex items-center gap-2 mb-4">
-                        <Users className="h-5 w-5 text-gray-500" />
-                        Couverts
-                      </h3>
-                      
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div className="space-y-2">
-                          <Label className="flex items-center gap-1">
-                            Limite de couverts réservables
-                            <Tooltip>
-                              <TooltipTrigger>
-                                <HelpCircle className="h-4 w-4 text-gray-400" />
-                              </TooltipTrigger>
-                              <TooltipContent>
-                                <p>Nombre maximum de couverts par service</p>
-                              </TooltipContent>
-                            </Tooltip>
-                          </Label>
-                          <Input 
-                            type="number" 
-                            defaultValue={selectedRestaurantData?.capacity || 40} 
-                            data-testid="input-capacity"
-                          />
-                        </div>
-                        <div className="space-y-2 p-4 bg-gray-50 rounded-lg">
-                          <Label className="text-sm text-gray-500 flex items-center gap-1">
-                            <Globe className="h-4 w-4" />
-                            Maximum de couverts réservables en ligne
-                          </Label>
-                          <p className="text-2xl font-bold">{selectedRestaurantData?.capacity || 40}</p>
-                        </div>
-                      </div>
-
-                      <div className="mt-6">
-                        <h4 className="text-sm font-medium mb-4">Accepter automatiquement les réservations en ligne entre</h4>
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <div className="space-y-2 p-4 bg-gray-50 rounded-lg">
-                            <Label className="text-sm text-gray-500 flex items-center gap-1">
-                              <Globe className="h-4 w-4" />
-                              Minimum de personnes
-                            </Label>
-                            <p className="text-xl font-bold">1</p>
-                          </div>
-                          <div className="space-y-2 p-4 bg-gray-50 rounded-lg">
-                            <Label className="text-sm text-gray-500 flex items-center gap-1">
-                              <Globe className="h-4 w-4" />
-                              Maximum de personnes
-                            </Label>
-                            <p className="text-xl font-bold">12</p>
+                        <div className="p-6">
+                          <div className="space-y-4">
+                            {["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"].map((day) => (
+                              <div key={day} className="flex items-center gap-4 py-2 border-b border-gray-100">
+                                <div className="w-24">
+                                  <span className="font-medium">{day}</span>
+                                </div>
+                                <Switch defaultChecked={day !== "Dimanche"} data-testid={`toggle-${day.toLowerCase()}`} />
+                                <div className="flex items-center gap-2">
+                                  <Select defaultValue="12:00">
+                                    <SelectTrigger className="w-24" data-testid={`select-${day.toLowerCase()}-start`}>
+                                      <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      {["11:00", "11:30", "12:00", "12:30"].map(time => (
+                                        <SelectItem key={time} value={time}>{time}</SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                  <span className="text-gray-400">-</span>
+                                  <Select defaultValue="14:00">
+                                    <SelectTrigger className="w-24" data-testid={`select-${day.toLowerCase()}-end-lunch`}>
+                                      <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      {["13:30", "14:00", "14:30", "15:00"].map(time => (
+                                        <SelectItem key={time} value={time}>{time}</SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <Select defaultValue="19:00">
+                                    <SelectTrigger className="w-24" data-testid={`select-${day.toLowerCase()}-start-dinner`}>
+                                      <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      {["18:00", "18:30", "19:00", "19:30"].map(time => (
+                                        <SelectItem key={time} value={time}>{time}</SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                  <span className="text-gray-400">-</span>
+                                  <Select defaultValue="22:00">
+                                    <SelectTrigger className="w-24" data-testid={`select-${day.toLowerCase()}-end-dinner`}>
+                                      <SelectValue />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                      {["21:00", "21:30", "22:00", "22:30", "23:00"].map(time => (
+                                        <SelectItem key={time} value={time}>{time}</SelectItem>
+                                      ))}
+                                    </SelectContent>
+                                  </Select>
+                                </div>
+                              </div>
+                            ))}
                           </div>
                         </div>
-                      </div>
+                      </CardContent>
+                    </Card>
 
-                      <div className="mt-6 flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                        <div>
-                          <p className="font-medium">Demandes de réservations de groupe</p>
-                          <p className="text-sm text-gray-500">Accepter les demandes pour plus de 12 personnes</p>
-                        </div>
-                        <Switch data-testid="toggle-group-bookings" />
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  <Card className="bg-white">
-                    <CardContent className="p-6">
-                      <h3 className="font-semibold flex items-center gap-2 mb-2">
-                        <Clock className="h-5 w-5 text-gray-500" />
-                        Cadence par créneau horaire
-                      </h3>
-                      <p className="text-sm text-gray-500 mb-6">
-                        Contrôlez le nombre de clients pour chaque créneau horaire en limitant le nombre de couverts et de réservations.
-                      </p>
-
-                      <div className="space-y-3">
-                        <div className="grid grid-cols-[80px_1fr_1fr] gap-4 text-sm font-medium text-gray-500 pb-2 border-b">
-                          <div></div>
-                          <div>Total réservé/maximum total</div>
-                          <div>Réservations en ligne/maximum en ligne</div>
-                        </div>
-                        
-                        {["18:00", "18:15", "18:30", "18:45", "19:00", "19:15", "19:30", "19:45", "20:00"].map(time => (
-                          <div key={time} className="grid grid-cols-[80px_1fr_1fr] gap-4 items-center py-2">
-                            <div className="flex items-center gap-2">
-                              <Switch defaultChecked data-testid={`toggle-slot-${time}`} />
-                              <span className="text-sm font-medium">{time}</span>
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <Users className="h-4 w-4 text-gray-400" />
-                              <span className="text-sm">0 /</span>
-                              <Input 
-                                type="number" 
-                                className="w-16 h-8 text-sm" 
-                                defaultValue={10}
-                                data-testid={`input-slot-max-${time}`}
-                              />
-                            </div>
-                            <div className="flex items-center gap-2">
-                              <Globe className="h-4 w-4 text-gray-400" />
-                              <span className="text-sm">0 /</span>
-                              <Input 
-                                type="number" 
-                                className="w-16 h-8 text-sm" 
-                                defaultValue={10}
-                                data-testid={`input-slot-online-${time}`}
-                              />
-                            </div>
-                          </div>
-                        ))}
-                      </div>
-                    </CardContent>
-                  </Card>
-
-                  <div className="flex justify-end gap-3">
-                    <Button variant="outline" onClick={() => setActiveSection("overview")}>
-                      Annuler
-                    </Button>
-                    <Button 
-                      onClick={() => toast({ title: "Paramètres enregistrés" })}
-                      data-testid="save-services"
-                    >
-                      Appliquer
-                    </Button>
+                    <div className="flex justify-end gap-3 pt-4 pb-6">
+                      <Button variant="outline" onClick={() => setActiveSection("overview")} className="px-6">
+                        ANNULER
+                      </Button>
+                      <Button onClick={() => toast({ title: "Horaires enregistrés" })} className="px-6" data-testid="save-service-hours">
+                        ENREGISTRER
+                      </Button>
+                    </div>
                   </div>
-                </div>
+                )}
+
+                {servicesSubSection === "capacity" && (
+                  <div className="space-y-6 max-w-4xl">
+                    <h2 className="text-2xl font-bold">Capacité et couverts</h2>
+
+                    <Card className="bg-white border shadow-sm">
+                      <CardContent className="p-0">
+                        <div className="px-6 py-4 border-b bg-gray-50/50">
+                          <h3 className="text-sm font-medium text-gray-600 flex items-center gap-2">
+                            <Users className="h-4 w-4" />
+                            Capacité du restaurant
+                          </h3>
+                        </div>
+                        <div className="p-6">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="space-y-2">
+                              <Label className="flex items-center gap-1">
+                                Limite de couverts réservables
+                                <HelpCircle className="h-4 w-4 text-gray-400" />
+                              </Label>
+                              <Input 
+                                type="number" 
+                                defaultValue={selectedRestaurantData?.capacity || 40} 
+                                className="border-gray-200"
+                                data-testid="input-capacity"
+                              />
+                            </div>
+                            <div className="space-y-2 p-4 bg-gray-50 rounded-lg">
+                              <Label className="text-sm text-gray-500 flex items-center gap-1">
+                                <Globe className="h-4 w-4" />
+                                Maximum de couverts réservables en ligne
+                              </Label>
+                              <p className="text-2xl font-bold">{selectedRestaurantData?.capacity || 40}</p>
+                            </div>
+                          </div>
+
+                          <div className="mt-6 pt-6 border-t">
+                            <h4 className="text-sm font-medium mb-4">Accepter automatiquement les réservations en ligne entre</h4>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                              <div className="space-y-2">
+                                <Label className="text-sm text-gray-500">Minimum de personnes</Label>
+                                <Input type="number" defaultValue={1} className="border-gray-200" data-testid="input-min-guests" />
+                              </div>
+                              <div className="space-y-2">
+                                <Label className="text-sm text-gray-500">Maximum de personnes</Label>
+                                <Input type="number" defaultValue={12} className="border-gray-200" data-testid="input-max-guests" />
+                              </div>
+                            </div>
+                          </div>
+
+                          <div className="mt-6 flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                            <div>
+                              <p className="font-medium">Demandes de réservations de groupe</p>
+                              <p className="text-sm text-gray-500">Accepter les demandes pour plus de 12 personnes</p>
+                            </div>
+                            <Switch data-testid="toggle-group-bookings" />
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    <div className="flex justify-end gap-3 pt-4 pb-6">
+                      <Button variant="outline" onClick={() => setActiveSection("overview")} className="px-6">
+                        ANNULER
+                      </Button>
+                      <Button onClick={() => toast({ title: "Capacité enregistrée" })} className="px-6" data-testid="save-capacity">
+                        ENREGISTRER
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
+                {servicesSubSection === "time-slots" && (
+                  <div className="space-y-6 max-w-4xl">
+                    <h2 className="text-2xl font-bold">Créneaux horaires</h2>
+
+                    <Card className="bg-white border shadow-sm">
+                      <CardContent className="p-0">
+                        <div className="px-6 py-4 border-b bg-gray-50/50">
+                          <h3 className="text-sm font-medium text-gray-600 flex items-center gap-2">
+                            <CalendarDays className="h-4 w-4" />
+                            Cadence par créneau horaire
+                          </h3>
+                        </div>
+                        <div className="p-6">
+                          <p className="text-sm text-gray-500 mb-6">
+                            Contrôlez le nombre de clients pour chaque créneau horaire en limitant le nombre de couverts et de réservations.
+                          </p>
+
+                          <div className="space-y-3">
+                            <div className="grid grid-cols-[100px_1fr_1fr] gap-4 text-sm font-medium text-gray-500 pb-2 border-b">
+                              <div>Créneau</div>
+                              <div>Total réservé / maximum</div>
+                              <div>En ligne / maximum</div>
+                            </div>
+                            
+                            {["18:00", "18:15", "18:30", "18:45", "19:00", "19:15", "19:30", "19:45", "20:00"].map(time => (
+                              <div key={time} className="grid grid-cols-[100px_1fr_1fr] gap-4 items-center py-2 border-b border-gray-100">
+                                <div className="flex items-center gap-2">
+                                  <Switch defaultChecked data-testid={`toggle-slot-${time}`} />
+                                  <span className="text-sm font-medium">{time}</span>
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <span className="text-sm text-gray-500">0 /</span>
+                                  <Input 
+                                    type="number" 
+                                    className="w-20 h-8 text-sm border-gray-200" 
+                                    defaultValue={10}
+                                    data-testid={`input-slot-max-${time}`}
+                                  />
+                                </div>
+                                <div className="flex items-center gap-2">
+                                  <span className="text-sm text-gray-500">0 /</span>
+                                  <Input 
+                                    type="number" 
+                                    className="w-20 h-8 text-sm border-gray-200" 
+                                    defaultValue={10}
+                                    data-testid={`input-slot-online-${time}`}
+                                  />
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    <div className="flex justify-end gap-3 pt-4 pb-6">
+                      <Button variant="outline" onClick={() => setActiveSection("overview")} className="px-6">
+                        ANNULER
+                      </Button>
+                      <Button onClick={() => toast({ title: "Créneaux enregistrés" })} className="px-6" data-testid="save-time-slots">
+                        ENREGISTRER
+                      </Button>
+                    </div>
+                  </div>
+                )}
               </>
             )}
 
