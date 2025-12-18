@@ -54,7 +54,7 @@ import {
 } from "lucide-react";
 import type { Restaurant } from "@shared/schema";
 
-type SettingsSection = "overview" | "profile" | "services" | "users" | "reservations" | "appearance" | "legal";
+type SettingsSection = "overview" | "profile" | "services" | "users" | "legal";
 type ProfileSubSection = "contacts" | "profil" | "photos";
 
 export default function Settings() {
@@ -104,29 +104,11 @@ export default function Settings() {
       ]
     },
     {
-      id: "reservations",
-      icon: CalendarDays,
-      title: "Module de réservation",
-      items: [
-        { id: "booking-settings", label: "Paramètres de réservation", icon: SettingsIcon },
-        { id: "auto-confirm", label: "Confirmation automatique", icon: Bell },
-      ]
-    },
-    {
       id: "users",
       icon: Users,
       title: "Utilisateurs",
       items: [
         { id: "team", label: "Gestion des utilisateurs", icon: Users },
-      ]
-    },
-    {
-      id: "appearance",
-      icon: Palette,
-      title: "Conception et communication",
-      items: [
-        { id: "branding", label: "Personnalisation", icon: Palette },
-        { id: "website", label: "Page de réservation", icon: Globe },
       ]
     },
     {
@@ -920,89 +902,6 @@ export default function Settings() {
                           </span>
                         </div>
                       )}
-                    </div>
-                  </CardContent>
-                </Card>
-              </>
-            )}
-
-            {activeSection === "reservations" && (
-              <>
-                <div className="flex items-center gap-4 mb-6">
-                  <Button 
-                    variant="ghost" 
-                    size="sm"
-                    onClick={() => setActiveSection("overview")}
-                    className="flex items-center gap-2"
-                  >
-                    <ChevronLeft className="h-4 w-4" />
-                    Retour
-                  </Button>
-                  <h1 className="text-2xl font-bold">Module de réservation</h1>
-                </div>
-
-                <Card className="bg-white max-w-2xl">
-                  <CardContent className="p-6 space-y-6">
-                    <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                      <div>
-                        <p className="font-medium">Confirmation automatique</p>
-                        <p className="text-sm text-gray-500">Confirmer automatiquement les réservations en ligne</p>
-                      </div>
-                      <Switch defaultChecked data-testid="toggle-auto-confirm" />
-                    </div>
-
-                    <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                      <div>
-                        <p className="font-medium">Rappels par email</p>
-                        <p className="text-sm text-gray-500">Envoyer des rappels aux clients avant leur réservation</p>
-                      </div>
-                      <Switch defaultChecked data-testid="toggle-email-reminders" />
-                    </div>
-
-                    <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
-                      <div>
-                        <p className="font-medium">Permettre les annulations</p>
-                        <p className="text-sm text-gray-500">Les clients peuvent annuler leurs réservations</p>
-                      </div>
-                      <Switch defaultChecked data-testid="toggle-cancellations" />
-                    </div>
-
-                    <div className="pt-4 border-t flex justify-end gap-3">
-                      <Button variant="outline" onClick={() => setActiveSection("overview")}>
-                        Annuler
-                      </Button>
-                      <Button onClick={() => toast({ title: "Paramètres enregistrés" })}>
-                        Enregistrer
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              </>
-            )}
-
-            {activeSection === "appearance" && (
-              <>
-                <div className="flex items-center gap-4 mb-6">
-                  <Button 
-                    variant="ghost" 
-                    size="sm"
-                    onClick={() => setActiveSection("overview")}
-                    className="flex items-center gap-2"
-                  >
-                    <ChevronLeft className="h-4 w-4" />
-                    Retour
-                  </Button>
-                  <h1 className="text-2xl font-bold">Conception et communication</h1>
-                </div>
-
-                <Card className="bg-white max-w-2xl">
-                  <CardContent className="p-6">
-                    <div className="text-center py-8">
-                      <Palette className="h-12 w-12 text-gray-300 mx-auto mb-4" />
-                      <h3 className="font-medium text-gray-600 mb-2">Personnalisation</h3>
-                      <p className="text-sm text-gray-500">
-                        Les options de personnalisation seront bientôt disponibles.
-                      </p>
                     </div>
                   </CardContent>
                 </Card>
