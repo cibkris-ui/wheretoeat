@@ -289,55 +289,6 @@ export default function Settings() {
 
             {activeSection === "profile" && (
               <>
-                <div className="flex items-center gap-4 mb-6">
-                  <Button 
-                    variant="ghost" 
-                    size="sm"
-                    onClick={() => setActiveSection("overview")}
-                    className="flex items-center gap-2"
-                  >
-                    <ChevronLeft className="h-4 w-4" />
-                    Retour
-                  </Button>
-                  <h1 className="text-2xl font-bold">Profil du restaurant</h1>
-                </div>
-
-                <div className="flex gap-4 mb-6 border-b">
-                  <button
-                    onClick={() => setProfileSubSection("contacts")}
-                    className={`pb-3 px-1 text-sm font-medium border-b-2 transition-colors ${
-                      profileSubSection === "contacts" 
-                        ? "border-primary text-primary" 
-                        : "border-transparent text-gray-500 hover:text-gray-700"
-                    }`}
-                    data-testid="tab-contacts"
-                  >
-                    Contacts
-                  </button>
-                  <button
-                    onClick={() => setProfileSubSection("profil")}
-                    className={`pb-3 px-1 text-sm font-medium border-b-2 transition-colors ${
-                      profileSubSection === "profil" 
-                        ? "border-primary text-primary" 
-                        : "border-transparent text-gray-500 hover:text-gray-700"
-                    }`}
-                    data-testid="tab-profil"
-                  >
-                    Profil
-                  </button>
-                  <button
-                    onClick={() => setProfileSubSection("photos")}
-                    className={`pb-3 px-1 text-sm font-medium border-b-2 transition-colors ${
-                      profileSubSection === "photos" 
-                        ? "border-primary text-primary" 
-                        : "border-transparent text-gray-500 hover:text-gray-700"
-                    }`}
-                    data-testid="tab-photos"
-                  >
-                    Photos
-                  </button>
-                </div>
-
                 {profileSubSection === "contacts" && (
                   <div className="space-y-6 max-w-4xl">
                     <h2 className="text-2xl font-bold">Contacts</h2>
