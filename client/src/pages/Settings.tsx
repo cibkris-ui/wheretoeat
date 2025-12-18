@@ -231,6 +231,7 @@ export default function Settings() {
                     </Link>
                   ) : (
                     <button
+                      onClick={() => setActiveSection("overview")}
                       className={`w-12 h-12 rounded-lg flex items-center justify-center transition-colors ${
                         item.id === "settings" 
                           ? "bg-primary/10 text-primary" 
