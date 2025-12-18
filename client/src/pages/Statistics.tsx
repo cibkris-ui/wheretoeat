@@ -507,18 +507,6 @@ export default function Statistics() {
                         </div>
                       </div>
                     </div>
-                    
-                    <div className="mt-4 p-3 bg-teal-50 rounded-lg border border-teal-100">
-                      <div className="flex items-start gap-2">
-                        <Lightbulb className="h-4 w-4 text-teal-600 mt-0.5" />
-                        <div className="text-xs text-teal-700">
-                          <p>{stats.coversChange}% de couverts par rapport au mois précédent.</p>
-                          <a href="#" className="text-teal-600 font-medium hover:underline mt-1 block">
-                            AUGMENTEZ VOTRE VISIBILITÉ &gt;
-                          </a>
-                        </div>
-                      </div>
-                    </div>
                   </CardContent>
                 </Card>
 
@@ -546,18 +534,6 @@ export default function Statistics() {
                         </div>
                       </div>
                     </div>
-
-                    <div className="mt-4 p-3 bg-amber-50 rounded-lg border border-amber-100">
-                      <div className="flex items-start gap-2">
-                        <Lightbulb className="h-4 w-4 text-amber-600 mt-0.5" />
-                        <div className="text-xs text-amber-700">
-                          <p>Réduisez les annulations tardives en demandant une confirmation.</p>
-                          <a href="#" className="text-amber-600 font-medium hover:underline mt-1 block">
-                            RÉDUISEZ LE NOMBRE D'ANNULATIONS TARDIVES &gt;
-                          </a>
-                        </div>
-                      </div>
-                    </div>
                   </CardContent>
                 </Card>
 
@@ -582,18 +558,6 @@ export default function Statistics() {
                           {stats.noShowsChange <= 0 ? <TrendingDown className="h-4 w-4" /> : <TrendingUp className="h-4 w-4" />}
                           <span>{stats.noShowsChange >= 0 ? "+" : ""}{stats.noShowsChange}%</span>
                           <span className="text-gray-500">vs mois précédent</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="mt-4 p-3 bg-pink-50 rounded-lg border border-pink-100">
-                      <div className="flex items-start gap-2">
-                        <Lightbulb className="h-4 w-4 text-pink-600 mt-0.5" />
-                        <div className="text-xs text-pink-700">
-                          <p>Aucun changement pour les no-shows par rapport au mois précédent.</p>
-                          <a href="#" className="text-pink-600 font-medium hover:underline mt-1 block">
-                            LUTTEZ CONTRE LES NO-SHOWS &gt;
-                          </a>
                         </div>
                       </div>
                     </div>
@@ -703,18 +667,7 @@ export default function Statistics() {
                     )}
                   </div>
 
-                  <div className="mt-4 p-3 bg-amber-50 rounded-lg border border-amber-100">
-                    <div className="flex items-start gap-2">
-                      <Lightbulb className="h-4 w-4 text-amber-600 mt-0.5" />
-                      <div className="text-xs text-amber-700">
-                        <p>Optimisez votre taux d'occupation en proposant des offres promotionnelles.</p>
-                        <a href="#" className="text-amber-600 font-medium hover:underline mt-1 block">
-                          OPTIMISEZ VOTRE TAUX D'OCCUPATION &gt;
-                        </a>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
+                  </CardContent>
               </Card>
             </>
           )}
@@ -742,18 +695,6 @@ export default function Statistics() {
                       {stats.coversChange >= 0 ? <TrendingUp className="h-4 w-4" /> : <TrendingDown className="h-4 w-4" />}
                       <span>{stats.coversChange >= 0 ? "+" : ""}{stats.coversChange}%</span>
                       <span className="text-gray-500">vs mois précédent</span>
-                    </div>
-
-                    <div className="mt-4 p-3 bg-teal-50 rounded-lg border border-teal-100">
-                      <div className="flex items-start gap-2">
-                        <Lightbulb className="h-4 w-4 text-teal-600 mt-0.5" />
-                        <div className="text-xs text-teal-700">
-                          <p>{stats.coversChange}% de couverts par rapport au mois précédent.</p>
-                          <a href="#" className="text-teal-600 font-medium hover:underline mt-1 block">
-                            AUGMENTEZ VOTRE VISIBILITÉ &gt;
-                          </a>
-                        </div>
-                      </div>
                     </div>
                   </CardContent>
                 </Card>
