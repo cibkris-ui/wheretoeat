@@ -89,9 +89,8 @@ export default function Settings() {
       title: "Profil du restaurant",
       items: [
         { id: "contacts", label: "Contacts", icon: Phone },
-        { id: "photos", label: "Photos du profil", icon: Image },
-        { id: "description", label: "Description", icon: FileText },
-        { id: "address", label: "Adresse", icon: MapPin },
+        { id: "profil", label: "Profil", icon: FileText },
+        { id: "photos", label: "Photos", icon: Image },
       ]
     },
     {
