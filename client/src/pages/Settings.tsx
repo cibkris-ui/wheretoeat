@@ -64,6 +64,8 @@ export default function Settings() {
   const [activeSection, setActiveSection] = useState<SettingsSection>("overview");
   const [profileSubSection, setProfileSubSection] = useState<ProfileSubSection>("contacts");
   const [selectedRestaurant, setSelectedRestaurant] = useState<number | null>(null);
+  const [addressField, setAddressField] = useState("");
+  const [cityField, setCityField] = useState("");
 
   const { data: myRestaurants = [] } = useQuery<Restaurant[]>({
     queryKey: ["/api/my-restaurants"],
@@ -72,6 +74,18 @@ export default function Settings() {
 
   const activeRestaurantId = selectedRestaurant || myRestaurants[0]?.id;
   const selectedRestaurantData = myRestaurants.find(r => r.id === activeRestaurantId);
+
+  const defaultAddress = selectedRestaurantData?.address || "Rue du Grand-Bureau 16";
+  const defaultCity = selectedRestaurantData?.location || "1227 Genève";
+  
+  const currentAddress = addressField || defaultAddress;
+  const currentCity = cityField || defaultCity;
+  
+  const googleMapsUrl = useMemo(() => {
+    const fullAddress = `${currentAddress}, ${currentCity}, Switzerland`;
+    const encodedAddress = encodeURIComponent(fullAddress);
+    return `https://www.google.com/maps/embed/v1/place?key=AIzaSyBFw0Qbyq9zTFTd-tUY6dZWTgaQzuU17R8&q=${encodedAddress}`;
+  }, [currentAddress, currentCity]);
 
   const sidebarItems = [
     { id: "reservations" as const, icon: LayoutDashboard, label: "Réservations", link: "/dashboard" },
@@ -370,6 +384,56 @@ export default function Settings() {
                       <CardContent className="p-0">
                         <div className="px-6 py-4 border-b bg-gray-50/50">
                           <h3 className="text-sm font-medium text-gray-600 flex items-center gap-2">
+                            <MapPin className="h-4 w-4" />
+                            Localisation
+                          </h3>
+                        </div>
+                        <div className="p-6">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div className="bg-gray-100 rounded-lg h-64 flex items-center justify-center border overflow-hidden">
+                              <iframe
+                                width="100%"
+                                height="100%"
+                                style={{ border: 0 }}
+                                loading="lazy"
+                                allowFullScreen
+                                referrerPolicy="no-referrer-when-downgrade"
+                                src={googleMapsUrl}
+                                title="Localisation du restaurant"
+                              />
+                            </div>
+                            <div className="flex flex-col justify-center space-y-4">
+                              <div className="space-y-1">
+                                <Label className="text-sm text-gray-500 flex items-center gap-1">
+                                  Adresse de votre restaurant
+                                  <HelpCircle className="h-3 w-3 text-gray-400" />
+                                </Label>
+                                <Input 
+                                  value={currentAddress}
+                                  onChange={(e) => setAddressField(e.target.value)}
+                                  className="border-gray-200"
+                                  data-testid="input-address"
+                                />
+                              </div>
+                              <div className="space-y-1">
+                                <Label className="text-sm text-gray-500">Code postal et ville</Label>
+                                <Input 
+                                  value={currentCity}
+                                  onChange={(e) => setCityField(e.target.value)}
+                                  className="border-gray-200"
+                                  data-testid="input-city"
+                                />
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    <Card className="bg-white border shadow-sm">
+                      <CardContent className="p-0">
+                        <div className="px-6 py-4 border-b bg-gray-50/50">
+                          <h3 className="text-sm font-medium text-gray-600 flex items-center gap-2">
                             <FileText className="h-4 w-4" />
                             Informations légales
                           </h3>
@@ -444,50 +508,6 @@ export default function Settings() {
                                 className="border-gray-200"
                                 data-testid="input-privacy-policy"
                               />
-                            </div>
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-
-                    <Card className="bg-white border shadow-sm">
-                      <CardContent className="p-0">
-                        <div className="px-6 py-4 border-b bg-gray-50/50">
-                          <h3 className="text-sm font-medium text-gray-600 flex items-center gap-2">
-                            <MapPin className="h-4 w-4" />
-                            Localisation
-                          </h3>
-                        </div>
-                        <div className="p-6">
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <div className="bg-gray-100 rounded-lg h-64 flex items-center justify-center border overflow-hidden">
-                              <div className="w-full h-full bg-gradient-to-br from-gray-100 to-gray-200 flex items-center justify-center">
-                                <div className="text-center text-gray-500">
-                                  <MapPin className="h-8 w-8 mx-auto mb-2 text-red-500" />
-                                  <p className="text-xs text-gray-400">Google Maps</p>
-                                </div>
-                              </div>
-                            </div>
-                            <div className="flex flex-col justify-center space-y-4">
-                              <div className="space-y-1">
-                                <Label className="text-sm text-gray-500 flex items-center gap-1">
-                                  Adresse de votre restaurant
-                                  <HelpCircle className="h-3 w-3 text-gray-400" />
-                                </Label>
-                                <Input 
-                                  defaultValue={selectedRestaurantData?.address || "Rue du Grand-Bureau 16"}
-                                  className="border-gray-200"
-                                  data-testid="input-address"
-                                />
-                              </div>
-                              <div className="space-y-1">
-                                <Label className="text-sm text-gray-500">Code postal et ville</Label>
-                                <Input 
-                                  defaultValue={selectedRestaurantData?.location || "1227 Genève"}
-                                  className="border-gray-200"
-                                  data-testid="input-city"
-                                />
-                              </div>
                             </div>
                           </div>
                         </div>
