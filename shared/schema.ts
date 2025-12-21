@@ -102,6 +102,9 @@ export const restaurants = pgTable("restaurants", {
   menuPdfUrl: text("menu_pdf_url"),
   googlePlaceId: text("google_place_id"),
   capacity: integer("capacity").default(40),
+  approvalStatus: text("approval_status").default("pending"),
+  isBlocked: boolean("is_blocked").default(false),
+  createdAt: timestamp("created_at").defaultNow(),
 });
 
 export const insertRestaurantSchema = createInsertSchema(restaurants).omit({
