@@ -38,11 +38,25 @@ Database tables:
 - `bookings` - Table reservations (restaurant reference, date, time, guests, contact info)
 
 ### API Structure
-- `GET /api/restaurants` - List all restaurants
+- `GET /api/restaurants` - List all approved, non-blocked restaurants
 - `GET /api/restaurants/:id` - Get single restaurant
 - `POST /api/restaurants` - Create restaurant
 - `POST /api/bookings` - Create booking
 - `GET /api/bookings/restaurant/:id` - Get bookings for restaurant
+
+### Admin API (requires admin role)
+- `GET /api/admin/restaurants` - List all restaurants (including pending/blocked)
+- `PUT /api/admin/restaurants/:id/approve` - Approve a restaurant
+- `PUT /api/admin/restaurants/:id/reject` - Reject a restaurant
+- `PUT /api/admin/restaurants/:id/block` - Block/unblock a restaurant
+- `DELETE /api/admin/restaurants/:id` - Delete a restaurant
+- `GET /api/admin/clients` - List all clients
+- `GET /api/admin/users` - List all users
+- `POST /api/admin/users` - Create a new user
+- `PUT /api/admin/users/:id` - Update user (admin role)
+- `DELETE /api/admin/users/:id` - Delete a user
+
+Default admin credentials: admin@admin.com / adminadmin
 
 ### Key Design Decisions
 

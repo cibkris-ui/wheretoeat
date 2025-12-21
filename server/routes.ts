@@ -563,7 +563,7 @@ export async function registerRoutes(
     phone: z.string().min(1),
     companyName: z.string().min(1),
     registrationNumber: z.string().optional(),
-    cuisineType: z.string().min(1),
+    cuisineType: z.union([z.string(), z.array(z.string())]),
     priceRange: z.string().min(1),
     description: z.string().optional(),
     logoUrl: z.string().optional(),
@@ -580,7 +580,7 @@ export async function registerRoutes(
         });
       }
 
-      const { email, password, firstName, lastName, ...registrationData } = result.data;
+      const { email, password, firstName, lastName, cuisineType, ...registrationData } = result.data;
 
       const existingUser = await storage.getUserByEmail(email);
       if (existingUser) {
@@ -590,8 +590,11 @@ export async function registerRoutes(
       const hashedPassword = await bcrypt.hash(password, 10);
       const user = await storage.createUserWithPassword(email, hashedPassword, firstName, lastName);
 
+      const cuisineTypeArray = Array.isArray(cuisineType) ? cuisineType : [cuisineType];
+
       const registration = await storage.createRegistration({
         userId: user.id,
+        cuisineType: cuisineTypeArray,
         ...registrationData,
       });
 
@@ -658,9 +661,12 @@ export async function registerRoutes(
         return res.status(404).json({ message: "Registration not found" });
       }
       if (status === "approved") {
+        const cuisineString = Array.isArray(registration.cuisineType) 
+          ? registration.cuisineType.join(", ") 
+          : registration.cuisineType;
         const newRestaurant = await storage.createRestaurant({
           name: registration.restaurantName,
-          cuisine: registration.cuisineType,
+          cuisine: cuisineString,
           location: registration.address,
           rating: 0,
           priceRange: registration.priceRange,
@@ -672,6 +678,7 @@ export async function registerRoutes(
           address: registration.address,
           openingHours: registration.openingHours as Record<string, unknown> | undefined,
           menuPdfUrl: registration.menuPdfUrl,
+          approvalStatus: "approved",
         });
         return res.json({ registration, restaurant: newRestaurant });
       }
@@ -883,7 +890,7 @@ export async function registerRoutes(
   app.get("/api/admin/users", isAdmin, async (_req, res) => {
     try {
       const allUsers = await storage.getAllUsers();
-      res.json(allUsers.map(u => ({ ...u, password: undefined })));
+      res.json(allUsers.map(({ password, ...rest }) => rest));
     } catch (error: any) {
       res.status(500).json({ message: error.message });
     }
@@ -904,7 +911,8 @@ export async function registerRoutes(
       if (makeAdmin) {
         await storage.updateUser(user.id, { isAdmin: true });
       }
-      res.status(201).json({ ...user, password: undefined });
+      const { password: _, ...safeUser } = user;
+      res.status(201).json(safeUser);
     } catch (error: any) {
       res.status(500).json({ message: error.message });
     }
@@ -914,7 +922,12 @@ export async function registerRoutes(
     try {
       const { isAdmin: makeAdmin } = req.body;
       const updated = await storage.updateUser(req.params.id, { isAdmin: makeAdmin });
-      res.json({ ...updated, password: undefined });
+      if (updated) {
+        const { password: _, ...safeUser } = updated;
+        res.json(safeUser);
+      } else {
+        res.status(404).json({ message: "User not found" });
+      }
     } catch (error: any) {
       res.status(500).json({ message: error.message });
     }
