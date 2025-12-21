@@ -796,5 +796,150 @@ export async function registerRoutes(
     }
   });
 
+  const isAdmin: RequestHandler = async (req: any, res, next) => {
+    const userId = req.session?.userId || req.user?.claims?.sub;
+    if (!userId) {
+      return res.status(401).json({ message: "Unauthorized" });
+    }
+    const user = await storage.getUser(userId);
+    if (!user?.isAdmin) {
+      return res.status(403).json({ message: "Admin access required" });
+    }
+    req.localUserId = userId;
+    next();
+  };
+
+  app.get("/api/admin/restaurants", isAdmin, async (_req, res) => {
+    try {
+      const allRestaurants = await storage.getAllRestaurantsAdmin();
+      res.json(allRestaurants);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.put("/api/admin/restaurants/:id/approve", isAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid restaurant ID" });
+      }
+      const updated = await storage.updateRestaurant(id, { approvalStatus: "approved" });
+      res.json(updated);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.put("/api/admin/restaurants/:id/reject", isAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid restaurant ID" });
+      }
+      const updated = await storage.updateRestaurant(id, { approvalStatus: "rejected" });
+      res.json(updated);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.put("/api/admin/restaurants/:id/block", isAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid restaurant ID" });
+      }
+      const { isBlocked } = req.body;
+      const updated = await storage.updateRestaurant(id, { isBlocked: isBlocked ?? true });
+      res.json(updated);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.delete("/api/admin/restaurants/:id", isAdmin, async (req, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid restaurant ID" });
+      }
+      await storage.deleteRestaurant(id);
+      res.json({ success: true });
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.get("/api/admin/clients", isAdmin, async (_req, res) => {
+    try {
+      const allClients = await storage.getAllClients();
+      res.json(allClients);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.get("/api/admin/users", isAdmin, async (_req, res) => {
+    try {
+      const allUsers = await storage.getAllUsers();
+      res.json(allUsers.map(u => ({ ...u, password: undefined })));
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.post("/api/admin/users", isAdmin, async (req, res) => {
+    try {
+      const { email, password, firstName, lastName, isAdmin: makeAdmin } = req.body;
+      if (!email || !password) {
+        return res.status(400).json({ message: "Email and password required" });
+      }
+      const existing = await storage.getUserByEmail(email);
+      if (existing) {
+        return res.status(400).json({ message: "User already exists" });
+      }
+      const hashedPassword = await bcrypt.hash(password, 10);
+      const user = await storage.createUserWithPassword(email, hashedPassword, firstName, lastName);
+      if (makeAdmin) {
+        await storage.updateUser(user.id, { isAdmin: true });
+      }
+      res.status(201).json({ ...user, password: undefined });
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.put("/api/admin/users/:id", isAdmin, async (req, res) => {
+    try {
+      const { isAdmin: makeAdmin } = req.body;
+      const updated = await storage.updateUser(req.params.id, { isAdmin: makeAdmin });
+      res.json({ ...updated, password: undefined });
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.delete("/api/admin/users/:id", isAdmin, async (req, res) => {
+    try {
+      await storage.deleteUser(req.params.id);
+      res.json({ success: true });
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  const initDefaultAdmin = async () => {
+    const adminEmail = "admin@admin.com";
+    const existing = await storage.getUserByEmail(adminEmail);
+    if (!existing) {
+      const hashedPassword = await bcrypt.hash("adminadmin", 10);
+      const admin = await storage.createUserWithPassword(adminEmail, hashedPassword, "Admin", "User");
+      await storage.updateUser(admin.id, { isAdmin: true });
+      console.log("Default admin created: admin@admin.com / adminadmin");
+    }
+  };
+  initDefaultAdmin();
+
   return httpServer;
 }

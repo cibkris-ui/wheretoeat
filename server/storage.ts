@@ -28,12 +28,18 @@ export interface IStorage {
   getUserByEmail(email: string): Promise<User | undefined>;
   upsertUser(user: UpsertUser): Promise<User>;
   createUserWithPassword(email: string, hashedPassword: string, firstName?: string, lastName?: string): Promise<User>;
+  getAllUsers(): Promise<User[]>;
+  updateUser(id: string, data: Partial<UpsertUser>): Promise<User | undefined>;
+  deleteUser(id: string): Promise<void>;
   
   getAllRestaurants(): Promise<Restaurant[]>;
+  getAllRestaurantsAdmin(): Promise<Restaurant[]>;
   getRestaurant(id: number): Promise<Restaurant | undefined>;
   getRestaurantsByOwner(ownerId: string): Promise<Restaurant[]>;
   createRestaurant(restaurant: InsertRestaurant): Promise<Restaurant>;
   updateRestaurant(id: number, data: Partial<InsertRestaurant>): Promise<Restaurant | undefined>;
+  deleteRestaurant(id: number): Promise<void>;
+  getAllClients(): Promise<Client[]>;
   
   createBooking(booking: InsertBooking): Promise<Booking>;
   getBooking(id: number): Promise<Booking | undefined>;
@@ -103,8 +109,45 @@ export class DatabaseStorage implements IStorage {
     return user;
   }
 
+  async getAllUsers(): Promise<User[]> {
+    return await db.select().from(users);
+  }
+
+  async updateUser(id: string, data: Partial<UpsertUser>): Promise<User | undefined> {
+    const [updated] = await db
+      .update(users)
+      .set({ ...data, updatedAt: new Date() })
+      .where(eq(users.id, id))
+      .returning();
+    return updated;
+  }
+
+  async deleteUser(id: string): Promise<void> {
+    await db.delete(users).where(eq(users.id, id));
+  }
+
   async getAllRestaurants(): Promise<Restaurant[]> {
+    return await db.select().from(restaurants).where(
+      and(
+        eq(restaurants.approvalStatus, 'approved'),
+        eq(restaurants.isBlocked, false)
+      )
+    );
+  }
+
+  async getAllRestaurantsAdmin(): Promise<Restaurant[]> {
     return await db.select().from(restaurants);
+  }
+
+  async deleteRestaurant(id: number): Promise<void> {
+    await db.delete(bookings).where(eq(bookings.restaurantId, id));
+    await db.delete(clients).where(eq(clients.restaurantId, id));
+    await db.delete(closedDays).where(eq(closedDays.restaurantId, id));
+    await db.delete(restaurants).where(eq(restaurants.id, id));
+  }
+
+  async getAllClients(): Promise<Client[]> {
+    return await db.select().from(clients).orderBy(desc(clients.createdAt));
   }
 
   async getRestaurant(id: number): Promise<Restaurant | undefined> {
