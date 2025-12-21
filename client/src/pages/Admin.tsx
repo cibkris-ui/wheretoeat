@@ -140,6 +140,17 @@ export default function Admin() {
   const [newUserDialog, setNewUserDialog] = useState(false);
   const [newUser, setNewUser] = useState({ email: "", password: "", firstName: "", lastName: "", isAdmin: false });
   const [selectedRestaurant, setSelectedRestaurant] = useState<Restaurant | null>(null);
+  const [newRestaurantDialog, setNewRestaurantDialog] = useState(false);
+  const [newRestaurant, setNewRestaurant] = useState({
+    name: "",
+    cuisine: "",
+    location: "",
+    priceRange: "$$",
+    description: "",
+    phone: "",
+    address: "",
+    image: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4",
+  });
 
   const { data: restaurants = [] } = useQuery<Restaurant[]>({
     queryKey: ["admin-restaurants"],
@@ -271,6 +282,41 @@ export default function Admin() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-users"] });
       setDeleteConfirm(null);
+    },
+  });
+
+  const createRestaurantMutation = useMutation({
+    mutationFn: async (data: typeof newRestaurant) => {
+      const res = await fetch("/api/restaurants", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          ...data,
+          rating: 0,
+          features: [],
+          approvalStatus: "approved",
+        }),
+      });
+      if (!res.ok) {
+        const error = await res.json();
+        throw new Error(error.message || "Failed to create restaurant");
+      }
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-restaurants"] });
+      setNewRestaurantDialog(false);
+      setNewRestaurant({
+        name: "",
+        cuisine: "",
+        location: "",
+        priceRange: "$$",
+        description: "",
+        phone: "",
+        address: "",
+        image: "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4",
+      });
     },
   });
 
@@ -455,8 +501,8 @@ export default function Admin() {
 
             <TabsContent value="restaurants" className="m-0">
               <CardContent className="p-6">
-                <div className="mb-4">
-                  <div className="relative">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="relative flex-1 max-w-sm">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                     <Input
                       placeholder="Rechercher un restaurant..."
@@ -466,6 +512,10 @@ export default function Admin() {
                       data-testid="search-restaurants"
                     />
                   </div>
+                  <Button onClick={() => setNewRestaurantDialog(true)} data-testid="button-add-restaurant">
+                    <Store className="w-4 h-4 mr-2" />
+                    Ajouter un restaurant
+                  </Button>
                 </div>
                 <Table>
                   <TableHeader>
@@ -884,6 +934,119 @@ export default function Admin() {
               </DialogFooter>
             </>
           )}
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={newRestaurantDialog} onOpenChange={setNewRestaurantDialog}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Ajouter un restaurant</DialogTitle>
+            <DialogDescription>Créer un nouveau restaurant dans la plateforme</DialogDescription>
+          </DialogHeader>
+          <form onSubmit={(e) => { e.preventDefault(); createRestaurantMutation.mutate(newRestaurant); }} className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="restaurantName">Nom du restaurant *</Label>
+                <Input
+                  id="restaurantName"
+                  value={newRestaurant.name}
+                  onChange={(e) => setNewRestaurant({ ...newRestaurant, name: e.target.value })}
+                  required
+                  data-testid="input-restaurant-name"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="restaurantCuisine">Type de cuisine *</Label>
+                <Input
+                  id="restaurantCuisine"
+                  value={newRestaurant.cuisine}
+                  onChange={(e) => setNewRestaurant({ ...newRestaurant, cuisine: e.target.value })}
+                  placeholder="Italien, Français, Suisse..."
+                  required
+                  data-testid="input-restaurant-cuisine"
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="restaurantLocation">Ville *</Label>
+                <Input
+                  id="restaurantLocation"
+                  value={newRestaurant.location}
+                  onChange={(e) => setNewRestaurant({ ...newRestaurant, location: e.target.value })}
+                  placeholder="Genève, Zurich, Lausanne..."
+                  required
+                  data-testid="input-restaurant-location"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="restaurantAddress">Adresse</Label>
+                <Input
+                  id="restaurantAddress"
+                  value={newRestaurant.address}
+                  onChange={(e) => setNewRestaurant({ ...newRestaurant, address: e.target.value })}
+                  placeholder="Rue et numéro"
+                  data-testid="input-restaurant-address"
+                />
+              </div>
+            </div>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="restaurantPhone">Téléphone</Label>
+                <Input
+                  id="restaurantPhone"
+                  value={newRestaurant.phone}
+                  onChange={(e) => setNewRestaurant({ ...newRestaurant, phone: e.target.value })}
+                  placeholder="+41 22 123 45 67"
+                  data-testid="input-restaurant-phone"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="restaurantPriceRange">Gamme de prix *</Label>
+                <select
+                  id="restaurantPriceRange"
+                  value={newRestaurant.priceRange}
+                  onChange={(e) => setNewRestaurant({ ...newRestaurant, priceRange: e.target.value })}
+                  className="w-full h-10 px-3 rounded-md border border-input bg-background"
+                  data-testid="select-restaurant-price"
+                >
+                  <option value="$">$ - Économique</option>
+                  <option value="$$">$$ - Modéré</option>
+                  <option value="$$$">$$$ - Haut de gamme</option>
+                  <option value="$$$$">$$$$ - Luxe</option>
+                </select>
+              </div>
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="restaurantImage">URL de l'image</Label>
+              <Input
+                id="restaurantImage"
+                value={newRestaurant.image}
+                onChange={(e) => setNewRestaurant({ ...newRestaurant, image: e.target.value })}
+                placeholder="https://..."
+                data-testid="input-restaurant-image"
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="restaurantDescription">Description</Label>
+              <textarea
+                id="restaurantDescription"
+                value={newRestaurant.description}
+                onChange={(e) => setNewRestaurant({ ...newRestaurant, description: e.target.value })}
+                className="w-full min-h-[80px] px-3 py-2 rounded-md border border-input bg-background resize-none"
+                placeholder="Description du restaurant..."
+                data-testid="textarea-restaurant-description"
+              />
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setNewRestaurantDialog(false)}>
+                Annuler
+              </Button>
+              <Button type="submit" disabled={createRestaurantMutation.isPending} data-testid="button-create-restaurant">
+                {createRestaurantMutation.isPending ? "Création..." : "Créer le restaurant"}
+              </Button>
+            </DialogFooter>
+          </form>
         </DialogContent>
       </Dialog>
     </div>
