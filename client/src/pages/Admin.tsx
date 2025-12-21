@@ -25,7 +25,12 @@ interface Restaurant {
   rating: number;
   priceRange: string;
   image: string;
+  description: string;
+  features: string[];
   ownerId: string | null;
+  phone: string | null;
+  address: string | null;
+  capacity: number | null;
   approvalStatus: string | null;
   isBlocked: boolean | null;
   createdAt: string | null;
@@ -134,6 +139,7 @@ export default function Admin() {
   const [deleteConfirm, setDeleteConfirm] = useState<{ type: "restaurant" | "user"; id: number | string } | null>(null);
   const [newUserDialog, setNewUserDialog] = useState(false);
   const [newUser, setNewUser] = useState({ email: "", password: "", firstName: "", lastName: "", isAdmin: false });
+  const [selectedRestaurant, setSelectedRestaurant] = useState<Restaurant | null>(null);
 
   const { data: restaurants = [] } = useQuery<Restaurant[]>({
     queryKey: ["admin-restaurants"],
@@ -504,6 +510,14 @@ export default function Admin() {
                             <Button
                               size="sm"
                               variant="outline"
+                              onClick={() => setSelectedRestaurant(restaurant)}
+                              data-testid={`view-${restaurant.id}`}
+                            >
+                              <Eye className="w-4 h-4 mr-1" /> Voir
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
                               onClick={() => blockMutation.mutate({ id: restaurant.id, isBlocked: !restaurant.isBlocked })}
                               disabled={blockMutation.isPending}
                               data-testid={`block-${restaurant.id}`}
@@ -762,6 +776,116 @@ export default function Admin() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <Dialog open={!!selectedRestaurant} onOpenChange={() => setSelectedRestaurant(null)}>
+        <DialogContent className="max-w-2xl">
+          {selectedRestaurant && (
+            <>
+              <DialogHeader>
+                <DialogTitle className="flex items-center gap-3">
+                  <img 
+                    src={selectedRestaurant.image} 
+                    alt={selectedRestaurant.name} 
+                    className="w-12 h-12 object-cover rounded"
+                  />
+                  {selectedRestaurant.name}
+                </DialogTitle>
+                <DialogDescription>
+                  Détails du restaurant
+                </DialogDescription>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Localisation</p>
+                    <p className="flex items-center gap-1">
+                      <MapPin className="w-4 h-4 text-muted-foreground" />
+                      {selectedRestaurant.location}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Adresse</p>
+                    <p>{selectedRestaurant.address || "-"}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Téléphone</p>
+                    <p className="flex items-center gap-1">
+                      <Phone className="w-4 h-4 text-muted-foreground" />
+                      {selectedRestaurant.phone || "-"}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Type de cuisine</p>
+                    <Badge variant="secondary">{selectedRestaurant.cuisine}</Badge>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Gamme de prix</p>
+                    <p>{selectedRestaurant.priceRange}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Note</p>
+                    <p>{selectedRestaurant.rating > 0 ? `${selectedRestaurant.rating}/5` : "Pas encore noté"}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Capacité</p>
+                    <p>{selectedRestaurant.capacity || 40} couverts</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Statut</p>
+                    {selectedRestaurant.isBlocked ? (
+                      <Badge variant="destructive">Bloqué</Badge>
+                    ) : (
+                      <Badge className="bg-green-100 text-green-700">Visible</Badge>
+                    )}
+                  </div>
+                </div>
+                {selectedRestaurant.description && (
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground mb-1">Description</p>
+                    <p className="text-sm">{selectedRestaurant.description}</p>
+                  </div>
+                )}
+                {selectedRestaurant.features && selectedRestaurant.features.length > 0 && (
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground mb-1">Caractéristiques</p>
+                    <div className="flex flex-wrap gap-2">
+                      {selectedRestaurant.features.map((feature, i) => (
+                        <Badge key={i} variant="outline">{feature}</Badge>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                {selectedRestaurant.createdAt && (
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">Date de création</p>
+                    <p className="text-sm">{new Date(selectedRestaurant.createdAt).toLocaleDateString("fr-CH")}</p>
+                  </div>
+                )}
+              </div>
+              <DialogFooter className="mt-4">
+                <Button
+                  variant="outline"
+                  onClick={() => {
+                    blockMutation.mutate({ id: selectedRestaurant.id, isBlocked: !selectedRestaurant.isBlocked });
+                    setSelectedRestaurant(null);
+                  }}
+                >
+                  {selectedRestaurant.isBlocked ? "Débloquer" : "Bloquer"}
+                </Button>
+                <Button
+                  variant="destructive"
+                  onClick={() => {
+                    setDeleteConfirm({ type: "restaurant", id: selectedRestaurant.id });
+                    setSelectedRestaurant(null);
+                  }}
+                >
+                  Supprimer
+                </Button>
+              </DialogFooter>
+            </>
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
