@@ -25,7 +25,7 @@ function Router() {
       <Route path="/restaurants" component={Restaurants} />
       <Route path="/restaurant/:id" component={RestaurantDetail} />
       <Route path="/dashboard" component={Dashboard} />
-      <Route path="/dashboard/plan-de-salle" component={Assignments} />
+      <Route path="/dashboard/attribution" component={Assignments} />
       <Route path="/dashboard/nouvelle-reservation" component={NewBooking} />
       <Route path="/dashboard/calendrier" component={Calendar} />
       <Route path="/dashboard/notifications" component={Notifications} />
