@@ -52,6 +52,7 @@ export interface IStorage {
   checkClientIdEmailMismatch(clientId: string, email: string): Promise<Booking | undefined>;
   updateBookingArrival(id: number, arrivalTime: string): Promise<Booking | undefined>;
   updateBookingStatus(id: number, status: string): Promise<Booking | undefined>;
+  updateBookingTable(id: number, tableId: string | null, zoneId: string | null): Promise<Booking | undefined>;
   
   getCuisineCategories(): Promise<CuisineCategory[]>;
   
@@ -206,6 +207,15 @@ export class DatabaseStorage implements IStorage {
     const [updated] = await db
       .update(bookings)
       .set({ status })
+      .where(eq(bookings.id, id))
+      .returning();
+    return updated;
+  }
+
+  async updateBookingTable(id: number, tableId: string | null, zoneId: string | null): Promise<Booking | undefined> {
+    const [updated] = await db
+      .update(bookings)
+      .set({ tableId, zoneId })
       .where(eq(bookings.id, id))
       .returning();
     return updated;

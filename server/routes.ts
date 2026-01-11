@@ -368,6 +368,37 @@ export async function registerRoutes(
     }
   });
 
+  app.patch("/api/bookings/:id/table", isAuthenticatedCombined, async (req: any, res) => {
+    try {
+      const bookingId = parseInt(req.params.id);
+      if (isNaN(bookingId)) {
+        return res.status(400).json({ message: "Invalid booking ID" });
+      }
+      
+      const { tableId, zoneId } = req.body;
+      
+      const booking = await storage.getBooking(bookingId);
+      if (!booking) {
+        return res.status(404).json({ message: "Booking not found" });
+      }
+      
+      const restaurant = await storage.getRestaurant(booking.restaurantId);
+      if (!restaurant) {
+        return res.status(404).json({ message: "Restaurant not found" });
+      }
+      
+      const userId = req.localUserId;
+      if (restaurant.ownerId !== userId) {
+        return res.status(403).json({ message: "Not authorized" });
+      }
+      
+      const updated = await storage.updateBookingTable(bookingId, tableId || null, zoneId || null);
+      res.json(updated);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
   app.get("/api/cuisine-categories", async (_req, res) => {
     try {
       const categories = await storage.getCuisineCategories();
