@@ -4,14 +4,23 @@ import { Link } from "wouter";
 import { format, addDays, subDays } from "date-fns";
 import { fr } from "date-fns/locale";
 import { 
-  ArrowLeft, 
   ChevronLeft, 
   ChevronRight, 
   Users,
   Clock,
   X,
   MapPin,
-  GripVertical
+  GripVertical,
+  LayoutDashboard,
+  Grid3X3,
+  CalendarDays,
+  Bell,
+  LineChart,
+  Settings,
+  Utensils,
+  Store,
+  UserCircle,
+  LogOut
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -22,6 +31,8 @@ import { Badge } from "@/components/ui/badge";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "sonner";
 import { DndContext, DragEndEvent, DragOverlay, DragStartEvent, useDraggable, useDroppable, PointerSensor, useSensor, useSensors } from "@dnd-kit/core";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import type { Booking, Restaurant, FloorPlanData, FloorPlanTable, FloorPlanDecor } from "@shared/schema";
 
 const CANVAS_WIDTH = 700;
@@ -320,6 +331,16 @@ export default function Assignments() {
   const unassignedBookings = filteredBookings.filter(b => !b.tableId);
   const assignedBookings = filteredBookings.filter(b => b.tableId);
 
+  const sidebarItems = [
+    { id: "reservations" as const, icon: LayoutDashboard, label: "Réservations", link: "/dashboard" },
+    { id: "attribution" as const, icon: Grid3X3, label: "Attribution", link: null },
+    { id: "calendar" as const, icon: CalendarDays, label: "Calendrier", link: "/dashboard/calendrier" },
+    { id: "notifications" as const, icon: Bell, label: "Notifications", link: "/dashboard/notifications" },
+    { id: "clients" as const, icon: Users, label: "Clients", link: "/dashboard/clients" },
+    { id: "stats" as const, icon: LineChart, label: "Statistiques", link: "/dashboard/statistiques" },
+    { id: "settings" as const, icon: Settings, label: "Paramètres", link: "/dashboard/parametres" },
+  ];
+
   return (
     <DndContext 
       sensors={sensors}
@@ -327,68 +348,127 @@ export default function Assignments() {
       onDragOver={handleDragOver}
       onDragEnd={handleDragEnd}
     >
-      <div className="min-h-screen bg-gray-50">
-        <header className="bg-white border-b px-6 py-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <Link href="/dashboard">
-                <Button variant="ghost" size="icon">
-                  <ArrowLeft className="h-5 w-5" />
-                </Button>
+      <TooltipProvider>
+        <div className="min-h-screen bg-gray-50">
+          <div className="sticky top-0 z-50 w-full border-b bg-white">
+            <div className="flex h-16 items-center justify-between px-6">
+              <Link href="/" className="flex items-center gap-2 font-serif text-xl font-bold tracking-tight hover:opacity-90 transition-opacity cursor-pointer">
+                <div className="flex h-8 w-8 items-center justify-center rounded-sm bg-primary text-primary-foreground">
+                  <Utensils className="h-5 w-5" />
+                </div>
+                <span>WHERE<span className="text-primary mx-0.5">TO</span>EAT.CH</span>
               </Link>
-              <h1 className="text-xl font-semibold">Attribution</h1>
-            </div>
-            
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-2 bg-gray-100 rounded-lg p-1">
-                <Button 
-                  variant="ghost" 
-                  size="icon"
-                  onClick={() => setSelectedDate(subDays(selectedDate, 1))}
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                </Button>
-                
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button variant="ghost" className="font-medium">
-                      {format(selectedDate, "EEEE d MMMM", { locale: fr })}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0" align="center">
-                    <Calendar
-                      mode="single"
-                      selected={selectedDate}
-                      onSelect={(date) => date && setSelectedDate(date)}
-                      locale={fr}
-                    />
-                  </PopoverContent>
-                </Popover>
-                
-                <Button 
-                  variant="ghost" 
-                  size="icon"
-                  onClick={() => setSelectedDate(addDays(selectedDate, 1))}
-                >
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
-              </div>
+              
+              <div className="flex items-center gap-4">
+                <div className="flex items-center gap-2 bg-gray-100 rounded-lg p-1">
+                  <Button 
+                    variant="ghost" 
+                    size="icon"
+                    onClick={() => setSelectedDate(subDays(selectedDate, 1))}
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+                  
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <Button variant="ghost" className="font-medium">
+                        {format(selectedDate, "EEEE d MMMM", { locale: fr })}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0" align="center">
+                      <Calendar
+                        mode="single"
+                        selected={selectedDate}
+                        onSelect={(date) => date && setSelectedDate(date)}
+                        locale={fr}
+                      />
+                    </PopoverContent>
+                  </Popover>
+                  
+                  <Button 
+                    variant="ghost" 
+                    size="icon"
+                    onClick={() => setSelectedDate(addDays(selectedDate, 1))}
+                  >
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
 
-              <Select value={selectedService} onValueChange={setSelectedService}>
-                <SelectTrigger className="w-32">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="all">Tout</SelectItem>
-                  <SelectItem value="lunch">Midi</SelectItem>
-                  <SelectItem value="dinner">Soir</SelectItem>
-                </SelectContent>
-              </Select>
+                <Select value={selectedService} onValueChange={setSelectedService}>
+                  <SelectTrigger className="w-32">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Tout</SelectItem>
+                    <SelectItem value="lunch">Midi</SelectItem>
+                    <SelectItem value="dinner">Soir</SelectItem>
+                  </SelectContent>
+                </Select>
+
+                {user && (
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <Button variant="ghost" className="relative h-9 w-9 rounded-full" data-testid="user-menu">
+                        <div className="h-9 w-9 rounded-full bg-primary/10 flex items-center justify-center">
+                          <UserCircle className="h-5 w-5 text-primary" />
+                        </div>
+                      </Button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-56">
+                      <div className="flex items-center gap-2 p-2">
+                        <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center">
+                          <UserCircle className="h-5 w-5 text-primary" />
+                        </div>
+                        <div className="flex flex-col">
+                          <span className="text-sm font-medium">{user.firstName} {user.lastName}</span>
+                          <span className="text-xs text-muted-foreground">{user.email}</span>
+                        </div>
+                      </div>
+                      <DropdownMenuSeparator />
+                      <DropdownMenuItem asChild>
+                        <a href="/api/logout" className="cursor-pointer text-red-600">
+                          <LogOut className="mr-2 h-4 w-4" />
+                          Déconnexion
+                        </a>
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
+                )}
+              </div>
             </div>
           </div>
-        </header>
 
-        <div className="flex h-[calc(100vh-73px)]">
+          <div className="flex">
+            <aside className="w-16 bg-white border-r flex flex-col items-center py-4 gap-2 fixed h-[calc(100vh-64px)] top-16 z-40">
+              {sidebarItems.map(item => (
+                <Tooltip key={item.id}>
+                  <TooltipTrigger asChild>
+                    {item.link ? (
+                      <Link href={item.link}>
+                        <button
+                          className="w-12 h-12 rounded-lg flex items-center justify-center transition-colors text-gray-500 hover:bg-gray-100"
+                          data-testid={`sidebar-${item.id}`}
+                        >
+                          <item.icon className="h-5 w-5" />
+                        </button>
+                      </Link>
+                    ) : (
+                      <button
+                        className="w-12 h-12 rounded-lg flex items-center justify-center transition-colors bg-primary/10 text-primary"
+                        data-testid={`sidebar-${item.id}`}
+                      >
+                        <item.icon className="h-5 w-5" />
+                      </button>
+                    )}
+                  </TooltipTrigger>
+                  <TooltipContent side="right">
+                    {item.label}
+                  </TooltipContent>
+                </Tooltip>
+              ))}
+            </aside>
+
+            <div className="flex-1 ml-16 h-[calc(100vh-64px)]">
           <div className="w-80 border-r bg-white p-4 flex flex-col">
             <div className="mb-4">
               <h2 className="font-semibold text-sm text-gray-600 mb-2">
@@ -554,7 +634,9 @@ export default function Assignments() {
             )}
           </div>
         </div>
-      </div>
+          </div>
+        </div>
+      </TooltipProvider>
 
       <DragOverlay>
         {activeDragBooking && <BookingDragOverlay booking={activeDragBooking} />}
