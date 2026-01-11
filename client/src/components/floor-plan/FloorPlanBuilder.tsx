@@ -204,6 +204,7 @@ export function FloorPlanBuilder({ restaurantId }: FloorPlanBuilderProps) {
   const [editingTable, setEditingTable] = useState<FloorPlanTable | null>(null);
   const [editTableName, setEditTableName] = useState("");
   const [editTableCapacity, setEditTableCapacity] = useState(4);
+  const [editTableMaxCapacity, setEditTableMaxCapacity] = useState(4);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
@@ -309,6 +310,7 @@ export function FloorPlanBuilder({ restaurantId }: FloorPlanBuilderProps) {
     setEditingTable(table);
     setEditTableName(table.name);
     setEditTableCapacity(table.capacity);
+    setEditTableMaxCapacity(table.maxCapacity || table.capacity);
   };
 
   const saveTableEdit = () => {
@@ -320,7 +322,7 @@ export function FloorPlanBuilder({ restaurantId }: FloorPlanBuilderProps) {
               ...zone,
               items: zone.items.map(item => 
                 item.id === editingTable.id 
-                  ? { ...item, name: editTableName, capacity: editTableCapacity } as FloorPlanTable
+                  ? { ...item, name: editTableName, capacity: editTableCapacity, maxCapacity: editTableMaxCapacity } as FloorPlanTable
                   : item
               ),
             }
@@ -354,11 +356,13 @@ export function FloorPlanBuilder({ restaurantId }: FloorPlanBuilderProps) {
         : 100);
 
       if (data.type === "table") {
+        const capacity = data.capacity || 4;
         const newTable: FloorPlanTable = {
           id: generateId(),
           type: "table",
           name: `T${floorPlan.zones.find(z => z.id === activeZoneId)?.items.filter(i => i.type === "table").length! + 1}`,
-          capacity: data.capacity || 4,
+          capacity: capacity,
+          maxCapacity: capacity,
           shape: data.shape || "square",
           x: Math.max(0, Math.min(x, CANVAS_WIDTH - 60)),
           y: Math.max(0, Math.min(y, CANVAS_HEIGHT - 60)),
@@ -739,10 +743,25 @@ export function FloorPlanBuilder({ restaurantId }: FloorPlanBuilderProps) {
               <Input 
                 type="number"
                 value={editTableCapacity} 
-                onChange={e => setEditTableCapacity(parseInt(e.target.value) || 1)}
+                onChange={e => {
+                  const val = parseInt(e.target.value) || 1;
+                  setEditTableCapacity(val);
+                  if (editTableMaxCapacity < val) setEditTableMaxCapacity(val);
+                }}
                 min={1}
                 max={20}
                 data-testid="edit-table-capacity"
+              />
+            </div>
+            <div>
+              <Label>Nombre de couverts max</Label>
+              <Input 
+                type="number"
+                value={editTableMaxCapacity} 
+                onChange={e => setEditTableMaxCapacity(Math.max(editTableCapacity, parseInt(e.target.value) || 1))}
+                min={editTableCapacity}
+                max={30}
+                data-testid="edit-table-max-capacity"
               />
             </div>
           </div>

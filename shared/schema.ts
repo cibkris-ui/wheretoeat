@@ -204,6 +204,7 @@ export interface FloorPlanTable {
   type: "table";
   name: string;
   capacity: number;
+  maxCapacity: number;
   shape: "square" | "round" | "rectangle";
   x: number;
   y: number;
