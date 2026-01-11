@@ -53,9 +53,10 @@ import {
   HelpCircle
 } from "lucide-react";
 import type { Restaurant } from "@shared/schema";
+import { FloorPlanBuilder } from "@/components/floor-plan/FloorPlanBuilder";
 
 type SettingsSection = "overview" | "profile" | "services" | "users" | "legal";
-type ProfileSubSection = "contacts" | "profil" | "photos";
+type ProfileSubSection = "contacts" | "profil" | "photos" | "plan-de-salle";
 type ServicesSubSection = "service-hours" | "capacity" | "time-slots";
 
 export default function Settings() {
@@ -107,6 +108,7 @@ export default function Settings() {
         { id: "contacts", label: "Contacts", icon: Phone },
         { id: "profil", label: "Profil", icon: FileText },
         { id: "photos", label: "Photos", icon: Image },
+        { id: "plan-de-salle", label: "Plan de salle", icon: LayoutDashboard },
       ]
     },
     {
@@ -806,6 +808,12 @@ export default function Settings() {
                         </div>
                       </CardContent>
                     </Card>
+                  </div>
+                )}
+
+                {profileSubSection === "plan-de-salle" && activeRestaurantId && (
+                  <div className="space-y-6">
+                    <FloorPlanBuilder restaurantId={activeRestaurantId} />
                   </div>
                 )}
               </>

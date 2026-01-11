@@ -36,6 +36,7 @@ Database tables:
 - `users` - User authentication (id, username, password)
 - `restaurants` - Restaurant listings (name, cuisine, location, rating, price range, image, description, features)
 - `bookings` - Table reservations (restaurant reference, date, time, guests, contact info)
+- `floor_plans` - Restaurant floor plans with tables and decorations (JSONB data with zones/items)
 
 ### API Structure
 - `GET /api/restaurants` - List all approved, non-blocked restaurants
@@ -43,6 +44,8 @@ Database tables:
 - `POST /api/restaurants` - Create restaurant
 - `POST /api/bookings` - Create booking
 - `GET /api/bookings/restaurant/:id` - Get bookings for restaurant
+- `GET /api/restaurants/:id/floor-plan` - Get floor plan for restaurant (owner only)
+- `PUT /api/restaurants/:id/floor-plan` - Save floor plan for restaurant (owner only)
 
 ### Admin API (requires admin role)
 - `GET /api/admin/restaurants` - List all restaurants (including pending/blocked)
@@ -80,6 +83,7 @@ Default admin credentials: admin@admin.com / adminadmin
 - Embla Carousel for image carousels
 - date-fns for date formatting (French locale support)
 - cmdk for command palette functionality
+- @dnd-kit for drag-and-drop floor plan builder
 
 ### Development Tools
 - Drizzle Kit for database migrations (`npm run db:push`)
