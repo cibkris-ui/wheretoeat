@@ -50,11 +50,13 @@ const snapToGrid = (value: number) => Math.round(value / GRID_SIZE) * GRID_SIZE;
 function DraggableItem({ 
   item, 
   isSelected, 
-  onSelect 
+  onSelect,
+  onDoubleClick
 }: { 
   item: FloorPlanTable | FloorPlanDecor; 
   isSelected: boolean;
   onSelect: () => void;
+  onDoubleClick?: () => void;
 }) {
   const { attributes, listeners, setNodeRef, transform, isDragging } = useDraggable({
     id: item.id,
@@ -82,6 +84,7 @@ function DraggableItem({
         {...attributes}
         style={style}
         onClick={(e) => { e.stopPropagation(); onSelect(); }}
+        onDoubleClick={(e) => { e.stopPropagation(); onDoubleClick?.(); }}
         className={`flex flex-col items-center justify-center text-white text-xs font-medium shadow-md transition-all
           ${table.shape === "round" ? "rounded-full" : table.shape === "rectangle" ? "rounded-lg" : "rounded-md"}
           ${isSelected ? "ring-2 ring-blue-500 ring-offset-2" : ""}
@@ -198,6 +201,9 @@ export function FloorPlanBuilder({ restaurantId }: FloorPlanBuilderProps) {
   const [showAddZone, setShowAddZone] = useState(false);
   const [newZoneName, setNewZoneName] = useState("");
   const [draggedItem, setDraggedItem] = useState<any>(null);
+  const [editingTable, setEditingTable] = useState<FloorPlanTable | null>(null);
+  const [editTableName, setEditTableName] = useState("");
+  const [editTableCapacity, setEditTableCapacity] = useState(4);
 
   const sensors = useSensors(
     useSensor(PointerSensor, { activationConstraint: { distance: 5 } })
@@ -297,6 +303,31 @@ export function FloorPlanBuilder({ restaurantId }: FloorPlanBuilderProps) {
       ),
     }));
     setSelectedItemId(null);
+  };
+
+  const openEditTableDialog = (table: FloorPlanTable) => {
+    setEditingTable(table);
+    setEditTableName(table.name);
+    setEditTableCapacity(table.capacity);
+  };
+
+  const saveTableEdit = () => {
+    if (!editingTable || !activeZoneId) return;
+    setFloorPlan(prev => ({
+      zones: prev.zones.map(zone => 
+        zone.id === activeZoneId 
+          ? {
+              ...zone,
+              items: zone.items.map(item => 
+                item.id === editingTable.id 
+                  ? { ...item, name: editTableName, capacity: editTableCapacity } as FloorPlanTable
+                  : item
+              ),
+            }
+          : zone
+      ),
+    }));
+    setEditingTable(null);
   };
 
   const handleDragStart = (event: DragStartEvent) => {
@@ -545,6 +576,7 @@ export function FloorPlanBuilder({ restaurantId }: FloorPlanBuilderProps) {
                       item={item} 
                       isSelected={item.id === selectedItemId}
                       onSelect={() => setSelectedItemId(item.id)}
+                      onDoubleClick={item.type === "table" ? () => openEditTableDialog(item as FloorPlanTable) : undefined}
                     />
                   ))}
                 </DroppableCanvas>
@@ -686,6 +718,40 @@ export function FloorPlanBuilder({ restaurantId }: FloorPlanBuilderProps) {
           </div>
         )}
       </DragOverlay>
+
+      <Dialog open={!!editingTable} onOpenChange={(open) => !open && setEditingTable(null)}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Modifier la table</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <Label>Numéro / Nom de la table</Label>
+              <Input 
+                value={editTableName} 
+                onChange={e => setEditTableName(e.target.value)}
+                placeholder="ex: T1, Table 5..."
+                data-testid="edit-table-name"
+              />
+            </div>
+            <div>
+              <Label>Nombre de couverts</Label>
+              <Input 
+                type="number"
+                value={editTableCapacity} 
+                onChange={e => setEditTableCapacity(parseInt(e.target.value) || 1)}
+                min={1}
+                max={20}
+                data-testid="edit-table-capacity"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setEditingTable(null)}>Annuler</Button>
+            <Button onClick={saveTableEdit} data-testid="save-table-edit">Enregistrer</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </DndContext>
   );
 }
