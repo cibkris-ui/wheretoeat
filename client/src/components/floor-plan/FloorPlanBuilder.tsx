@@ -193,6 +193,22 @@ function DroppableCanvas({
   );
 }
 
+function TrashDropZone({ isActive }: { isActive: boolean }) {
+  const { setNodeRef, isOver } = useDroppable({ id: "trash" });
+
+  return (
+    <div
+      ref={setNodeRef}
+      className={`flex flex-col items-center justify-center p-3 border-2 border-dashed rounded-lg transition-all
+        ${isOver ? "border-red-500 bg-red-100 scale-105" : isActive ? "border-red-300 bg-red-50" : "border-gray-300 bg-gray-50"}`}
+      data-testid="trash-zone"
+    >
+      <Trash2 className={`w-5 h-5 ${isOver ? "text-red-600" : "text-gray-400"}`} />
+      <span className={`text-xs mt-1 ${isOver ? "text-red-600" : "text-gray-500"}`}>Supprimer</span>
+    </div>
+  );
+}
+
 export function FloorPlanBuilder({ restaurantId }: FloorPlanBuilderProps) {
   const queryClient = useQueryClient();
   const [floorPlan, setFloorPlan] = useState<FloorPlanData>({ zones: [] });
@@ -400,6 +416,19 @@ export function FloorPlanBuilder({ restaurantId }: FloorPlanBuilderProps) {
       }
     } else if (data?.isExisting) {
       const item = data.item as FloorPlanTable | FloorPlanDecor;
+      
+      if (over?.id === "trash") {
+        setFloorPlan(prev => ({
+          zones: prev.zones.map(zone => 
+            zone.id === activeZoneId 
+              ? { ...zone, items: zone.items.filter(i => i.id !== item.id) }
+              : zone
+          ),
+        }));
+        setSelectedItemId(null);
+        return;
+      }
+      
       const newX = snapToGrid(Math.max(0, Math.min(item.x + delta.x, CANVAS_WIDTH - item.width)));
       const newY = snapToGrid(Math.max(0, Math.min(item.y + delta.y, CANVAS_HEIGHT - item.height)));
       
@@ -514,7 +543,7 @@ export function FloorPlanBuilder({ restaurantId }: FloorPlanBuilderProps) {
                         <TabsTrigger value="decor" className="text-xs">Décoration</TabsTrigger>
                       </TabsList>
                       <TabsContent value="tables" className="mt-0">
-                        <div className="flex gap-2">
+                        <div className="flex gap-2 items-center">
                           <PaletteItem 
                             type="table-square" 
                             label="Carrée" 
@@ -533,10 +562,13 @@ export function FloorPlanBuilder({ restaurantId }: FloorPlanBuilderProps) {
                             icon={<RectangleHorizontal className="w-5 h-5 text-emerald-600" />}
                             data={{ type: "table", shape: "rectangle", capacity: 6, width: 100, height: 60 }}
                           />
+                          <div className="border-l pl-2 ml-2">
+                            <TrashDropZone isActive={draggedItem?.isExisting} />
+                          </div>
                         </div>
                       </TabsContent>
                       <TabsContent value="decor" className="mt-0">
-                        <div className="flex gap-2 flex-wrap">
+                        <div className="flex gap-2 flex-wrap items-center">
                           <PaletteItem 
                             type="decor-door" 
                             label="Porte" 
@@ -567,6 +599,9 @@ export function FloorPlanBuilder({ restaurantId }: FloorPlanBuilderProps) {
                             icon={<PanelTop className="w-5 h-5 text-sky-500" />}
                             data={{ type: "decor", decorType: "window", width: 80, height: 15 }}
                           />
+                          <div className="border-l pl-2 ml-2">
+                            <TrashDropZone isActive={draggedItem?.isExisting} />
+                          </div>
                         </div>
                       </TabsContent>
                     </Tabs>
