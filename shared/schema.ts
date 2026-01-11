@@ -181,3 +181,55 @@ export const insertClosedDaySchema = createInsertSchema(closedDays).omit({
 
 export type InsertClosedDay = z.infer<typeof insertClosedDaySchema>;
 export type ClosedDay = typeof closedDays.$inferSelect;
+
+// Floor plans for restaurants
+export const floorPlans = pgTable("floor_plans", {
+  id: serial("id").primaryKey(),
+  restaurantId: integer("restaurant_id").notNull().references(() => restaurants.id).unique(),
+  plan: jsonb("plan").notNull(),
+  updatedAt: timestamp("updated_at").defaultNow(),
+});
+
+export const insertFloorPlanSchema = createInsertSchema(floorPlans).omit({
+  id: true,
+  updatedAt: true,
+});
+
+export type InsertFloorPlan = z.infer<typeof insertFloorPlanSchema>;
+export type FloorPlan = typeof floorPlans.$inferSelect;
+
+// Type definitions for floor plan data
+export interface FloorPlanTable {
+  id: string;
+  type: "table";
+  name: string;
+  capacity: number;
+  shape: "square" | "round" | "rectangle";
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  rotation: number;
+}
+
+export interface FloorPlanDecor {
+  id: string;
+  type: "decor";
+  decorType: "door" | "plant" | "bar" | "wall" | "window";
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  rotation: number;
+}
+
+export interface FloorPlanZone {
+  id: string;
+  name: string;
+  type: "indoor" | "terrace" | "floor";
+  items: (FloorPlanTable | FloorPlanDecor)[];
+}
+
+export interface FloorPlanData {
+  zones: FloorPlanZone[];
+}

@@ -14,13 +14,16 @@ import {
   type InsertClosedDay,
   type Client,
   type InsertClient,
+  type FloorPlan,
+  type FloorPlanData,
   users,
   restaurants,
   bookings,
   restaurantRegistrations,
   cuisineCategories,
   closedDays,
-  clients
+  clients,
+  floorPlans
 } from "@shared/schema";
 
 export interface IStorage {
@@ -68,6 +71,9 @@ export interface IStorage {
   getClient(id: number): Promise<Client | undefined>;
   getClientBookings(clientId: number, restaurantId: number): Promise<Booking[]>;
   upsertClientFromBooking(restaurantId: number, firstName: string, lastName: string, email: string, phone: string): Promise<Client>;
+  
+  getFloorPlan(restaurantId: number): Promise<FloorPlan | undefined>;
+  saveFloorPlan(restaurantId: number, plan: FloorPlanData): Promise<FloorPlan>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -359,6 +365,27 @@ export class DatabaseStorage implements IStorage {
       phone
     }).returning();
     return newClient;
+  }
+
+  async getFloorPlan(restaurantId: number): Promise<FloorPlan | undefined> {
+    const [plan] = await db.select().from(floorPlans).where(eq(floorPlans.restaurantId, restaurantId));
+    return plan;
+  }
+
+  async saveFloorPlan(restaurantId: number, plan: FloorPlanData): Promise<FloorPlan> {
+    const existing = await this.getFloorPlan(restaurantId);
+    if (existing) {
+      const [updated] = await db.update(floorPlans)
+        .set({ plan, updatedAt: new Date() })
+        .where(eq(floorPlans.restaurantId, restaurantId))
+        .returning();
+      return updated;
+    }
+    const [newPlan] = await db.insert(floorPlans).values({
+      restaurantId,
+      plan,
+    }).returning();
+    return newPlan;
   }
 }
 

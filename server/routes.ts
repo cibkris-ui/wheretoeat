@@ -803,6 +803,55 @@ export async function registerRoutes(
     }
   });
 
+  app.get("/api/restaurants/:id/floor-plan", isAuthenticatedCombined, async (req: any, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid restaurant ID" });
+      }
+      
+      const restaurant = await storage.getRestaurant(id);
+      if (!restaurant) {
+        return res.status(404).json({ message: "Restaurant not found" });
+      }
+      
+      const userId = req.localUserId;
+      if (restaurant.ownerId !== userId) {
+        return res.status(403).json({ message: "Not authorized" });
+      }
+      
+      const floorPlan = await storage.getFloorPlan(id);
+      res.json(floorPlan?.plan || { zones: [] });
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.put("/api/restaurants/:id/floor-plan", isAuthenticatedCombined, async (req: any, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid restaurant ID" });
+      }
+      
+      const restaurant = await storage.getRestaurant(id);
+      if (!restaurant) {
+        return res.status(404).json({ message: "Restaurant not found" });
+      }
+      
+      const userId = req.localUserId;
+      if (restaurant.ownerId !== userId) {
+        return res.status(403).json({ message: "Not authorized" });
+      }
+      
+      const plan = req.body;
+      const saved = await storage.saveFloorPlan(id, plan);
+      res.json(saved);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
   const isAdmin: RequestHandler = async (req: any, res, next) => {
     const userId = req.session?.userId || req.user?.claims?.sub;
     if (!userId) {
