@@ -292,7 +292,7 @@ export default function Settings() {
                               key={item.id}
                               onClick={() => {
                                 setActiveSection(category.id as SettingsSection);
-                                if (category.id === "profile" && (item.id === "contacts" || item.id === "profil" || item.id === "photos")) {
+                                if (category.id === "profile" && (item.id === "contacts" || item.id === "profil" || item.id === "photos" || item.id === "plan-de-salle")) {
                                   setProfileSubSection(item.id as ProfileSubSection);
                                 }
                                 if (category.id === "services" && (item.id === "service-hours" || item.id === "capacity" || item.id === "time-slots")) {
