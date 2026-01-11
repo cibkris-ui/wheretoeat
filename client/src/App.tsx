@@ -16,6 +16,7 @@ import Notifications from "@/pages/Notifications";
 import Clients from "@/pages/Clients";
 import Statistics from "@/pages/Statistics";
 import Settings from "@/pages/Settings";
+import Assignments from "@/pages/Assignments";
 
 function Router() {
   return (
@@ -24,6 +25,7 @@ function Router() {
       <Route path="/restaurants" component={Restaurants} />
       <Route path="/restaurant/:id" component={RestaurantDetail} />
       <Route path="/dashboard" component={Dashboard} />
+      <Route path="/dashboard/plan-de-salle" component={Assignments} />
       <Route path="/dashboard/nouvelle-reservation" component={NewBooking} />
       <Route path="/dashboard/calendrier" component={Calendar} />
       <Route path="/dashboard/notifications" component={Notifications} />

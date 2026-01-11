@@ -1,0 +1,439 @@
+import { useState, useEffect } from "react";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { Link } from "wouter";
+import { format, addDays, subDays } from "date-fns";
+import { fr } from "date-fns/locale";
+import { 
+  ArrowLeft, 
+  ChevronLeft, 
+  ChevronRight, 
+  Users,
+  Clock,
+  Check,
+  X,
+  MapPin
+} from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { toast } from "sonner";
+import type { Booking, Restaurant, FloorPlanData, FloorPlanTable, FloorPlanDecor } from "@shared/schema";
+
+const CANVAS_WIDTH = 700;
+const CANVAS_HEIGHT = 400;
+
+function FloorPlanItem({ 
+  item,
+  booking,
+  isSelected,
+  onClick
+}: { 
+  item: FloorPlanTable | FloorPlanDecor;
+  booking?: Booking | null;
+  isSelected: boolean;
+  onClick: () => void;
+}) {
+  const scaleX = CANVAS_WIDTH / 800;
+  const scaleY = CANVAS_HEIGHT / 500;
+  
+  const style: React.CSSProperties = {
+    position: "absolute",
+    left: item.x * scaleX,
+    top: item.y * scaleY,
+    width: item.width * scaleX,
+    height: item.height * scaleY,
+    transform: `rotate(${item.rotation}deg)`,
+    cursor: item.type === "table" ? "pointer" : "default",
+  };
+
+  if (item.type === "table") {
+    const table = item as FloorPlanTable;
+    const hasBooking = !!booking;
+    
+    return (
+      <div
+        style={style}
+        onClick={(e) => { e.stopPropagation(); onClick(); }}
+        className={`flex flex-col items-center justify-center text-white text-xs font-medium shadow-md transition-all
+          ${table.shape === "round" ? "rounded-full" : table.shape === "rectangle" ? "rounded-lg" : "rounded-md"}
+          ${isSelected ? "ring-2 ring-blue-500 ring-offset-2" : ""}
+          ${hasBooking ? "bg-orange-500 hover:bg-orange-600" : "bg-emerald-600 hover:bg-emerald-700"}`}
+        data-testid={`assignment-table-${item.id}`}
+      >
+        <span className="font-bold text-[10px]">{table.name}</span>
+        {hasBooking && (
+          <span className="text-[8px] opacity-90 truncate max-w-full px-1">
+            {booking.firstName}
+          </span>
+        )}
+      </div>
+    );
+  }
+
+  const decor = item as FloorPlanDecor;
+  const decorStyles: Record<string, string> = {
+    door: "bg-amber-700",
+    plant: "bg-green-500",
+    bar: "bg-purple-600",
+    wall: "bg-gray-700",
+    window: "bg-sky-400",
+  };
+
+  return (
+    <div
+      style={style}
+      className={`${decorStyles[decor.decorType] || "bg-gray-400"} 
+        ${decor.decorType === "plant" ? "rounded-full" : "rounded-sm"} opacity-70`}
+    />
+  );
+}
+
+export default function Assignments() {
+  const queryClient = useQueryClient();
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [selectedService, setSelectedService] = useState<string>("all");
+  const [selectedBookingId, setSelectedBookingId] = useState<number | null>(null);
+  const [selectedTableId, setSelectedTableId] = useState<string | null>(null);
+  const [activeZoneId, setActiveZoneId] = useState<string | null>(null);
+
+  const { data: user } = useQuery<any>({
+    queryKey: ["/api/auth/user"],
+  });
+
+  const { data: restaurants = [] } = useQuery<Restaurant[]>({
+    queryKey: ["/api/restaurants/owner"],
+    enabled: !!user,
+  });
+
+  const restaurant = restaurants[0];
+
+  const { data: bookings = [] } = useQuery<Booking[]>({
+    queryKey: [`/api/restaurants/${restaurant?.id}/bookings`],
+    enabled: !!restaurant?.id,
+  });
+
+  const { data: floorPlan } = useQuery<{ plan: FloorPlanData }>({
+    queryKey: [`/api/restaurants/${restaurant?.id}/floor-plan`],
+    enabled: !!restaurant?.id,
+  });
+
+  const assignTableMutation = useMutation({
+    mutationFn: async ({ bookingId, tableId, zoneId }: { bookingId: number; tableId: string | null; zoneId: string | null }) => {
+      const res = await fetch(`/api/bookings/${bookingId}/table`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ tableId, zoneId }),
+      });
+      if (!res.ok) throw new Error("Failed to assign table");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: [`/api/restaurants/${restaurant?.id}/bookings`] });
+      toast.success("Table assignée avec succès");
+      setSelectedBookingId(null);
+      setSelectedTableId(null);
+    },
+    onError: () => {
+      toast.error("Erreur lors de l'assignation");
+    },
+  });
+
+  const dateStr = format(selectedDate, "yyyy-MM-dd");
+  
+  const filteredBookings = bookings.filter(b => {
+    if (b.date !== dateStr) return false;
+    if (b.status === "cancelled" || b.status === "noshow") return false;
+    if (selectedService === "lunch") {
+      const hour = parseInt(b.time.split(":")[0]);
+      return hour < 15;
+    }
+    if (selectedService === "dinner") {
+      const hour = parseInt(b.time.split(":")[0]);
+      return hour >= 15;
+    }
+    return true;
+  });
+
+  const zones = floorPlan?.plan?.zones || [];
+  const currentZone = zones.find(z => z.id === activeZoneId) || zones[0];
+
+  useEffect(() => {
+    if (zones.length > 0 && !activeZoneId) {
+      setActiveZoneId(zones[0].id);
+    }
+  }, [zones, activeZoneId]);
+
+  const getBookingForTable = (tableId: string, zoneId: string) => {
+    return filteredBookings.find(b => b.tableId === tableId && b.zoneId === zoneId);
+  };
+
+  const handleTableClick = (tableId: string) => {
+    if (!currentZone) return;
+    
+    const existingBooking = getBookingForTable(tableId, currentZone.id);
+    
+    if (existingBooking) {
+      setSelectedBookingId(existingBooking.id);
+      setSelectedTableId(tableId);
+    } else if (selectedBookingId) {
+      assignTableMutation.mutate({
+        bookingId: selectedBookingId,
+        tableId,
+        zoneId: currentZone.id,
+      });
+    } else {
+      setSelectedTableId(tableId);
+    }
+  };
+
+  const handleUnassign = (bookingId: number) => {
+    assignTableMutation.mutate({
+      bookingId,
+      tableId: null,
+      zoneId: null,
+    });
+  };
+
+  const unassignedBookings = filteredBookings.filter(b => !b.tableId);
+  const assignedBookings = filteredBookings.filter(b => b.tableId);
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <header className="bg-white border-b px-6 py-4">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-4">
+            <Link href="/dashboard">
+              <Button variant="ghost" size="icon">
+                <ArrowLeft className="h-5 w-5" />
+              </Button>
+            </Link>
+            <h1 className="text-xl font-semibold">Plan de salle</h1>
+          </div>
+          
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2 bg-gray-100 rounded-lg p-1">
+              <Button 
+                variant="ghost" 
+                size="icon"
+                onClick={() => setSelectedDate(subDays(selectedDate, 1))}
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button variant="ghost" className="font-medium">
+                    {format(selectedDate, "EEEE d MMMM", { locale: fr })}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="center">
+                  <Calendar
+                    mode="single"
+                    selected={selectedDate}
+                    onSelect={(date) => date && setSelectedDate(date)}
+                    locale={fr}
+                  />
+                </PopoverContent>
+              </Popover>
+              
+              <Button 
+                variant="ghost" 
+                size="icon"
+                onClick={() => setSelectedDate(addDays(selectedDate, 1))}
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+
+            <Select value={selectedService} onValueChange={setSelectedService}>
+              <SelectTrigger className="w-32">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Tout</SelectItem>
+                <SelectItem value="lunch">Midi</SelectItem>
+                <SelectItem value="dinner">Soir</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+      </header>
+
+      <div className="flex h-[calc(100vh-73px)]">
+        <div className="w-80 border-r bg-white p-4 flex flex-col">
+          <div className="mb-4">
+            <h2 className="font-semibold text-sm text-gray-600 mb-2">
+              RÉSERVATIONS À ASSIGNER ({unassignedBookings.length})
+            </h2>
+            <ScrollArea className="h-48">
+              <div className="space-y-2">
+                {unassignedBookings.map(booking => (
+                  <div
+                    key={booking.id}
+                    onClick={() => setSelectedBookingId(selectedBookingId === booking.id ? null : booking.id)}
+                    className={`p-3 rounded-lg border cursor-pointer transition-all
+                      ${selectedBookingId === booking.id ? "border-blue-500 bg-blue-50" : "border-gray-200 hover:border-gray-300"}`}
+                    data-testid={`unassigned-booking-${booking.id}`}
+                  >
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="font-medium">{booking.firstName} {booking.lastName}</span>
+                      <Badge variant="outline" className="text-xs">
+                        <Users className="h-3 w-3 mr-1" />
+                        {booking.guests}
+                      </Badge>
+                    </div>
+                    <div className="flex items-center text-sm text-gray-500">
+                      <Clock className="h-3 w-3 mr-1" />
+                      {booking.time}
+                    </div>
+                  </div>
+                ))}
+                {unassignedBookings.length === 0 && (
+                  <p className="text-sm text-gray-500 text-center py-4">
+                    Toutes les réservations sont assignées
+                  </p>
+                )}
+              </div>
+            </ScrollArea>
+          </div>
+
+          <div className="flex-1">
+            <h2 className="font-semibold text-sm text-gray-600 mb-2">
+              TABLES ASSIGNÉES ({assignedBookings.length})
+            </h2>
+            <ScrollArea className="h-[calc(100%-2rem)]">
+              <div className="space-y-2">
+                {assignedBookings.map(booking => {
+                  const zone = zones.find(z => z.id === booking.zoneId);
+                  const table = zone?.items.find(i => i.id === booking.tableId) as FloorPlanTable | undefined;
+                  
+                  return (
+                    <div
+                      key={booking.id}
+                      className="p-3 rounded-lg border border-orange-200 bg-orange-50"
+                      data-testid={`assigned-booking-${booking.id}`}
+                    >
+                      <div className="flex items-center justify-between mb-1">
+                        <span className="font-medium">{booking.firstName} {booking.lastName}</span>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-6 w-6"
+                          onClick={() => handleUnassign(booking.id)}
+                          data-testid={`unassign-${booking.id}`}
+                        >
+                          <X className="h-3 w-3" />
+                        </Button>
+                      </div>
+                      <div className="flex items-center gap-3 text-sm text-gray-600">
+                        <span className="flex items-center">
+                          <Clock className="h-3 w-3 mr-1" />
+                          {booking.time}
+                        </span>
+                        <span className="flex items-center">
+                          <Users className="h-3 w-3 mr-1" />
+                          {booking.guests}
+                        </span>
+                        <Badge variant="secondary" className="text-xs">
+                          <MapPin className="h-3 w-3 mr-1" />
+                          {table?.name || "Table"}
+                        </Badge>
+                      </div>
+                    </div>
+                  );
+                })}
+                {assignedBookings.length === 0 && (
+                  <p className="text-sm text-gray-500 text-center py-4">
+                    Aucune table assignée
+                  </p>
+                )}
+              </div>
+            </ScrollArea>
+          </div>
+        </div>
+
+        <div className="flex-1 p-6">
+          {zones.length > 1 && (
+            <div className="flex gap-2 mb-4">
+              {zones.map(zone => (
+                <Button
+                  key={zone.id}
+                  variant={activeZoneId === zone.id ? "default" : "outline"}
+                  size="sm"
+                  onClick={() => setActiveZoneId(zone.id)}
+                >
+                  {zone.name}
+                </Button>
+              ))}
+            </div>
+          )}
+
+          {currentZone ? (
+            <Card>
+              <CardHeader className="py-3">
+                <CardTitle className="text-sm flex items-center justify-between">
+                  <span>{currentZone.name}</span>
+                  {selectedBookingId && (
+                    <Badge className="bg-blue-500">
+                      Cliquez sur une table pour assigner
+                    </Badge>
+                  )}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div
+                  className="relative border-2 rounded-lg bg-gray-100"
+                  style={{
+                    width: CANVAS_WIDTH,
+                    height: CANVAS_HEIGHT,
+                    backgroundImage: `
+                      linear-gradient(to right, #e5e7eb 1px, transparent 1px),
+                      linear-gradient(to bottom, #e5e7eb 1px, transparent 1px)
+                    `,
+                    backgroundSize: "17.5px 16px",
+                  }}
+                  data-testid="assignment-floor-plan"
+                >
+                  {currentZone.items.map(item => (
+                    <FloorPlanItem
+                      key={item.id}
+                      item={item}
+                      booking={item.type === "table" ? getBookingForTable(item.id, currentZone.id) : null}
+                      isSelected={selectedTableId === item.id}
+                      onClick={() => item.type === "table" && handleTableClick(item.id)}
+                    />
+                  ))}
+                </div>
+                
+                <div className="flex items-center gap-4 mt-4 text-sm">
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 rounded bg-emerald-600" />
+                    <span>Disponible</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="w-4 h-4 rounded bg-orange-500" />
+                    <span>Réservée</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ) : (
+            <Card className="flex items-center justify-center h-96">
+              <CardContent className="text-center">
+                <p className="text-gray-500 mb-4">Aucun plan de salle configuré</p>
+                <Link href="/dashboard/parametres">
+                  <Button>Créer un plan de salle</Button>
+                </Link>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}

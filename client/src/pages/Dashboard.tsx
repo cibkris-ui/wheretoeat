@@ -43,7 +43,8 @@ import {
   Moon,
   X,
   AlertCircle,
-  Bell
+  Bell,
+  Grid3X3
 } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { format, addDays, subDays, isToday, isSameDay, parseISO, startOfDay, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth } from "date-fns";
@@ -265,6 +266,7 @@ export default function Dashboard() {
 
   const sidebarItems = [
     { id: "reservations" as const, icon: LayoutDashboard, label: "Réservations", link: null },
+    { id: "floorplan" as const, icon: Grid3X3, label: "Plan de salle", link: "/dashboard/plan-de-salle" },
     { id: "calendar" as const, icon: CalendarDays, label: "Calendrier", link: "/dashboard/calendrier" },
     { id: "notifications" as const, icon: Bell, label: "Notifications", link: "/dashboard/notifications" },
     { id: "clients" as const, icon: Users, label: "Clients", link: "/dashboard/clients" },
