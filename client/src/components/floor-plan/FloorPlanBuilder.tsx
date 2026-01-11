@@ -197,7 +197,6 @@ export function FloorPlanBuilder({ restaurantId }: FloorPlanBuilderProps) {
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
   const [showAddZone, setShowAddZone] = useState(false);
   const [newZoneName, setNewZoneName] = useState("");
-  const [newZoneType, setNewZoneType] = useState<"indoor" | "terrace" | "floor">("indoor");
   const [draggedItem, setDraggedItem] = useState<any>(null);
 
   const sensors = useSensors(
@@ -250,7 +249,7 @@ export function FloorPlanBuilder({ restaurantId }: FloorPlanBuilderProps) {
     const newZone: FloorPlanZone = {
       id: generateId(),
       name: newZoneName.trim(),
-      type: newZoneType,
+      type: "indoor",
       items: [],
     };
     setFloorPlan(prev => ({ zones: [...prev.zones, newZone] }));
@@ -424,22 +423,9 @@ export function FloorPlanBuilder({ restaurantId }: FloorPlanBuilderProps) {
                         <Input 
                           value={newZoneName} 
                           onChange={e => setNewZoneName(e.target.value)}
-                          placeholder="ex: Terrasse"
+                          placeholder="ex: Terrasse, Étage 1, Salle principale..."
                           data-testid="zone-name-input"
                         />
-                      </div>
-                      <div>
-                        <Label>Type</Label>
-                        <Select value={newZoneType} onValueChange={(v: any) => setNewZoneType(v)}>
-                          <SelectTrigger data-testid="zone-type-select">
-                            <SelectValue />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="indoor">Intérieur</SelectItem>
-                            <SelectItem value="terrace">Terrasse</SelectItem>
-                            <SelectItem value="floor">Étage</SelectItem>
-                          </SelectContent>
-                        </Select>
                       </div>
                     </div>
                     <DialogFooter>
