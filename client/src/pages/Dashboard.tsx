@@ -215,12 +215,20 @@ export default function Dashboard() {
       relevantBookings = allBookings.filter(b => b.restaurantId === selectedRestaurant);
     }
     
-    const selectedDateBookings = relevantBookings.filter(b => isSameDay(parseISO(b.date), selectedDayStart) && b.status !== "cancelled" && b.status !== "noshow");
-    const totalGuests = selectedDateBookings.reduce((sum, b) => sum + b.guests, 0);
+    const selectedDateBookings = relevantBookings.filter(b => isSameDay(parseISO(b.date), selectedDayStart) && b.status !== "cancelled" && b.status !== "noshow" && b.status !== "refused");
+    
+    // Réservations confirmées (exclut les en attente)
+    const confirmedBookings = selectedDateBookings.filter(b => b.status !== "waiting" && b.status !== "pending");
+    const confirmedGuests = confirmedBookings.reduce((sum, b) => sum + b.guests, 0);
+    
+    // Réservations en attente
+    const waitingBookings = selectedDateBookings.filter(b => b.status === "waiting");
+    const waitingGuests = waitingBookings.reduce((sum, b) => sum + b.guests, 0);
+    
     const upcomingBookings = relevantBookings.filter(b => parseISO(b.date) >= today);
     
-    // Calcul des places disponibles (exclut les clients partis)
-    const activeBookings = selectedDateBookings.filter(b => !b.departureTime);
+    // Calcul des places disponibles (exclut les clients partis et les en attente)
+    const activeBookings = confirmedBookings.filter(b => !b.departureTime);
     const occupiedPlaces = activeBookings.reduce((sum, b) => sum + b.guests, 0);
     const totalCapacity = selectedRestaurant === "all" 
       ? myRestaurants.reduce((sum, r) => sum + (r.capacity || 40), 0)
@@ -228,8 +236,10 @@ export default function Dashboard() {
     const availablePlaces = Math.max(0, totalCapacity - occupiedPlaces);
 
     return {
-      selectedDateCount: selectedDateBookings.length,
-      selectedDateGuests: totalGuests,
+      selectedDateCount: confirmedBookings.length,
+      selectedDateGuests: confirmedGuests,
+      waitingCount: waitingBookings.length,
+      waitingGuests: waitingGuests,
       upcomingCount: upcomingBookings.length,
       availablePlaces: availablePlaces,
     };
@@ -477,7 +487,7 @@ export default function Dashboard() {
           <main className="flex-1 ml-16 p-6">
             {activeSection === "reservations" && (
               <>
-                <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
+                <div className="grid grid-cols-1 md:grid-cols-5 gap-4 mb-6">
           <Card className="bg-white">
             <CardContent className="p-4">
               <div className="flex items-center gap-3">
@@ -501,6 +511,20 @@ export default function Dashboard() {
                 <div>
                   <p className="text-2xl font-bold">{stats.selectedDateGuests}</p>
                   <p className="text-sm text-muted-foreground">Couverts {isToday(selectedDate) ? "aujourd'hui" : format(selectedDate, "d MMM", { locale: fr })}</p>
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          <Card className="bg-white">
+            <CardContent className="p-4">
+              <div className="flex items-center gap-3">
+                <div className="p-2 bg-yellow-100 rounded-lg">
+                  <Clock className="h-5 w-5 text-yellow-600" />
+                </div>
+                <div>
+                  <p className="text-2xl font-bold">{stats.waitingCount}</p>
+                  <p className="text-sm text-muted-foreground">En attente ({stats.waitingGuests} couv.)</p>
                 </div>
               </div>
             </CardContent>
