@@ -106,6 +106,13 @@ function DroppableTable({
   
   const hasBooking = !!booking;
   
+  const getTableColor = () => {
+    if (!hasBooking) return "bg-emerald-600";
+    if (booking.billRequested) return "bg-yellow-500 animate-pulse";
+    if (booking.arrivalTime) return "bg-lime-400 animate-pulse";
+    return "bg-orange-500";
+  };
+  
   const style: React.CSSProperties = {
     position: "absolute",
     left: item.x * scaleX,
@@ -122,7 +129,7 @@ function DroppableTable({
       className={`flex flex-col items-center justify-center text-white text-xs font-medium shadow-md transition-all
         ${item.shape === "round" ? "rounded-full" : item.shape === "rectangle" ? "rounded-lg" : "rounded-md"}
         ${isOver && !hasBooking ? "ring-4 ring-blue-400 ring-offset-2 scale-105" : ""}
-        ${hasBooking ? "bg-orange-500" : "bg-emerald-600"}`}
+        ${getTableColor()}`}
       data-testid={`assignment-table-${item.id}`}
     >
       <span className="font-bold text-[10px]">{item.name}</span>
@@ -574,14 +581,22 @@ export default function Assignments() {
                         })}
                       </div>
                       
-                      <div className="flex items-center justify-center gap-6 mt-4 text-sm">
+                      <div className="flex items-center justify-center flex-wrap gap-4 mt-4 text-sm">
                         <div className="flex items-center gap-2">
                           <div className="w-4 h-4 rounded bg-emerald-600" />
-                          <span>Disponible</span>
+                          <span>Libre</span>
                         </div>
                         <div className="flex items-center gap-2">
                           <div className="w-4 h-4 rounded bg-orange-500" />
                           <span>Réservée</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="w-4 h-4 rounded bg-lime-400 animate-pulse" />
+                          <span>Client arrivé</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="w-4 h-4 rounded bg-yellow-500 animate-pulse" />
+                          <span>Note demandée</span>
                         </div>
                       </div>
                     </CardContent>
