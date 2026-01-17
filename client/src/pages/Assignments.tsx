@@ -468,172 +468,180 @@ export default function Assignments() {
               ))}
             </aside>
 
-            <div className="flex-1 ml-16 h-[calc(100vh-64px)]">
-          <div className="w-80 border-r bg-white p-4 flex flex-col">
-            <div className="mb-4">
-              <h2 className="font-semibold text-sm text-gray-600 mb-2">
-                RÉSERVATIONS À ASSIGNER ({unassignedBookings.length})
-              </h2>
-              <p className="text-xs text-gray-400 mb-2">Glissez une réservation sur une table</p>
-              <ScrollArea className="h-48">
-                <div className="space-y-2">
-                  {unassignedBookings.map(booking => (
-                    <DraggableBooking
-                      key={booking.id}
-                      booking={booking}
-                      isSelected={selectedBookingId === booking.id}
-                      onClick={() => setSelectedBookingId(selectedBookingId === booking.id ? null : booking.id)}
-                    />
-                  ))}
-                  {unassignedBookings.length === 0 && (
-                    <p className="text-sm text-gray-500 text-center py-4">
-                      Toutes les réservations sont assignées
-                    </p>
-                  )}
-                </div>
-              </ScrollArea>
-            </div>
-
-            <div className="flex-1">
-              <h2 className="font-semibold text-sm text-gray-600 mb-2">
-                TABLES ASSIGNÉES ({assignedBookings.length})
-              </h2>
-              <ScrollArea className="h-[calc(100%-2rem)]">
-                <div className="space-y-2">
-                  {assignedBookings.map(booking => {
-                    const zone = zones.find(z => z.id === booking.zoneId);
-                    const table = zone?.items.find(i => i.id === booking.tableId) as FloorPlanTable | undefined;
-                    
-                    return (
-                      <div
-                        key={booking.id}
-                        className="p-3 rounded-lg border border-orange-200 bg-orange-50"
-                        data-testid={`assigned-booking-${booking.id}`}
+            <div className="flex-1 ml-16 overflow-auto">
+              <div className="p-4">
+                {zones.length > 1 && (
+                  <div className="flex gap-2 mb-4">
+                    {zones.map(zone => (
+                      <Button
+                        key={zone.id}
+                        variant={activeZoneId === zone.id ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setActiveZoneId(zone.id)}
                       >
-                        <div className="flex items-center justify-between mb-1">
-                          <span className="font-medium">{booking.firstName} {booking.lastName}</span>
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            className="h-6 w-6"
-                            onClick={() => handleUnassign(booking.id)}
-                            data-testid={`unassign-${booking.id}`}
-                          >
-                            <X className="h-3 w-3" />
-                          </Button>
-                        </div>
-                        <div className="flex items-center gap-3 text-sm text-gray-600">
-                          <span className="flex items-center">
-                            <Clock className="h-3 w-3 mr-1" />
-                            {booking.time}
-                          </span>
-                          <span className="flex items-center">
-                            <Users className="h-3 w-3 mr-1" />
-                            {booking.guests}
-                          </span>
-                          <Badge variant="secondary" className="text-xs">
-                            <MapPin className="h-3 w-3 mr-1" />
-                            {table?.name || "Table"}
+                        {zone.name}
+                      </Button>
+                    ))}
+                  </div>
+                )}
+
+                {currentZone ? (
+                  <Card className="mb-6">
+                    <CardHeader className="py-3">
+                      <CardTitle className="text-sm flex items-center justify-between">
+                        <span>{currentZone.name}</span>
+                        {activeDragBooking && (
+                          <Badge className="bg-blue-500">
+                            Déposez sur une table verte
                           </Badge>
+                        )}
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <div
+                        className="relative border-2 rounded-lg bg-gray-100 mx-auto"
+                        style={{
+                          width: CANVAS_WIDTH,
+                          height: CANVAS_HEIGHT,
+                          backgroundImage: `
+                            linear-gradient(to right, #e5e7eb 1px, transparent 1px),
+                            linear-gradient(to bottom, #e5e7eb 1px, transparent 1px)
+                          `,
+                          backgroundSize: "17.5px 16px",
+                        }}
+                        data-testid="assignment-floor-plan"
+                      >
+                        {currentZone.items.map(item => {
+                          if (item.type === "table") {
+                            const tableItem = item as FloorPlanTable;
+                            const isOverThisTable = overTableId === `table-${currentZone.id}-${item.id}`;
+                            return (
+                              <DroppableTable
+                                key={item.id}
+                                item={tableItem}
+                                booking={getBookingForTable(item.id, currentZone.id)}
+                                zoneId={currentZone.id}
+                                isOver={isOverThisTable}
+                              />
+                            );
+                          } else {
+                            return <DecorItem key={item.id} item={item as FloorPlanDecor} />;
+                          }
+                        })}
+                      </div>
+                      
+                      <div className="flex items-center justify-center gap-6 mt-4 text-sm">
+                        <div className="flex items-center gap-2">
+                          <div className="w-4 h-4 rounded bg-emerald-600" />
+                          <span>Disponible</span>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <div className="w-4 h-4 rounded bg-orange-500" />
+                          <span>Réservée</span>
                         </div>
                       </div>
-                    );
-                  })}
-                  {assignedBookings.length === 0 && (
-                    <p className="text-sm text-gray-500 text-center py-4">
-                      Aucune table assignée
-                    </p>
-                  )}
+                    </CardContent>
+                  </Card>
+                ) : (
+                  <Card className="flex items-center justify-center h-64 mb-6">
+                    <CardContent className="text-center">
+                      <p className="text-gray-500 mb-4">Aucun plan de salle configuré</p>
+                      <Link href="/dashboard/parametres">
+                        <Button>Créer un plan de salle</Button>
+                      </Link>
+                    </CardContent>
+                  </Card>
+                )}
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <Card>
+                    <CardHeader className="py-3">
+                      <CardTitle className="text-sm">
+                        RÉSERVATIONS À ASSIGNER ({unassignedBookings.length})
+                      </CardTitle>
+                      <p className="text-xs text-gray-400">Glissez une réservation sur une table</p>
+                    </CardHeader>
+                    <CardContent>
+                      <ScrollArea className="h-64">
+                        <div className="space-y-2">
+                          {unassignedBookings.map(booking => (
+                            <DraggableBooking
+                              key={booking.id}
+                              booking={booking}
+                              isSelected={selectedBookingId === booking.id}
+                              onClick={() => setSelectedBookingId(selectedBookingId === booking.id ? null : booking.id)}
+                            />
+                          ))}
+                          {unassignedBookings.length === 0 && (
+                            <p className="text-sm text-gray-500 text-center py-4">
+                              Toutes les réservations sont assignées
+                            </p>
+                          )}
+                        </div>
+                      </ScrollArea>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader className="py-3">
+                      <CardTitle className="text-sm">
+                        TABLES ASSIGNÉES ({assignedBookings.length})
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <ScrollArea className="h-64">
+                        <div className="space-y-2">
+                          {assignedBookings.map(booking => {
+                            const zone = zones.find(z => z.id === booking.zoneId);
+                            const table = zone?.items.find(i => i.id === booking.tableId) as FloorPlanTable | undefined;
+                            
+                            return (
+                              <div
+                                key={booking.id}
+                                className="p-3 rounded-lg border border-orange-200 bg-orange-50"
+                                data-testid={`assigned-booking-${booking.id}`}
+                              >
+                                <div className="flex items-center justify-between mb-1">
+                                  <span className="font-medium">{booking.firstName} {booking.lastName}</span>
+                                  <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    className="h-6 w-6"
+                                    onClick={() => handleUnassign(booking.id)}
+                                    data-testid={`unassign-${booking.id}`}
+                                  >
+                                    <X className="h-3 w-3" />
+                                  </Button>
+                                </div>
+                                <div className="flex items-center gap-3 text-sm text-gray-600">
+                                  <span className="flex items-center">
+                                    <Clock className="h-3 w-3 mr-1" />
+                                    {booking.time}
+                                  </span>
+                                  <span className="flex items-center">
+                                    <Users className="h-3 w-3 mr-1" />
+                                    {booking.guests}
+                                  </span>
+                                  <Badge variant="secondary" className="text-xs">
+                                    <MapPin className="h-3 w-3 mr-1" />
+                                    {table?.name || "Table"}
+                                  </Badge>
+                                </div>
+                              </div>
+                            );
+                          })}
+                          {assignedBookings.length === 0 && (
+                            <p className="text-sm text-gray-500 text-center py-4">
+                              Aucune table assignée
+                            </p>
+                          )}
+                        </div>
+                      </ScrollArea>
+                    </CardContent>
+                  </Card>
                 </div>
-              </ScrollArea>
-            </div>
-          </div>
-
-          <div className="flex-1 p-6">
-            {zones.length > 1 && (
-              <div className="flex gap-2 mb-4">
-                {zones.map(zone => (
-                  <Button
-                    key={zone.id}
-                    variant={activeZoneId === zone.id ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => setActiveZoneId(zone.id)}
-                  >
-                    {zone.name}
-                  </Button>
-                ))}
               </div>
-            )}
-
-            {currentZone ? (
-              <Card>
-                <CardHeader className="py-3">
-                  <CardTitle className="text-sm flex items-center justify-between">
-                    <span>{currentZone.name}</span>
-                    {activeDragBooking && (
-                      <Badge className="bg-blue-500">
-                        Déposez sur une table verte
-                      </Badge>
-                    )}
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div
-                    className="relative border-2 rounded-lg bg-gray-100"
-                    style={{
-                      width: CANVAS_WIDTH,
-                      height: CANVAS_HEIGHT,
-                      backgroundImage: `
-                        linear-gradient(to right, #e5e7eb 1px, transparent 1px),
-                        linear-gradient(to bottom, #e5e7eb 1px, transparent 1px)
-                      `,
-                      backgroundSize: "17.5px 16px",
-                    }}
-                    data-testid="assignment-floor-plan"
-                  >
-                    {currentZone.items.map(item => {
-                      if (item.type === "table") {
-                        const tableItem = item as FloorPlanTable;
-                        const isOverThisTable = overTableId === `table-${currentZone.id}-${item.id}`;
-                        return (
-                          <DroppableTable
-                            key={item.id}
-                            item={tableItem}
-                            booking={getBookingForTable(item.id, currentZone.id)}
-                            zoneId={currentZone.id}
-                            isOver={isOverThisTable}
-                          />
-                        );
-                      } else {
-                        return <DecorItem key={item.id} item={item as FloorPlanDecor} />;
-                      }
-                    })}
-                  </div>
-                  
-                  <div className="flex items-center gap-4 mt-4 text-sm">
-                    <div className="flex items-center gap-2">
-                      <div className="w-4 h-4 rounded bg-emerald-600" />
-                      <span>Disponible</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="w-4 h-4 rounded bg-orange-500" />
-                      <span>Réservée</span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            ) : (
-              <Card className="flex items-center justify-center h-96">
-                <CardContent className="text-center">
-                  <p className="text-gray-500 mb-4">Aucun plan de salle configuré</p>
-                  <Link href="/dashboard/parametres">
-                    <Button>Créer un plan de salle</Button>
-                  </Link>
-                </CardContent>
-              </Card>
-            )}
-          </div>
-        </div>
+            </div>
           </div>
         </div>
       </TooltipProvider>
