@@ -750,17 +750,6 @@ export default function Dashboard() {
                           <Button
                             size="sm"
                             variant="outline"
-                            className="border-yellow-500 text-yellow-600 hover:bg-yellow-50"
-                            onClick={() => updateStatusMutation.mutate({ bookingId: booking.id, status: "waiting" })}
-                            disabled={updateStatusMutation.isPending}
-                            data-testid={`btn-waiting-${booking.id}`}
-                          >
-                            <Clock className="h-4 w-4 mr-1" />
-                            En attente
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="outline"
                             className="border-red-500 text-red-500 hover:bg-red-50"
                             onClick={() => updateStatusMutation.mutate({ bookingId: booking.id, status: "cancelled" })}
                             disabled={updateStatusMutation.isPending}
