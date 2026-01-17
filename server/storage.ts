@@ -233,22 +233,26 @@ export class DatabaseStorage implements IStorage {
   }
 
   async checkIpEmailMismatch(clientIp: string, email: string): Promise<Booking | undefined> {
-    const { ne } = await import("drizzle-orm");
+    const { ne, gte } = await import("drizzle-orm");
+    const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
     const [existing] = await db.select().from(bookings).where(
       and(
         eq(bookings.clientIp, clientIp),
-        ne(bookings.email, email)
+        ne(bookings.email, email),
+        gte(bookings.createdAt, twentyFourHoursAgo)
       )
     );
     return existing;
   }
 
   async checkClientIdEmailMismatch(clientId: string, email: string): Promise<Booking | undefined> {
-    const { ne } = await import("drizzle-orm");
+    const { ne, gte } = await import("drizzle-orm");
+    const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
     const [existing] = await db.select().from(bookings).where(
       and(
         eq(bookings.clientId, clientId),
-        ne(bookings.email, email)
+        ne(bookings.email, email),
+        gte(bookings.createdAt, twentyFourHoursAgo)
       )
     );
     return existing;
