@@ -90,9 +90,42 @@ export default function Notifications() {
     enabled: restaurantIds.length > 0,
   });
 
+  const updateStatusMutation = useMutation({
+    mutationFn: async ({ bookingId, status }: { bookingId: number; status: string }) => {
+      const res = await fetch(`/api/bookings/${bookingId}/status`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ status }),
+      });
+      if (!res.ok) throw new Error("Erreur lors de la mise à jour");
+      return res.json();
+    },
+    onSuccess: (_, variables) => {
+      queryClient.invalidateQueries({ queryKey: ["/api/all-bookings-notifications"] });
+      const statusLabels: Record<string, string> = {
+        confirmed: "Acceptée",
+        waiting: "Mise en liste d'attente",
+        refused: "Refusée",
+      };
+      toast({ 
+        title: "Réservation mise à jour", 
+        description: `La réservation a été ${statusLabels[variables.status]}.`
+      });
+      setSelectedNotification(null);
+    },
+    onError: () => {
+      toast({ title: "Erreur", description: "Impossible de mettre à jour le statut.", variant: "destructive" });
+    },
+  });
+
   const notifications: Notification[] = useMemo(() => {
     return allBookings
       .filter(booking => {
+        // Only show pending bookings (from public platform)
+        if (booking.status !== "pending") {
+          return false;
+        }
         if (selectedRestaurant && booking.restaurantId !== selectedRestaurant) {
           return false;
         }
@@ -543,19 +576,52 @@ export default function Notifications() {
                   )}
 
                   {/* Actions */}
-                  <div className="flex gap-2 pt-2">
-                    <Link href={`/dashboard?date=${selectedNotification.booking.date}`} className="flex-1">
-                      <Button variant="outline" className="w-full">
+                  <div className="space-y-3 pt-2">
+                    <div className="flex gap-2">
+                      <Button 
+                        className="flex-1 bg-green-600 hover:bg-green-700"
+                        onClick={() => updateStatusMutation.mutate({ 
+                          bookingId: selectedNotification.booking.id, 
+                          status: "confirmed" 
+                        })}
+                        disabled={updateStatusMutation.isPending}
+                        data-testid="btn-accept-notification"
+                      >
+                        <Check className="h-4 w-4 mr-1" />
+                        Accepter
+                      </Button>
+                      <Button 
+                        variant="outline"
+                        className="flex-1 border-yellow-500 text-yellow-600 hover:bg-yellow-50"
+                        onClick={() => updateStatusMutation.mutate({ 
+                          bookingId: selectedNotification.booking.id, 
+                          status: "waiting" 
+                        })}
+                        disabled={updateStatusMutation.isPending}
+                        data-testid="btn-waitlist-notification"
+                      >
+                        <Clock className="h-4 w-4 mr-1" />
+                        Liste d'attente
+                      </Button>
+                      <Button 
+                        variant="outline"
+                        className="flex-1 border-red-500 text-red-500 hover:bg-red-50"
+                        onClick={() => updateStatusMutation.mutate({ 
+                          bookingId: selectedNotification.booking.id, 
+                          status: "refused" 
+                        })}
+                        disabled={updateStatusMutation.isPending}
+                        data-testid="btn-refuse-notification"
+                      >
+                        <X className="h-4 w-4 mr-1" />
+                        Refuser
+                      </Button>
+                    </div>
+                    <Link href={`/dashboard?date=${selectedNotification.booking.date}`} className="block">
+                      <Button variant="ghost" className="w-full text-muted-foreground">
                         Voir dans le planning
                       </Button>
                     </Link>
-                    <Button 
-                      variant="default" 
-                      className="flex-1"
-                      onClick={() => setSelectedNotification(null)}
-                    >
-                      Fermer
-                    </Button>
                   </div>
                 </div>
               </>
