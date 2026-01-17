@@ -131,6 +131,8 @@ export const bookings = pgTable("bookings", {
   clientId: text("client_id"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   arrivalTime: text("arrival_time"),
+  billRequested: boolean("bill_requested").default(false),
+  departureTime: text("departure_time"),
   status: text("status").notNull().default("confirmed"),
   tableId: text("table_id"),
   zoneId: text("zone_id"),

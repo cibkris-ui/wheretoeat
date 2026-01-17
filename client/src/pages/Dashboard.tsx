@@ -126,6 +126,42 @@ export default function Dashboard() {
     },
   });
 
+  const markBillRequestedMutation = useMutation({
+    mutationFn: async (bookingId: number) => {
+      const res = await fetch(`/api/bookings/${bookingId}/bill-requested`, {
+        method: "PATCH",
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("Erreur lors de l'enregistrement");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/all-bookings"] });
+      toast({ title: "Note demandée", description: "La demande de note a été enregistrée." });
+    },
+    onError: () => {
+      toast({ title: "Erreur", description: "Impossible d'enregistrer la demande.", variant: "destructive" });
+    },
+  });
+
+  const markDepartureMutation = useMutation({
+    mutationFn: async (bookingId: number) => {
+      const res = await fetch(`/api/bookings/${bookingId}/departure`, {
+        method: "PATCH",
+        credentials: "include",
+      });
+      if (!res.ok) throw new Error("Erreur lors de l'enregistrement");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/all-bookings"] });
+      toast({ title: "Client parti", description: "Le départ du client a été enregistré." });
+    },
+    onError: () => {
+      toast({ title: "Erreur", description: "Impossible d'enregistrer le départ.", variant: "destructive" });
+    },
+  });
+
   const updateStatusMutation = useMutation({
     mutationFn: async ({ bookingId, status }: { bookingId: number; status: string }) => {
       const res = await fetch(`/api/bookings/${bookingId}/status`, {
@@ -730,10 +766,46 @@ export default function Dashboard() {
                           </Button>
                         </div>
                       ) : booking.arrivalTime ? (
-                        <Badge variant="default" className="bg-green-600">
-                          <Check className="h-3 w-3 mr-1" />
-                          Arrivé à {booking.arrivalTime}
-                        </Badge>
+                        <div className="flex flex-col gap-1">
+                          <Badge variant="default" className="bg-green-600">
+                            <Check className="h-3 w-3 mr-1" />
+                            Arrivé à {booking.arrivalTime}
+                          </Badge>
+                          {booking.departureTime ? (
+                            <Badge variant="secondary" className="bg-gray-500 text-white">
+                              Parti à {booking.departureTime}
+                            </Badge>
+                          ) : (
+                            <>
+                              {booking.billRequested ? (
+                                <Badge variant="secondary" className="bg-yellow-500 text-white">
+                                  Note demandée
+                                </Badge>
+                              ) : (
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="border-yellow-500 text-yellow-600 hover:bg-yellow-50"
+                                  onClick={() => markBillRequestedMutation.mutate(booking.id)}
+                                  disabled={markBillRequestedMutation.isPending}
+                                  data-testid={`btn-bill-${booking.id}`}
+                                >
+                                  Note demandée
+                                </Button>
+                              )}
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="border-green-600 text-green-600 hover:bg-green-50"
+                                onClick={() => markDepartureMutation.mutate(booking.id)}
+                                disabled={markDepartureMutation.isPending}
+                                data-testid={`btn-departure-${booking.id}`}
+                              >
+                                Client parti
+                              </Button>
+                            </>
+                          )}
+                        </div>
                       ) : (
                         <>
                           <Button
