@@ -108,6 +108,7 @@ function DroppableTable({
   
   const getTableColor = () => {
     if (!hasBooking) return "bg-emerald-600";
+    if (booking.departureTime) return "bg-emerald-600";
     if (booking.billRequested) return "bg-yellow-500 animate-pulse";
     if (booking.arrivalTime) return "bg-lime-400 animate-pulse";
     return "bg-orange-500";
