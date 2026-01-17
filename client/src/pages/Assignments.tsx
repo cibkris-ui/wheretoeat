@@ -356,8 +356,9 @@ export default function Assignments() {
     });
   };
 
-  const unassignedBookings = filteredBookings.filter(b => !b.tableId);
-  const assignedBookings = filteredBookings.filter(b => b.tableId);
+  const unassignedBookings = filteredBookings.filter(b => !b.tableId && !b.departureTime);
+  const assignedBookings = filteredBookings.filter(b => b.tableId && !b.departureTime);
+  const finishedBookings = filteredBookings.filter(b => b.departureTime);
 
   const sidebarItems = [
     { id: "reservations" as const, icon: LayoutDashboard, label: "Réservations", link: "/dashboard" },
@@ -613,7 +614,7 @@ export default function Assignments() {
                   </Card>
                 )}
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                   <Card>
                     <CardHeader className="py-3">
                       <CardTitle className="text-sm">
@@ -693,6 +694,56 @@ export default function Assignments() {
                           {assignedBookings.length === 0 && (
                             <p className="text-sm text-gray-500 text-center py-4">
                               Aucune table assignée
+                            </p>
+                          )}
+                        </div>
+                      </ScrollArea>
+                    </CardContent>
+                  </Card>
+
+                  <Card>
+                    <CardHeader className="py-3">
+                      <CardTitle className="text-sm">
+                        RÉSERVATIONS TERMINÉES ({finishedBookings.length})
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <ScrollArea className="h-64">
+                        <div className="space-y-2">
+                          {finishedBookings.map(booking => {
+                            const zone = zones.find(z => z.id === booking.zoneId);
+                            const table = zone?.items.find(i => i.id === booking.tableId) as FloorPlanTable | undefined;
+                            
+                            return (
+                              <div
+                                key={booking.id}
+                                className="p-3 rounded-lg border border-gray-200 bg-gray-50"
+                                data-testid={`finished-booking-${booking.id}`}
+                              >
+                                <div className="flex items-center justify-between mb-1">
+                                  <span className="font-medium text-gray-500">{booking.firstName} {booking.lastName}</span>
+                                </div>
+                                <div className="flex items-center gap-3 text-sm text-gray-400">
+                                  <span className="flex items-center">
+                                    <Clock className="h-3 w-3 mr-1" />
+                                    {booking.time} → {booking.departureTime}
+                                  </span>
+                                  <span className="flex items-center">
+                                    <Users className="h-3 w-3 mr-1" />
+                                    {booking.guests}
+                                  </span>
+                                  {table && (
+                                    <Badge variant="outline" className="text-xs text-gray-400">
+                                      {table.name}
+                                    </Badge>
+                                  )}
+                                </div>
+                              </div>
+                            );
+                          })}
+                          {finishedBookings.length === 0 && (
+                            <p className="text-sm text-gray-500 text-center py-4">
+                              Aucune réservation terminée
                             </p>
                           )}
                         </div>
