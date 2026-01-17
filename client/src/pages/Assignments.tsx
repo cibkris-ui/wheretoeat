@@ -186,10 +186,19 @@ function BookingDragOverlay({ booking }: { booking: Booking }) {
   );
 }
 
+// Determine current service based on time
+function getCurrentService(): "lunch" | "dinner" {
+  const now = new Date();
+  const hour = now.getHours();
+  // If it's before 15h, show lunch. After 15h, show dinner.
+  // If lunch is over (after 15h), automatically switch to dinner
+  return hour < 15 ? "lunch" : "dinner";
+}
+
 export default function Assignments() {
   const queryClient = useQueryClient();
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
-  const [selectedService, setSelectedService] = useState<string>("all");
+  const [selectedService, setSelectedService] = useState<"lunch" | "dinner">(getCurrentService());
   const [selectedBookingId, setSelectedBookingId] = useState<number | null>(null);
   const [activeZoneId, setActiveZoneId] = useState<string | null>(null);
   const [activeDragBooking, setActiveDragBooking] = useState<Booking | null>(null);
@@ -265,15 +274,12 @@ export default function Assignments() {
   const filteredBookings = bookings.filter(b => {
     if (b.date !== dateStr) return false;
     if (b.status === "cancelled" || b.status === "noshow") return false;
+    const hour = parseInt(b.time.split(":")[0]);
     if (selectedService === "lunch") {
-      const hour = parseInt(b.time.split(":")[0]);
       return hour < 15;
     }
-    if (selectedService === "dinner") {
-      const hour = parseInt(b.time.split(":")[0]);
-      return hour >= 15;
-    }
-    return true;
+    // dinner
+    return hour >= 15;
   });
 
   const zones = floorPlanData?.zones || [];
@@ -408,12 +414,11 @@ export default function Assignments() {
                   </Button>
                 </div>
 
-                <Select value={selectedService} onValueChange={setSelectedService}>
+                <Select value={selectedService} onValueChange={(v) => setSelectedService(v as "lunch" | "dinner")}>
                   <SelectTrigger className="w-32">
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="all">Tout</SelectItem>
                     <SelectItem value="lunch">Midi</SelectItem>
                     <SelectItem value="dinner">Soir</SelectItem>
                   </SelectContent>
