@@ -97,6 +97,7 @@ export default function NewBooking() {
     phone: "",
     phoneCode: "+41",
     guests: 2,
+    children: 0,
     notes: "",
     tableId: "",
     zoneId: "",
@@ -176,6 +177,7 @@ export default function NewBooking() {
         date: selectedDate,
         time: selectedTime,
         guests: formData.guests,
+        children: formData.children,
         firstName: formData.firstName,
         lastName: formData.lastName,
         email: "",
@@ -449,6 +451,26 @@ export default function NewBooking() {
                         ))}
                       </SelectContent>
                     </Select>
+                  </div>
+                </div>
+
+                <div>
+                  <Label className="text-gray-600 text-sm">Dont enfants</Label>
+                  <div className="flex gap-1 mt-1">
+                    {[0, 1, 2, 3, 4].map(n => (
+                      <button
+                        key={n}
+                        onClick={() => setFormData(prev => ({ ...prev, children: n }))}
+                        className={`w-10 h-10 rounded border text-sm font-medium transition-all ${
+                          formData.children === n 
+                            ? "bg-teal-600 text-white border-teal-600" 
+                            : "bg-white border-gray-300 hover:border-teal-400"
+                        }`}
+                        data-testid={`children-${n}`}
+                      >
+                        {n}
+                      </button>
+                    ))}
                   </div>
                 </div>
 
