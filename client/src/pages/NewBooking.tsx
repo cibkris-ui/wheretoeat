@@ -144,15 +144,15 @@ export default function NewBooking() {
   const createBookingMutation = useMutation({
     mutationFn: async () => {
       if (!activeRestaurantId || !selectedTime) throw new Error("Données manquantes");
-      return apiRequest("POST", "/api/bookings", {
+      return apiRequest("POST", "/api/owner/bookings", {
         restaurantId: activeRestaurantId,
         date: selectedDate,
         time: selectedTime,
         guests: formData.guests,
         firstName: formData.firstName,
         lastName: formData.lastName,
-        email: `${formData.firstName.toLowerCase()}.${formData.lastName.toLowerCase()}@email.com`,
-        phone: formData.phoneCode + formData.phone,
+        email: "",
+        phone: formData.phone ? formData.phoneCode + formData.phone : "",
       });
     },
     onSuccess: () => {

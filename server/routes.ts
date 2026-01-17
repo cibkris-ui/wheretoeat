@@ -278,6 +278,51 @@ export async function registerRoutes(
     }
   });
 
+  app.post("/api/owner/bookings", isAuthenticatedCombined, async (req: any, res) => {
+    try {
+      const { restaurantId, date, time, guests, firstName, lastName, email, phone, specialRequest } = req.body;
+      
+      if (!restaurantId || !date || !time || !guests || !firstName || !lastName) {
+        return res.status(400).json({ 
+          message: "Champs requis manquants: restaurantId, date, time, guests, firstName, lastName" 
+        });
+      }
+      
+      const restaurant = await storage.getRestaurant(restaurantId);
+      if (!restaurant) {
+        return res.status(404).json({ message: "Restaurant not found" });
+      }
+      
+      const userId = req.localUserId;
+      if (restaurant.ownerId !== userId) {
+        return res.status(403).json({ message: "Not authorized to create bookings for this restaurant" });
+      }
+      
+      const clientId = `owner_${userId}_${Date.now()}`;
+      
+      const bookingData = {
+        restaurantId,
+        date,
+        time,
+        guests,
+        firstName,
+        lastName,
+        email: email || "",
+        phone: phone || "",
+        specialRequest: specialRequest || null,
+        newsletter: 0,
+        clientIp: "owner-created",
+        clientId: clientId,
+        status: "confirmed"
+      };
+      
+      const booking = await storage.createBooking(bookingData);
+      res.status(201).json(booking);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
   app.get("/api/restaurants/:id/bookings", isAuthenticatedCombined, async (req: any, res) => {
     try {
       const id = parseInt(req.params.id);
