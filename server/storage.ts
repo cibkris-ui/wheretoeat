@@ -376,21 +376,29 @@ export class DatabaseStorage implements IStorage {
 
   async upsertClientFromBooking(restaurantId: number, firstName: string, lastName: string, email: string, phone: string): Promise<Client> {
     const normalizedEmail = email.toLowerCase().trim();
+    const normalizedFirstName = firstName.toLowerCase().trim();
+    const normalizedLastName = lastName.toLowerCase().trim();
+    
+    // Recherche par combinaison nom/prénom/email (une fiche par personne même email)
     const [existing] = await db.select().from(clients).where(
       and(
         eq(clients.restaurantId, restaurantId),
-        eq(sql`LOWER(${clients.email})`, normalizedEmail)
+        eq(sql`LOWER(${clients.email})`, normalizedEmail),
+        eq(sql`LOWER(${clients.firstName})`, normalizedFirstName),
+        eq(sql`LOWER(${clients.lastName})`, normalizedLastName)
       )
     );
     
     if (existing) {
+      // Met à jour seulement le téléphone si le client existe
       const [updated] = await db.update(clients)
-        .set({ firstName, lastName, phone, updatedAt: new Date() })
+        .set({ phone, updatedAt: new Date() })
         .where(eq(clients.id, existing.id))
         .returning();
       return updated;
     }
     
+    // Crée une nouvelle fiche pour ce nom/prénom
     const [newClient] = await db.insert(clients).values({
       restaurantId,
       firstName,
