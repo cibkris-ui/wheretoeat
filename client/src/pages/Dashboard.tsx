@@ -119,6 +119,9 @@ export default function Dashboard() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/all-bookings"] });
+      restaurantIds.forEach(id => {
+        queryClient.invalidateQueries({ queryKey: [`/api/restaurants/${id}/bookings`] });
+      });
       toast({ title: "Arrivée enregistrée", description: "L'heure d'arrivée a été enregistrée." });
     },
     onError: () => {
@@ -137,6 +140,9 @@ export default function Dashboard() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/all-bookings"] });
+      restaurantIds.forEach(id => {
+        queryClient.invalidateQueries({ queryKey: [`/api/restaurants/${id}/bookings`] });
+      });
       toast({ title: "Note demandée", description: "La demande de note a été enregistrée." });
     },
     onError: () => {
@@ -155,6 +161,9 @@ export default function Dashboard() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/all-bookings"] });
+      restaurantIds.forEach(id => {
+        queryClient.invalidateQueries({ queryKey: [`/api/restaurants/${id}/bookings`] });
+      });
       toast({ title: "Client parti", description: "Le départ du client a été enregistré." });
     },
     onError: () => {
@@ -175,6 +184,9 @@ export default function Dashboard() {
     },
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["/api/all-bookings"] });
+      restaurantIds.forEach(id => {
+        queryClient.invalidateQueries({ queryKey: [`/api/restaurants/${id}/bookings`] });
+      });
       const statusLabels: Record<string, string> = {
         pending: "En attente de validation",
         cancelled: "Annulée",
