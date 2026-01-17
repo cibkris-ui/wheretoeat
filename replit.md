@@ -96,9 +96,21 @@ Default admin credentials: admin@admin.com / adminadmin
 ## Fonctionnalités à ajouter
 
 ### Emails (en attente de clé API Resend)
-- Email de confirmation envoyé au client quand le restaurateur valide une réservation
+- Email de notification au restaurateur quand une nouvelle réservation est reçue
+- Email de confirmation envoyé au client quand le restaurateur accepte une réservation
+- Email de liste d'attente envoyé au client quand le restaurateur met en attente
+- Email de refus envoyé au client quand le restaurateur refuse
 - Email de rappel envoyé le matin de chaque réservation
 - Service recommandé: Resend (resend.com) - gratuit jusqu'à 3000 emails/mois
+- Note: L'utilisateur configurera la clé API plus tard
+
+### Statuts de réservation
+- pending: Nouvelle demande (en attente de validation par le restaurateur)
+- confirmed: Réservation acceptée
+- waiting: Client mis en liste d'attente
+- refused: Réservation refusée
+- cancelled: Réservation annulée
+- noshow: Client non présenté
 
 ## Intégrations externes
 
