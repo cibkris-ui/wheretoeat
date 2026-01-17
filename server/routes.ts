@@ -273,6 +273,18 @@ export async function registerRoutes(
       };
       
       const booking = await storage.createBooking(bookingData);
+      
+      // Ajouter le client à l'annuaire
+      if (result.data.email) {
+        await storage.upsertClientFromBooking(
+          result.data.restaurantId,
+          result.data.firstName,
+          result.data.lastName,
+          result.data.email,
+          result.data.phone
+        );
+      }
+      
       res.status(201).json(booking);
     } catch (error: any) {
       res.status(500).json({ message: error.message });
@@ -321,6 +333,18 @@ export async function registerRoutes(
       };
       
       const booking = await storage.createBooking(bookingData);
+      
+      // Ajouter le client à l'annuaire
+      if (firstName && lastName) {
+        await storage.upsertClientFromBooking(
+          restaurantId,
+          firstName,
+          lastName,
+          email || "",
+          phone || ""
+        );
+      }
+      
       res.status(201).json(booking);
     } catch (error: any) {
       res.status(500).json({ message: error.message });
