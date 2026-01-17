@@ -294,7 +294,13 @@ export default function Dashboard() {
     }
 
     return bookings.sort((a, b) => {
-      // Pending bookings always come first
+      // Finished reservations (client departed) go to the bottom
+      const aFinished = !!a.departureTime || a.status === "cancelled" || a.status === "noshow";
+      const bFinished = !!b.departureTime || b.status === "cancelled" || b.status === "noshow";
+      if (aFinished && !bFinished) return 1;
+      if (bFinished && !aFinished) return -1;
+      
+      // Pending bookings come first among active reservations
       if (a.status === "pending" && b.status !== "pending") return -1;
       if (b.status === "pending" && a.status !== "pending") return 1;
       
