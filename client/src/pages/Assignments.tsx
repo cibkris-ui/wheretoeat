@@ -20,7 +20,8 @@ import {
   Utensils,
   Store,
   UserCircle,
-  LogOut
+  LogOut,
+  Plus
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -470,8 +471,8 @@ export default function Assignments() {
 
             <div className="flex-1 ml-16 overflow-auto">
               <div className="p-4">
-                {zones.length > 1 && (
-                  <div className="flex gap-2 mb-4">
+                <div className="flex items-center justify-between mb-4">
+                  <div className="flex gap-2">
                     {zones.map(zone => (
                       <Button
                         key={zone.id}
@@ -483,7 +484,13 @@ export default function Assignments() {
                       </Button>
                     ))}
                   </div>
-                )}
+                  <Link href="/dashboard/nouvelle-reservation">
+                    <Button size="sm" className="gap-1" data-testid="btn-add-reservation">
+                      <Plus className="h-4 w-4" />
+                      Ajouter une réservation
+                    </Button>
+                  </Link>
+                </div>
 
                 {currentZone ? (
                   <Card className="mb-6">
