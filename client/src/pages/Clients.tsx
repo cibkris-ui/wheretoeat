@@ -504,7 +504,7 @@ export default function Clients() {
                               </div>
                               <div className="flex items-center gap-2 text-sm text-gray-500">
                                 <Users className="h-4 w-4" />
-                                <span>{booking.guests} pers.</span>
+                                <span>{booking.guests} pers.{booking.children > 0 ? ` (${booking.children} enf.)` : ''}</span>
                               </div>
                             </div>
                             <Badge variant={

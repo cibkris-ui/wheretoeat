@@ -631,7 +631,7 @@ export default function Dashboard() {
                         <div className="flex flex-wrap items-center gap-3 text-sm text-muted-foreground mt-1">
                           <span className="flex items-center gap-1">
                             <Users className="h-4 w-4" />
-                            {booking.guests} pers.
+                            {booking.guests} pers.{booking.children > 0 ? ` (${booking.children} enf.)` : ''}
                           </span>
                           <span className="flex items-center gap-1">
                             <Phone className="h-4 w-4" />

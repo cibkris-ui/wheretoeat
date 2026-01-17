@@ -74,7 +74,7 @@ function DraggableBooking({ booking, isSelected, onClick }: {
         </div>
         <Badge variant="outline" className="text-xs">
           <Users className="h-3 w-3 mr-1" />
-          {booking.guests}
+          {booking.guests}{booking.children > 0 ? ` (${booking.children} enf.)` : ''}
         </Badge>
       </div>
       <div className="flex items-center text-sm text-gray-500 ml-6">
@@ -175,7 +175,7 @@ function BookingDragOverlay({ booking }: { booking: Booking }) {
         </div>
         <Badge variant="outline" className="text-xs">
           <Users className="h-3 w-3 mr-1" />
-          {booking.guests}
+          {booking.guests}{booking.children > 0 ? ` (${booking.children} enf.)` : ''}
         </Badge>
       </div>
       <div className="flex items-center text-sm text-gray-500 ml-6">
@@ -664,7 +664,7 @@ export default function Assignments() {
                                   </span>
                                   <span className="flex items-center">
                                     <Users className="h-3 w-3 mr-1" />
-                                    {booking.guests}
+                                    {booking.guests}{booking.children > 0 ? ` (${booking.children} enf.)` : ''}
                                   </span>
                                   <Badge variant="secondary" className="text-xs">
                                     <MapPin className="h-3 w-3 mr-1" />

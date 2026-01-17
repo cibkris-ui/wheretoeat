@@ -444,7 +444,7 @@ export default function Notifications() {
                               {notification.booking.time}
                             </span>
                             <span className="text-sm font-semibold text-gray-900">
-                              {notification.booking.guests}p
+                              {notification.booking.guests}p{notification.booking.children > 0 ? ` (${notification.booking.children} enf.)` : ''}
                             </span>
                           </div>
                         </div>
@@ -516,7 +516,7 @@ export default function Notifications() {
                     <div className="bg-gray-50 rounded-lg p-3 text-center">
                       <Users className="h-5 w-5 mx-auto mb-1 text-gray-500" />
                       <p className="text-sm font-semibold">
-                        {selectedNotification.booking.guests} pers.
+                        {selectedNotification.booking.guests} pers.{selectedNotification.booking.children > 0 ? ` (${selectedNotification.booking.children} enf.)` : ''}
                       </p>
                     </div>
                   </div>
