@@ -194,6 +194,7 @@ export default function Assignments() {
   const [activeZoneId, setActiveZoneId] = useState<string | null>(null);
   const [activeDragBooking, setActiveDragBooking] = useState<Booking | null>(null);
   const [overTableId, setOverTableId] = useState<string | null>(null);
+  const [selectedRestaurantId, setSelectedRestaurantId] = useState<number | null>(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -212,7 +213,19 @@ export default function Assignments() {
     enabled: !!user,
   });
 
-  const restaurant = restaurants[0];
+  // Set first restaurant as default when restaurants load
+  useEffect(() => {
+    if (restaurants.length > 0 && selectedRestaurantId === null) {
+      setSelectedRestaurantId(restaurants[0].id);
+    }
+  }, [restaurants, selectedRestaurantId]);
+
+  // Reset zone when restaurant changes
+  useEffect(() => {
+    setActiveZoneId(null);
+  }, [selectedRestaurantId]);
+
+  const restaurant = restaurants.find(r => r.id === selectedRestaurantId) || restaurants[0];
 
   const { data: bookings = [] } = useQuery<Booking[]>({
     queryKey: [`/api/restaurants/${restaurant?.id}/bookings`],
@@ -405,6 +418,25 @@ export default function Assignments() {
                     <SelectItem value="dinner">Soir</SelectItem>
                   </SelectContent>
                 </Select>
+
+                {restaurants.length > 1 && (
+                  <Select 
+                    value={selectedRestaurantId?.toString() || ""} 
+                    onValueChange={v => setSelectedRestaurantId(parseInt(v))}
+                  >
+                    <SelectTrigger className="w-48" data-testid="select-restaurant">
+                      <Store className="h-4 w-4 mr-2" />
+                      <SelectValue placeholder="Établissement" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {restaurants.map(r => (
+                        <SelectItem key={r.id} value={r.id.toString()}>
+                          {r.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                )}
 
                 {user && (
                   <DropdownMenu>
