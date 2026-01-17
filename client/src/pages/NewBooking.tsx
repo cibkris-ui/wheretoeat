@@ -103,6 +103,7 @@ export default function NewBooking() {
     occasion: "",
     duration: "1h30",
     tags: "",
+    status: "confirmed" as "confirmed" | "waiting",
   });
 
   const { data: myRestaurants = [] } = useQuery<Restaurant[]>({
@@ -181,6 +182,7 @@ export default function NewBooking() {
         phone: formData.phone ? formData.phoneCode + formData.phone : "",
         tableId: formData.tableId || null,
         zoneId: formData.zoneId || null,
+        status: formData.status,
       });
     },
     onSuccess: () => {
@@ -621,6 +623,24 @@ export default function NewBooking() {
                       <SelectItem value="2h">2 h 00 min</SelectItem>
                       <SelectItem value="2h30">2 h 30 min</SelectItem>
                       <SelectItem value="3h">3 h 00 min</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label className="text-gray-600 text-sm">Statut</Label>
+                  <Select 
+                    value={formData.status} 
+                    onValueChange={v => setFormData(prev => ({ ...prev, status: v as "confirmed" | "waiting" }))}
+                  >
+                    <SelectTrigger className="mt-1" data-testid="select-status">
+                      <SelectValue>
+                        {formData.status === "confirmed" ? "Confirmée" : "En attente"}
+                      </SelectValue>
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="confirmed">Confirmée</SelectItem>
+                      <SelectItem value="waiting">En attente</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>

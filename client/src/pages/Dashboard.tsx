@@ -44,7 +44,8 @@ import {
   X,
   AlertCircle,
   Bell,
-  Grid3X3
+  Grid3X3,
+  Clock
 } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { format, addDays, subDays, isToday, isSameDay, parseISO, startOfDay, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth } from "date-fns";
@@ -142,6 +143,7 @@ export default function Dashboard() {
         cancelled: "Annulée",
         noshow: "No Show",
         confirmed: "Confirmée",
+        waiting: "En attente",
       };
       toast({ 
         title: "Statut mis à jour", 
@@ -155,23 +157,30 @@ export default function Dashboard() {
 
   const stats = useMemo(() => {
     const today = startOfDay(new Date());
-    const todayBookings = allBookings.filter(b => isSameDay(parseISO(b.date), today));
+    
+    // Filter bookings by selectedRestaurant first
+    let relevantBookings = allBookings;
+    if (selectedRestaurant !== "all") {
+      relevantBookings = allBookings.filter(b => b.restaurantId === selectedRestaurant);
+    }
+    
+    const todayBookings = relevantBookings.filter(b => isSameDay(parseISO(b.date), today) && b.status !== "cancelled" && b.status !== "noshow");
     const totalGuests = todayBookings.reduce((sum, b) => sum + b.guests, 0);
-    const upcomingBookings = allBookings.filter(b => parseISO(b.date) >= today);
-    const monthStart = startOfMonth(today);
-    const monthEnd = endOfMonth(today);
-    const monthBookings = allBookings.filter(b => {
-      const d = parseISO(b.date);
-      return d >= monthStart && d <= monthEnd;
-    });
+    const upcomingBookings = relevantBookings.filter(b => parseISO(b.date) >= today);
+    
+    // Calcul des places disponibles (scoped to selectedRestaurant)
+    const totalCapacity = selectedRestaurant === "all" 
+      ? myRestaurants.reduce((sum, r) => sum + (r.capacity || 40), 0)
+      : myRestaurants.find(r => r.id === selectedRestaurant)?.capacity || 40;
+    const availablePlaces = Math.max(0, totalCapacity - totalGuests);
 
     return {
       todayCount: todayBookings.length,
       todayGuests: totalGuests,
       upcomingCount: upcomingBookings.length,
-      monthCount: monthBookings.length,
+      availablePlaces: availablePlaces,
     };
-  }, [allBookings]);
+  }, [allBookings, myRestaurants, selectedRestaurant]);
 
   const filteredBookings = useMemo(() => {
     let bookings = [...allBookings];
@@ -455,8 +464,8 @@ export default function Dashboard() {
                   <BarChart3 className="h-5 w-5 text-purple-600" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold">{stats.monthCount}</p>
-                  <p className="text-sm text-muted-foreground">Ce mois-ci</p>
+                  <p className="text-2xl font-bold">{stats.availablePlaces}</p>
+                  <p className="text-sm text-muted-foreground">Places disponibles</p>
                 </div>
               </div>
             </CardContent>
@@ -640,6 +649,35 @@ export default function Dashboard() {
                           <AlertCircle className="h-3 w-3 mr-1" />
                           No Show
                         </Badge>
+                      ) : booking.status === "waiting" ? (
+                        <div className="flex flex-col gap-1">
+                          <Badge variant="secondary" className="bg-yellow-500 text-white">
+                            <Clock className="h-3 w-3 mr-1" />
+                            En attente
+                          </Badge>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="border-green-600 text-green-600 hover:bg-green-50"
+                            onClick={() => updateStatusMutation.mutate({ bookingId: booking.id, status: "confirmed" })}
+                            disabled={updateStatusMutation.isPending}
+                            data-testid={`btn-confirm-${booking.id}`}
+                          >
+                            <Check className="h-4 w-4 mr-1" />
+                            Confirmer
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="border-red-500 text-red-500 hover:bg-red-50"
+                            onClick={() => updateStatusMutation.mutate({ bookingId: booking.id, status: "cancelled" })}
+                            disabled={updateStatusMutation.isPending}
+                            data-testid={`btn-cancel-${booking.id}`}
+                          >
+                            <X className="h-4 w-4 mr-1" />
+                            Annuler
+                          </Button>
+                        </div>
                       ) : booking.arrivalTime ? (
                         <Badge variant="default" className="bg-green-600">
                           <Check className="h-3 w-3 mr-1" />
@@ -657,6 +695,17 @@ export default function Dashboard() {
                           >
                             <Check className="h-4 w-4 mr-1" />
                             Arrivé
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="border-yellow-500 text-yellow-600 hover:bg-yellow-50"
+                            onClick={() => updateStatusMutation.mutate({ bookingId: booking.id, status: "waiting" })}
+                            disabled={updateStatusMutation.isPending}
+                            data-testid={`btn-waiting-${booking.id}`}
+                          >
+                            <Clock className="h-4 w-4 mr-1" />
+                            En attente
                           </Button>
                           <Button
                             size="sm"
@@ -722,8 +771,8 @@ export default function Dashboard() {
                 <CardContent>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="p-6 bg-gray-50 rounded-lg text-center">
-                      <p className="text-4xl font-bold text-primary">{stats.monthCount}</p>
-                      <p className="text-muted-foreground mt-2">Réservations ce mois</p>
+                      <p className="text-4xl font-bold text-primary">{stats.availablePlaces}</p>
+                      <p className="text-muted-foreground mt-2">Places disponibles aujourd'hui</p>
                     </div>
                     <div className="p-6 bg-gray-50 rounded-lg text-center">
                       <p className="text-4xl font-bold text-green-600">{stats.upcomingCount}</p>
