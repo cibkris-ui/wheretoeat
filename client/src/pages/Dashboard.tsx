@@ -140,10 +140,12 @@ export default function Dashboard() {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["/api/all-bookings"] });
       const statusLabels: Record<string, string> = {
+        pending: "En attente de validation",
         cancelled: "Annulée",
         noshow: "No Show",
         confirmed: "Confirmée",
-        waiting: "En attente",
+        waiting: "Liste d'attente",
+        refused: "Refusée",
       };
       toast({ 
         title: "Statut mis à jour", 
@@ -244,6 +246,10 @@ export default function Dashboard() {
     }
 
     return bookings.sort((a, b) => {
+      // Pending bookings always come first
+      if (a.status === "pending" && b.status !== "pending") return -1;
+      if (b.status === "pending" && a.status !== "pending") return 1;
+      
       const parseTime = (t: string) => {
         const parts = t.split(":");
         return (parseInt(parts[0]) || 0) * 60 + (parseInt(parts[1]) || 0);
@@ -644,16 +650,61 @@ export default function Dashboard() {
                           <X className="h-3 w-3 mr-1" />
                           Annulée
                         </Badge>
+                      ) : booking.status === "refused" ? (
+                        <Badge variant="destructive">
+                          <X className="h-3 w-3 mr-1" />
+                          Refusée
+                        </Badge>
                       ) : booking.status === "noshow" ? (
                         <Badge variant="secondary" className="bg-orange-500 text-white">
                           <AlertCircle className="h-3 w-3 mr-1" />
                           No Show
                         </Badge>
+                      ) : booking.status === "pending" ? (
+                        <div className="flex flex-col gap-1">
+                          <Badge variant="secondary" className="bg-blue-500 text-white animate-pulse">
+                            <Clock className="h-3 w-3 mr-1" />
+                            Nouvelle demande
+                          </Badge>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="border-green-600 text-green-600 hover:bg-green-50"
+                            onClick={() => updateStatusMutation.mutate({ bookingId: booking.id, status: "confirmed" })}
+                            disabled={updateStatusMutation.isPending}
+                            data-testid={`btn-accept-${booking.id}`}
+                          >
+                            <Check className="h-4 w-4 mr-1" />
+                            Accepter
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="border-yellow-500 text-yellow-600 hover:bg-yellow-50"
+                            onClick={() => updateStatusMutation.mutate({ bookingId: booking.id, status: "waiting" })}
+                            disabled={updateStatusMutation.isPending}
+                            data-testid={`btn-waitlist-${booking.id}`}
+                          >
+                            <Clock className="h-4 w-4 mr-1" />
+                            Liste d'attente
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="border-red-500 text-red-500 hover:bg-red-50"
+                            onClick={() => updateStatusMutation.mutate({ bookingId: booking.id, status: "refused" })}
+                            disabled={updateStatusMutation.isPending}
+                            data-testid={`btn-refuse-${booking.id}`}
+                          >
+                            <X className="h-4 w-4 mr-1" />
+                            Refuser
+                          </Button>
+                        </div>
                       ) : booking.status === "waiting" ? (
                         <div className="flex flex-col gap-1">
                           <Badge variant="secondary" className="bg-yellow-500 text-white">
                             <Clock className="h-3 w-3 mr-1" />
-                            En attente
+                            Liste d'attente
                           </Badge>
                           <Button
                             size="sm"

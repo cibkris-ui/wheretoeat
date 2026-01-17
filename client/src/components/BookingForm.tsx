@@ -172,7 +172,7 @@ export function BookingForm({ restaurantId }: BookingFormProps) {
         <div className="h-20 w-20 bg-green-100 text-[#00645A] rounded-full flex items-center justify-center mb-2">
           <CheckCircle2 className="h-10 w-10" />
         </div>
-        <h3 className="text-3xl font-bold text-[#00645A]">Réservation Confirmée</h3>
+        <h3 className="text-3xl font-bold text-[#00645A]">Demande envoyée</h3>
         <div className="border p-4 rounded-lg bg-muted/20 w-full max-w-sm">
             <p className="font-medium">{format(formData.date, "EEEE d MMMM yyyy", { locale: fr })}</p>
             <p className="text-xl font-bold my-1">{formData.time}</p>
@@ -180,7 +180,7 @@ export function BookingForm({ restaurantId }: BookingFormProps) {
             <p className="text-sm text-muted-foreground mt-2">{formData.firstName} {formData.lastName}</p>
         </div>
         <p className="text-muted-foreground max-w-xs mx-auto text-sm">
-          Un email de confirmation a été envoyé à {formData.email}.
+          Votre demande a été transmise au restaurant. Vous recevrez un email de confirmation à {formData.email} dès que le restaurant aura validé votre réservation.
         </p>
         <Button 
           variant="outline" 

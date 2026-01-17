@@ -268,7 +268,8 @@ export async function registerRoutes(
       const bookingData = {
         ...result.data,
         clientIp: ipAddress,
-        clientId: clientId
+        clientId: clientId,
+        status: "pending"
       };
       
       const booking = await storage.createBooking(bookingData);
@@ -389,7 +390,7 @@ export async function registerRoutes(
       }
       
       const { status } = req.body;
-      if (!status || !["confirmed", "cancelled", "noshow"].includes(status)) {
+      if (!status || !["pending", "confirmed", "waiting", "refused", "cancelled", "noshow"].includes(status)) {
         return res.status(400).json({ message: "Invalid status" });
       }
       
