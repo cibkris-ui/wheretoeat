@@ -280,7 +280,7 @@ export async function registerRoutes(
 
   app.post("/api/owner/bookings", isAuthenticatedCombined, async (req: any, res) => {
     try {
-      const { restaurantId, date, time, guests, firstName, lastName, email, phone, specialRequest } = req.body;
+      const { restaurantId, date, time, guests, firstName, lastName, email, phone, specialRequest, tableId, zoneId } = req.body;
       
       if (!restaurantId || !date || !time || !guests || !firstName || !lastName) {
         return res.status(400).json({ 
@@ -313,7 +313,9 @@ export async function registerRoutes(
         newsletter: 0,
         clientIp: "owner-created",
         clientId: clientId,
-        status: "confirmed"
+        status: "confirmed",
+        tableId: tableId || null,
+        zoneId: zoneId || null
       };
       
       const booking = await storage.createBooking(bookingData);

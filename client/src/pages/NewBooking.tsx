@@ -61,7 +61,7 @@ const CLIENT_TAGS = {
 };
 import { format, parseISO, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths, getDay, isWeekend, isBefore, startOfDay } from "date-fns";
 import { fr } from "date-fns/locale";
-import type { Restaurant, Booking } from "@shared/schema";
+import type { Restaurant, Booking, FloorPlanData, FloorPlanTable } from "@shared/schema";
 import { apiRequest } from "@/lib/queryClient";
 
 const LUNCH_SLOTS = ["12:00", "12:15", "12:30", "12:45", "13:00", "13:15"];
@@ -98,7 +98,8 @@ export default function NewBooking() {
     phoneCode: "+41",
     guests: 2,
     notes: "",
-    table: "",
+    tableId: "",
+    zoneId: "",
     occasion: "",
     duration: "1h30",
     tags: "",
@@ -122,6 +123,31 @@ export default function NewBooking() {
     },
     enabled: !!activeRestaurantId,
   });
+
+  const { data: floorPlanData } = useQuery<FloorPlanData>({
+    queryKey: [`/api/restaurants/${activeRestaurantId}/floor-plan`],
+    enabled: !!activeRestaurantId,
+  });
+
+  const allTables = useMemo(() => {
+    if (!floorPlanData?.zones) return [];
+    const tables: { tableId: string; zoneId: string; name: string; zoneName: string; capacity: number }[] = [];
+    floorPlanData.zones.forEach(zone => {
+      zone.items.forEach(item => {
+        if (item.type === "table") {
+          const table = item as FloorPlanTable;
+          tables.push({
+            tableId: table.id,
+            zoneId: zone.id,
+            name: table.name,
+            zoneName: zone.name,
+            capacity: table.capacity,
+          });
+        }
+      });
+    });
+    return tables;
+  }, [floorPlanData]);
 
   const bookingsForDate = useMemo(() => {
     return existingBookings.filter(b => b.date === selectedDate);
@@ -153,6 +179,8 @@ export default function NewBooking() {
         lastName: formData.lastName,
         email: "",
         phone: formData.phone ? formData.phoneCode + formData.phone : "",
+        tableId: formData.tableId || null,
+        zoneId: formData.zoneId || null,
       });
     },
     onSuccess: () => {
@@ -530,13 +558,32 @@ export default function NewBooking() {
 
                 <div>
                   <Label className="text-gray-600 text-sm">Table</Label>
-                  <Input
-                    placeholder=""
-                    value={formData.table}
-                    onChange={e => setFormData(prev => ({ ...prev, table: e.target.value }))}
-                    className="mt-1"
-                    data-testid="input-table"
-                  />
+                  <Select 
+                    value={formData.tableId ? `${formData.zoneId}|${formData.tableId}` : ""} 
+                    onValueChange={v => {
+                      if (!v || v === "none") {
+                        setFormData(prev => ({ ...prev, tableId: "", zoneId: "" }));
+                      } else {
+                        const [zoneId, tableId] = v.split("|");
+                        setFormData(prev => ({ ...prev, tableId, zoneId }));
+                      }
+                    }}
+                  >
+                    <SelectTrigger className="mt-1" data-testid="select-table">
+                      <SelectValue placeholder="Choisir une table" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="none">Pas de table assignée</SelectItem>
+                      {allTables.map(table => (
+                        <SelectItem 
+                          key={`${table.zoneId}|${table.tableId}`} 
+                          value={`${table.zoneId}|${table.tableId}`}
+                        >
+                          {table.name} ({table.zoneName}) - {table.capacity} pers.
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
 
                 <div>
