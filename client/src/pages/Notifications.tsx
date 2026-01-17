@@ -122,8 +122,8 @@ export default function Notifications() {
   const notifications: Notification[] = useMemo(() => {
     return allBookings
       .filter(booking => {
-        // Only show pending bookings (from public platform)
-        if (booking.status !== "pending") {
+        // Only show bookings from public platform (not owner-created)
+        if (booking.clientIp === "owner-created") {
           return false;
         }
         if (selectedRestaurant && booking.restaurantId !== selectedRestaurant) {
@@ -577,46 +577,64 @@ export default function Notifications() {
 
                   {/* Actions */}
                   <div className="space-y-3 pt-2">
-                    <div className="flex gap-2">
-                      <Button 
-                        className="flex-1 bg-green-600 hover:bg-green-700"
-                        onClick={() => updateStatusMutation.mutate({ 
-                          bookingId: selectedNotification.booking.id, 
-                          status: "confirmed" 
-                        })}
-                        disabled={updateStatusMutation.isPending}
-                        data-testid="btn-accept-notification"
-                      >
-                        <Check className="h-4 w-4 mr-1" />
-                        Accepter
-                      </Button>
-                      <Button 
-                        variant="outline"
-                        className="flex-1 border-yellow-500 text-yellow-600 hover:bg-yellow-50"
-                        onClick={() => updateStatusMutation.mutate({ 
-                          bookingId: selectedNotification.booking.id, 
-                          status: "waiting" 
-                        })}
-                        disabled={updateStatusMutation.isPending}
-                        data-testid="btn-waitlist-notification"
-                      >
-                        <Clock className="h-4 w-4 mr-1" />
-                        Liste d'attente
-                      </Button>
-                      <Button 
-                        variant="outline"
-                        className="flex-1 border-red-500 text-red-500 hover:bg-red-50"
-                        onClick={() => updateStatusMutation.mutate({ 
-                          bookingId: selectedNotification.booking.id, 
-                          status: "refused" 
-                        })}
-                        disabled={updateStatusMutation.isPending}
-                        data-testid="btn-refuse-notification"
-                      >
-                        <X className="h-4 w-4 mr-1" />
-                        Refuser
-                      </Button>
-                    </div>
+                    {selectedNotification.booking.status === "pending" && (
+                      <div className="flex gap-2">
+                        <Button 
+                          className="flex-1 bg-green-600 hover:bg-green-700"
+                          onClick={() => updateStatusMutation.mutate({ 
+                            bookingId: selectedNotification.booking.id, 
+                            status: "confirmed" 
+                          })}
+                          disabled={updateStatusMutation.isPending}
+                          data-testid="btn-accept-notification"
+                        >
+                          <Check className="h-4 w-4 mr-1" />
+                          Accepter
+                        </Button>
+                        <Button 
+                          variant="outline"
+                          className="flex-1 border-yellow-500 text-yellow-600 hover:bg-yellow-50"
+                          onClick={() => updateStatusMutation.mutate({ 
+                            bookingId: selectedNotification.booking.id, 
+                            status: "waiting" 
+                          })}
+                          disabled={updateStatusMutation.isPending}
+                          data-testid="btn-waitlist-notification"
+                        >
+                          <Clock className="h-4 w-4 mr-1" />
+                          Liste d'attente
+                        </Button>
+                        <Button 
+                          variant="outline"
+                          className="flex-1 border-red-500 text-red-500 hover:bg-red-50"
+                          onClick={() => updateStatusMutation.mutate({ 
+                            bookingId: selectedNotification.booking.id, 
+                            status: "refused" 
+                          })}
+                          disabled={updateStatusMutation.isPending}
+                          data-testid="btn-refuse-notification"
+                        >
+                          <X className="h-4 w-4 mr-1" />
+                          Refuser
+                        </Button>
+                      </div>
+                    )}
+                    {selectedNotification.booking.status !== "pending" && (
+                      <div className="text-center py-2">
+                        <Badge className={
+                          selectedNotification.booking.status === "confirmed" ? "bg-green-600" :
+                          selectedNotification.booking.status === "waiting" ? "bg-yellow-500" :
+                          selectedNotification.booking.status === "refused" ? "bg-red-500" :
+                          "bg-gray-500"
+                        }>
+                          {selectedNotification.booking.status === "confirmed" ? "Acceptée" :
+                           selectedNotification.booking.status === "waiting" ? "Liste d'attente" :
+                           selectedNotification.booking.status === "refused" ? "Refusée" :
+                           selectedNotification.booking.status === "cancelled" ? "Annulée" :
+                           "Traité"}
+                        </Badge>
+                      </div>
+                    )}
                     <Link href={`/dashboard?date=${selectedNotification.booking.date}`} className="block">
                       <Button variant="ghost" className="w-full text-muted-foreground">
                         Voir dans le planning
