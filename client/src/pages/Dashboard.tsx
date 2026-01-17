@@ -206,6 +206,7 @@ export default function Dashboard() {
   });
 
   const stats = useMemo(() => {
+    const selectedDayStart = startOfDay(selectedDate);
     const today = startOfDay(new Date());
     
     // Filter bookings by selectedRestaurant first
@@ -214,8 +215,8 @@ export default function Dashboard() {
       relevantBookings = allBookings.filter(b => b.restaurantId === selectedRestaurant);
     }
     
-    const todayBookings = relevantBookings.filter(b => isSameDay(parseISO(b.date), today) && b.status !== "cancelled" && b.status !== "noshow");
-    const totalGuests = todayBookings.reduce((sum, b) => sum + b.guests, 0);
+    const selectedDateBookings = relevantBookings.filter(b => isSameDay(parseISO(b.date), selectedDayStart) && b.status !== "cancelled" && b.status !== "noshow");
+    const totalGuests = selectedDateBookings.reduce((sum, b) => sum + b.guests, 0);
     const upcomingBookings = relevantBookings.filter(b => parseISO(b.date) >= today);
     
     // Calcul des places disponibles (scoped to selectedRestaurant)
@@ -225,12 +226,12 @@ export default function Dashboard() {
     const availablePlaces = Math.max(0, totalCapacity - totalGuests);
 
     return {
-      todayCount: todayBookings.length,
-      todayGuests: totalGuests,
+      selectedDateCount: selectedDateBookings.length,
+      selectedDateGuests: totalGuests,
       upcomingCount: upcomingBookings.length,
       availablePlaces: availablePlaces,
     };
-  }, [allBookings, myRestaurants, selectedRestaurant]);
+  }, [allBookings, myRestaurants, selectedRestaurant, selectedDate]);
 
   const filteredBookings = useMemo(() => {
     let bookings = [...allBookings];
@@ -482,8 +483,8 @@ export default function Dashboard() {
                   <CalendarDays className="h-5 w-5 text-primary" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold">{stats.todayCount}</p>
-                  <p className="text-sm text-muted-foreground">Réservations aujourd'hui</p>
+                  <p className="text-2xl font-bold">{stats.selectedDateCount}</p>
+                  <p className="text-sm text-muted-foreground">Réservations {isToday(selectedDate) ? "aujourd'hui" : format(selectedDate, "d MMM", { locale: fr })}</p>
                 </div>
               </div>
             </CardContent>
@@ -496,8 +497,8 @@ export default function Dashboard() {
                   <UserCheck className="h-5 w-5 text-green-600" />
                 </div>
                 <div>
-                  <p className="text-2xl font-bold">{stats.todayGuests}</p>
-                  <p className="text-sm text-muted-foreground">Couverts aujourd'hui</p>
+                  <p className="text-2xl font-bold">{stats.selectedDateGuests}</p>
+                  <p className="text-sm text-muted-foreground">Couverts {isToday(selectedDate) ? "aujourd'hui" : format(selectedDate, "d MMM", { locale: fr })}</p>
                 </div>
               </div>
             </CardContent>
