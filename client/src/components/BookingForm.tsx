@@ -30,6 +30,7 @@ const formSchema = z.object({
   date: z.date({ required_error: "Date requise" }),
   time: z.string({ required_error: "Heure requise" }),
   guests: z.number({ required_error: "Nombre de personnes requis" }),
+  children: z.number().default(0),
   email: z.string().email("Email invalide"),
   firstName: z.string().min(2, "Prénom requis"),
   lastName: z.string().min(2, "Nom requis"),
@@ -52,6 +53,7 @@ export function BookingForm({ restaurantId }: BookingFormProps) {
     resolver: zodResolver(formSchema),
     defaultValues: {
       guests: 2,
+      children: 0,
       newsletter: false,
     },
   });
@@ -100,6 +102,7 @@ export function BookingForm({ restaurantId }: BookingFormProps) {
       date: format(values.date, "yyyy-MM-dd"),
       time: values.time,
       guests: values.guests,
+      children: values.children,
       firstName: values.firstName,
       lastName: values.lastName,
       email: values.email,
@@ -173,7 +176,7 @@ export function BookingForm({ restaurantId }: BookingFormProps) {
         <div className="border p-4 rounded-lg bg-muted/20 w-full max-w-sm">
             <p className="font-medium">{format(formData.date, "EEEE d MMMM yyyy", { locale: fr })}</p>
             <p className="text-xl font-bold my-1">{formData.time}</p>
-            <p>{formData.guests} Personnes</p>
+            <p>{formData.guests} Personnes{formData.children > 0 ? ` (dont ${formData.children} enfant${formData.children > 1 ? 's' : ''})` : ''}</p>
             <p className="text-sm text-muted-foreground mt-2">{formData.firstName} {formData.lastName}</p>
         </div>
         <p className="text-muted-foreground max-w-xs mx-auto text-sm">
@@ -301,16 +304,41 @@ export function BookingForm({ restaurantId }: BookingFormProps) {
                     )}
                     onClick={() => {
                       setValue("guests", num);
-                      handleNext("details");
                     }}
                   >
                     {num}
                   </Button>
                 ))}
               </div>
-              <div className="flex justify-center">
-                 <Button variant="ghost" type="button" className="text-[#00645A] font-medium">
-                    Plus de choix +
+
+              <div className="border-t pt-4">
+                <h4 className="text-sm font-medium text-muted-foreground mb-3">Dont enfants</h4>
+                <div className="grid grid-cols-5 gap-2">
+                  {Array.from({ length: 5 }, (_, i) => i).map((num) => (
+                    <Button
+                      key={num}
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className={cn(
+                        "h-10 text-base font-medium hover:border-[#00645A] hover:text-[#00645A]",
+                        formData.children === num && "bg-[#00645A] text-white hover:bg-[#00645A] hover:text-white border-[#00645A]"
+                      )}
+                      onClick={() => setValue("children", num)}
+                    >
+                      {num}
+                    </Button>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex justify-center pt-2">
+                 <Button 
+                   type="button" 
+                   className="bg-[#00645A] hover:bg-[#00645A]/90 text-white px-8"
+                   onClick={() => handleNext("details")}
+                 >
+                    Continuer
                  </Button>
               </div>
             </div>
@@ -323,7 +351,7 @@ export function BookingForm({ restaurantId }: BookingFormProps) {
                  <h3 className="font-bold text-lg">RÉSERVATION</h3>
                  <div className="flex items-center justify-center gap-2 text-sm mt-1">
                     <span className="font-medium bg-white px-3 py-1 rounded-full border shadow-sm">
-                      {formData.guests} Pers.
+                      {formData.guests} Pers.{formData.children > 0 ? ` (${formData.children} enf.)` : ''}
                     </span>
                     <span className="font-medium bg-white px-3 py-1 rounded-full border shadow-sm">
                        {formData.date && format(formData.date, "eee d MMM", { locale: fr })}

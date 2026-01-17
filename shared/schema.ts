@@ -120,6 +120,7 @@ export const bookings = pgTable("bookings", {
   date: text("date").notNull(),
   time: text("time").notNull(),
   guests: integer("guests").notNull(),
+  children: integer("children").notNull().default(0),
   firstName: text("first_name").notNull(),
   lastName: text("last_name").notNull(),
   email: text("email").notNull(),

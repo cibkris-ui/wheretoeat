@@ -23,6 +23,7 @@ export async function createBooking(booking: {
   date: string;
   time: string;
   guests: number;
+  children?: number;
   firstName: string;
   lastName: string;
   email: string;
