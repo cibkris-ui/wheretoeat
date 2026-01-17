@@ -627,23 +627,6 @@ export default function NewBooking() {
                   </Select>
                 </div>
 
-                <div>
-                  <Label className="text-gray-600 text-sm">Statut</Label>
-                  <Select 
-                    value={formData.status} 
-                    onValueChange={v => setFormData(prev => ({ ...prev, status: v as "confirmed" | "waiting" }))}
-                  >
-                    <SelectTrigger className="mt-1" data-testid="select-status">
-                      <SelectValue>
-                        {formData.status === "confirmed" ? "Confirmée" : "En attente"}
-                      </SelectValue>
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="confirmed">Confirmée</SelectItem>
-                      <SelectItem value="waiting">En attente</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
               </div>
             </div>
 
