@@ -219,11 +219,13 @@ export default function Dashboard() {
     const totalGuests = selectedDateBookings.reduce((sum, b) => sum + b.guests, 0);
     const upcomingBookings = relevantBookings.filter(b => parseISO(b.date) >= today);
     
-    // Calcul des places disponibles (scoped to selectedRestaurant)
+    // Calcul des places disponibles (exclut les clients partis)
+    const activeBookings = selectedDateBookings.filter(b => !b.departureTime);
+    const occupiedPlaces = activeBookings.reduce((sum, b) => sum + b.guests, 0);
     const totalCapacity = selectedRestaurant === "all" 
       ? myRestaurants.reduce((sum, r) => sum + (r.capacity || 40), 0)
       : myRestaurants.find(r => r.id === selectedRestaurant)?.capacity || 40;
-    const availablePlaces = Math.max(0, totalCapacity - totalGuests);
+    const availablePlaces = Math.max(0, totalCapacity - occupiedPlaces);
 
     return {
       selectedDateCount: selectedDateBookings.length,
