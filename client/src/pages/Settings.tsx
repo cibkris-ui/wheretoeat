@@ -61,6 +61,179 @@ type SettingsSection = "overview" | "profile" | "services" | "users" | "legal";
 type ProfileSubSection = "contacts" | "profil" | "photos" | "plan-de-salle";
 type ServicesSubSection = "service-hours" | "capacity" | "time-slots";
 
+// Generate time options from 00:00 to 24:00 in 30-minute increments
+const generateTimeOptions = () => {
+  const times: string[] = [];
+  for (let hour = 0; hour <= 24; hour++) {
+    if (hour === 24) {
+      times.push("24:00");
+    } else {
+      times.push(`${hour.toString().padStart(2, "0")}:00`);
+      times.push(`${hour.toString().padStart(2, "0")}:30`);
+    }
+  }
+  return times;
+};
+
+const ALL_TIMES = generateTimeOptions();
+
+type DayHours = {
+  isOpen: boolean;
+  hasSecondService: boolean;
+  openTime1: string;
+  closeTime1: string;
+  openTime2: string;
+  closeTime2: string;
+};
+
+function ServiceHoursSection({ onBack, onSave }: { onBack: () => void; onSave: () => void }) {
+  const [hours, setHours] = useState<Record<string, DayHours>>(() => {
+    const days = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
+    const initial: Record<string, DayHours> = {};
+    days.forEach(day => {
+      initial[day] = {
+        isOpen: day !== "Dimanche",
+        hasSecondService: true,
+        openTime1: "11:30",
+        closeTime1: "14:00",
+        openTime2: "18:30",
+        closeTime2: "22:00",
+      };
+    });
+    return initial;
+  });
+
+  const updateDay = (day: string, field: keyof DayHours, value: string | boolean) => {
+    setHours(prev => ({
+      ...prev,
+      [day]: { ...prev[day], [field]: value }
+    }));
+  };
+
+  return (
+    <div className="space-y-6 max-w-4xl">
+      <h2 className="text-2xl font-bold">Horaires de service</h2>
+
+      <Card className="bg-white border shadow-sm">
+        <CardContent className="p-0">
+          <div className="px-6 py-4 border-b bg-gray-50/50">
+            <h3 className="text-sm font-medium text-gray-600 flex items-center gap-2">
+              <Clock className="h-4 w-4" />
+              Heures d'ouverture
+            </h3>
+            <p className="text-xs text-gray-500 mt-1">
+              Si votre restaurant est ouvert en continu, désactivez le second service.
+            </p>
+          </div>
+          <div className="p-6">
+            <div className="space-y-4">
+              {["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"].map((day) => {
+                const dayHours = hours[day];
+                return (
+                  <div key={day} className="flex items-center gap-3 py-3 border-b border-gray-100 flex-wrap">
+                    <div className="w-24 flex-shrink-0">
+                      <span className="font-medium">{day}</span>
+                    </div>
+                    <Switch 
+                      checked={dayHours.isOpen} 
+                      onCheckedChange={(checked) => updateDay(day, "isOpen", checked)}
+                      data-testid={`toggle-${day.toLowerCase()}`} 
+                    />
+                    
+                    {dayHours.isOpen && (
+                      <>
+                        <div className="flex items-center gap-2">
+                          <Select 
+                            value={dayHours.openTime1} 
+                            onValueChange={(v) => updateDay(day, "openTime1", v)}
+                          >
+                            <SelectTrigger className="w-24" data-testid={`select-${day.toLowerCase()}-start`}>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent className="max-h-60">
+                              {ALL_TIMES.map(time => (
+                                <SelectItem key={time} value={time}>{time}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <span className="text-gray-400">-</span>
+                          <Select 
+                            value={dayHours.closeTime1} 
+                            onValueChange={(v) => updateDay(day, "closeTime1", v)}
+                          >
+                            <SelectTrigger className="w-24" data-testid={`select-${day.toLowerCase()}-end-lunch`}>
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent className="max-h-60">
+                              {ALL_TIMES.map(time => (
+                                <SelectItem key={time} value={time}>{time}</SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        
+                        <div className="flex items-center gap-2 ml-2">
+                          <Switch 
+                            checked={dayHours.hasSecondService}
+                            onCheckedChange={(checked) => updateDay(day, "hasSecondService", checked)}
+                            data-testid={`toggle-${day.toLowerCase()}-second`}
+                          />
+                          <span className="text-xs text-gray-500">2ème service</span>
+                        </div>
+                        
+                        {dayHours.hasSecondService && (
+                          <div className="flex items-center gap-2">
+                            <Select 
+                              value={dayHours.openTime2} 
+                              onValueChange={(v) => updateDay(day, "openTime2", v)}
+                            >
+                              <SelectTrigger className="w-24" data-testid={`select-${day.toLowerCase()}-start-dinner`}>
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent className="max-h-60">
+                                {ALL_TIMES.map(time => (
+                                  <SelectItem key={time} value={time}>{time}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <span className="text-gray-400">-</span>
+                            <Select 
+                              value={dayHours.closeTime2} 
+                              onValueChange={(v) => updateDay(day, "closeTime2", v)}
+                            >
+                              <SelectTrigger className="w-24" data-testid={`select-${day.toLowerCase()}-end-dinner`}>
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent className="max-h-60">
+                                {ALL_TIMES.map(time => (
+                                  <SelectItem key={time} value={time}>{time}</SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        )}
+                      </>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <div className="flex justify-end gap-3 pt-4 pb-6">
+        <Button variant="outline" onClick={onBack} className="px-6">
+          ANNULER
+        </Button>
+        <Button onClick={onSave} className="px-6" data-testid="save-service-hours">
+          ENREGISTRER
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 export default function Settings() {
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   const { toast } = useToast();
@@ -1022,87 +1195,10 @@ export default function Settings() {
             {activeSection === "services" && (
               <>
                 {servicesSubSection === "service-hours" && (
-                  <div className="space-y-6 max-w-4xl">
-                    <h2 className="text-2xl font-bold">Horaires de service</h2>
-
-                    <Card className="bg-white border shadow-sm">
-                      <CardContent className="p-0">
-                        <div className="px-6 py-4 border-b bg-gray-50/50">
-                          <h3 className="text-sm font-medium text-gray-600 flex items-center gap-2">
-                            <Clock className="h-4 w-4" />
-                            Heures d'ouverture
-                          </h3>
-                        </div>
-                        <div className="p-6">
-                          <div className="space-y-4">
-                            {["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"].map((day) => (
-                              <div key={day} className="flex items-center gap-4 py-2 border-b border-gray-100">
-                                <div className="w-24">
-                                  <span className="font-medium">{day}</span>
-                                </div>
-                                <Switch defaultChecked={day !== "Dimanche"} data-testid={`toggle-${day.toLowerCase()}`} />
-                                <div className="flex items-center gap-2">
-                                  <Select defaultValue="12:00">
-                                    <SelectTrigger className="w-24" data-testid={`select-${day.toLowerCase()}-start`}>
-                                      <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      {["11:00", "11:30", "12:00", "12:30"].map(time => (
-                                        <SelectItem key={time} value={time}>{time}</SelectItem>
-                                      ))}
-                                    </SelectContent>
-                                  </Select>
-                                  <span className="text-gray-400">-</span>
-                                  <Select defaultValue="14:00">
-                                    <SelectTrigger className="w-24" data-testid={`select-${day.toLowerCase()}-end-lunch`}>
-                                      <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      {["13:30", "14:00", "14:30", "15:00"].map(time => (
-                                        <SelectItem key={time} value={time}>{time}</SelectItem>
-                                      ))}
-                                    </SelectContent>
-                                  </Select>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                  <Select defaultValue="19:00">
-                                    <SelectTrigger className="w-24" data-testid={`select-${day.toLowerCase()}-start-dinner`}>
-                                      <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      {["18:00", "18:30", "19:00", "19:30"].map(time => (
-                                        <SelectItem key={time} value={time}>{time}</SelectItem>
-                                      ))}
-                                    </SelectContent>
-                                  </Select>
-                                  <span className="text-gray-400">-</span>
-                                  <Select defaultValue="22:00">
-                                    <SelectTrigger className="w-24" data-testid={`select-${day.toLowerCase()}-end-dinner`}>
-                                      <SelectValue />
-                                    </SelectTrigger>
-                                    <SelectContent>
-                                      {["21:00", "21:30", "22:00", "22:30", "23:00"].map(time => (
-                                        <SelectItem key={time} value={time}>{time}</SelectItem>
-                                      ))}
-                                    </SelectContent>
-                                  </Select>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-
-                    <div className="flex justify-end gap-3 pt-4 pb-6">
-                      <Button variant="outline" onClick={() => setActiveSection("overview")} className="px-6">
-                        ANNULER
-                      </Button>
-                      <Button onClick={() => toast({ title: "Horaires enregistrés" })} className="px-6" data-testid="save-service-hours">
-                        ENREGISTRER
-                      </Button>
-                    </div>
-                  </div>
+                  <ServiceHoursSection 
+                    onBack={() => setActiveSection("overview")}
+                    onSave={() => toast({ title: "Horaires enregistrés" })}
+                  />
                 )}
 
                 {servicesSubSection === "capacity" && (
