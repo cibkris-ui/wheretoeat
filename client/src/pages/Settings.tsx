@@ -292,6 +292,7 @@ export default function Settings() {
   const [nearbyParkingField, setNearbyParkingField] = useState("");
   const [additionalInfoField, setAdditionalInfoField] = useState("");
   const [paymentMethods, setPaymentMethods] = useState<string[]>([]);
+  const [hasVegetarianOptions, setHasVegetarianOptions] = useState<boolean | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const [addUserDialog, setAddUserDialog] = useState(false);
   const [newUserEmail, setNewUserEmail] = useState("");
@@ -460,7 +461,7 @@ export default function Settings() {
   };
 
   const saveProfileMutation = useMutation({
-    mutationFn: async (data: { name: string; description: string; cuisine: string; priceRange: string; location: string; executiveChef?: string; publicTransport?: string; nearbyParking?: string; additionalInfo?: string; paymentMethods?: string[] }) => {
+    mutationFn: async (data: { name: string; description: string; cuisine: string; priceRange: string; location: string; executiveChef?: string; publicTransport?: string; nearbyParking?: string; additionalInfo?: string; paymentMethods?: string[]; hasVegetarianOptions?: boolean }) => {
       const res = await apiRequest("PUT", `/api/restaurants/${activeRestaurantId}`, data);
       return res.json();
     },
@@ -491,6 +492,7 @@ export default function Settings() {
       nearbyParking: nearbyParkingField || selectedRestaurantData?.nearbyParking || "",
       additionalInfo: additionalInfoField || selectedRestaurantData?.additionalInfo || "",
       paymentMethods: getCurrentPaymentMethods(),
+      hasVegetarianOptions: hasVegetarianOptions ?? selectedRestaurantData?.hasVegetarianOptions ?? false,
     });
   };
 
@@ -1335,22 +1337,17 @@ export default function Settings() {
                         </div>
 
                         <div className="space-y-2">
-                          <Label className="text-sm text-gray-600">Régime alimentaire</Label>
-                          <div className="flex flex-wrap gap-2 pb-2 border-b border-gray-200">
-                            <span className="inline-flex items-center gap-1 px-3 py-1 bg-gray-100 rounded-full text-sm">
-                              Options végétariennes <button className="ml-1 text-gray-500 hover:text-gray-700">×</button>
-                            </span>
-                            <Select>
-                              <SelectTrigger className="w-8 h-8 border-0 p-0" data-testid="select-add-regime">
-                                <span className="text-gray-400">▼</span>
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="vegan">Options vegan</SelectItem>
-                                <SelectItem value="sans-gluten">Sans gluten</SelectItem>
-                                <SelectItem value="halal">Halal</SelectItem>
-                                <SelectItem value="casher">Casher</SelectItem>
-                              </SelectContent>
-                            </Select>
+                          <Label className="text-sm text-gray-600">Plats végétariens disponibles</Label>
+                          <div className="flex items-center gap-3 pb-2 border-b border-gray-200">
+                            <label className={`flex items-center gap-2 p-2 rounded-lg cursor-pointer transition-colors ${
+                              (hasVegetarianOptions ?? selectedRestaurantData?.hasVegetarianOptions) ? "bg-green-100 border-green-500 border" : "bg-muted/50 hover:bg-muted border border-transparent"
+                            }`}>
+                              <Checkbox
+                                checked={hasVegetarianOptions ?? selectedRestaurantData?.hasVegetarianOptions ?? false}
+                                onCheckedChange={(checked) => setHasVegetarianOptions(checked as boolean)}
+                              />
+                              <span className="text-sm">🥗 Plats végétariens</span>
+                            </label>
                           </div>
                         </div>
 

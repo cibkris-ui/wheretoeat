@@ -118,6 +118,7 @@ export const restaurants = pgTable("restaurants", {
   nearbyParking: text("nearby_parking"),
   additionalInfo: text("additional_info"),
   paymentMethods: text("payment_methods").array(),
+  hasVegetarianOptions: boolean("has_vegetarian_options").default(false),
 });
 
 export const insertRestaurantSchema = createInsertSchema(restaurants).omit({
