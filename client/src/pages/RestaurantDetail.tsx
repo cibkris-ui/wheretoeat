@@ -1,9 +1,10 @@
+import React from "react";
 import { useRoute } from "wouter";
 import { Navbar } from "@/components/layout/Navbar";
 import { BookingForm } from "@/components/BookingForm";
 import { GoogleRating } from "@/components/GoogleRating";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Star, ChefHat, Clock, Phone, Globe, FileText, Image } from "lucide-react";
+import { MapPin, Star, ChefHat, Clock, Phone, Globe, FileText, Image, Mail } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
 import { fetchRestaurant } from "@/lib/api";
@@ -150,23 +151,50 @@ export default function RestaurantDetail() {
                   <MapPin className="w-5 h-5 text-muted-foreground mt-0.5" />
                   <div>
                     <h4 className="font-medium">Adresse</h4>
-                    <p className="text-sm text-muted-foreground">Rue Exemple 123<br/>{restaurant.location}, Suisse</p>
+                    <p className="text-sm text-muted-foreground">
+                      {restaurant.address && <>{restaurant.address}<br/></>}
+                      {restaurant.location}, Suisse
+                    </p>
                   </div>
                 </div>
-                <div className="flex items-start gap-3">
-                  <Phone className="w-5 h-5 text-muted-foreground mt-0.5" />
-                  <div>
-                    <h4 className="font-medium">Téléphone</h4>
-                    <p className="text-sm text-muted-foreground">+41 44 123 45 67</p>
+                {restaurant.phone && (
+                  <div className="flex items-start gap-3">
+                    <Phone className="w-5 h-5 text-muted-foreground mt-0.5" />
+                    <div>
+                      <h4 className="font-medium">Téléphone</h4>
+                      <a href={`tel:${restaurant.phone}`} className="text-sm text-muted-foreground hover:text-primary">
+                        {restaurant.phone}
+                      </a>
+                    </div>
                   </div>
-                </div>
-                <div className="flex items-start gap-3">
-                  <Globe className="w-5 h-5 text-muted-foreground mt-0.5" />
-                  <div>
-                    <h4 className="font-medium">Site Web</h4>
-                    <p className="text-sm text-muted-foreground underline cursor-pointer">www.exemple.ch</p>
+                )}
+                {restaurant.publicEmail && (
+                  <div className="flex items-start gap-3">
+                    <Mail className="w-5 h-5 text-muted-foreground mt-0.5" />
+                    <div>
+                      <h4 className="font-medium">Email</h4>
+                      <a href={`mailto:${restaurant.publicEmail}`} className="text-sm text-muted-foreground hover:text-primary">
+                        {restaurant.publicEmail}
+                      </a>
+                    </div>
                   </div>
-                </div>
+                )}
+                {restaurant.website && (
+                  <div className="flex items-start gap-3">
+                    <Globe className="w-5 h-5 text-muted-foreground mt-0.5" />
+                    <div>
+                      <h4 className="font-medium">Site Web</h4>
+                      <a 
+                        href={restaurant.website.startsWith('http') ? restaurant.website : `https://${restaurant.website}`} 
+                        target="_blank" 
+                        rel="noopener noreferrer"
+                        className="text-sm text-muted-foreground underline hover:text-primary"
+                      >
+                        {restaurant.website}
+                      </a>
+                    </div>
+                  </div>
+                )}
               </div>
               
               <div className="space-y-2">
@@ -174,14 +202,25 @@ export default function RestaurantDetail() {
                   <Clock className="w-5 h-5 text-muted-foreground" />
                   Heures d'ouverture
                 </div>
-                <div className="grid grid-cols-2 text-sm gap-y-1">
-                  <span className="text-muted-foreground">Lundi - Vendredi</span>
-                  <span>11:30 - 23:00</span>
-                  <span className="text-muted-foreground">Samedi</span>
-                  <span>17:00 - 24:00</span>
-                  <span className="text-muted-foreground">Dimanche</span>
-                  <span>Fermé</span>
-                </div>
+                {restaurant.openingHours ? (
+                  <div className="grid grid-cols-2 text-sm gap-y-1">
+                    {['Lundi', 'Mardi', 'Mercredi', 'Jeudi', 'Vendredi', 'Samedi', 'Dimanche'].map((day) => {
+                      const hours = (restaurant.openingHours as Record<string, any>)?.[day];
+                      return (
+                        <React.Fragment key={day}>
+                          <span className="text-muted-foreground">{day}</span>
+                          <span>
+                            {hours?.isOpen 
+                              ? `${hours.openTime1} - ${hours.closeTime1}${hours.hasSecondService ? `, ${hours.openTime2} - ${hours.closeTime2}` : ''}`
+                              : 'Fermé'}
+                          </span>
+                        </React.Fragment>
+                      );
+                    })}
+                  </div>
+                ) : (
+                  <p className="text-sm text-muted-foreground">Horaires non renseignés</p>
+                )}
               </div>
             </div>
           </section>
