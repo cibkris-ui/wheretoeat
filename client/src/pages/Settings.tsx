@@ -423,7 +423,7 @@ export default function Settings() {
   });
 
   const saveContactsMutation = useMutation({
-    mutationFn: async (data: { publicEmail: string; preferredLanguage: string; phone: string; website: string; address: string }) => {
+    mutationFn: async (data: { publicEmail: string; preferredLanguage: string; phone: string; website: string; address: string; location: string }) => {
       const res = await apiRequest("PUT", `/api/restaurants/${activeRestaurantId}`, data);
       return res.json();
     },
@@ -437,12 +437,17 @@ export default function Settings() {
   });
 
   const handleSaveContacts = () => {
+    const finalAddress = addressField || selectedRestaurantData?.address || "";
+    const finalCity = cityField || defaultCity;
+    const fullLocation = finalCity ? `${finalAddress}, ${finalCity}` : finalAddress;
+    
     saveContactsMutation.mutate({
       publicEmail: publicEmailValue || selectedRestaurantData?.publicEmail || "",
       preferredLanguage: preferredLanguageValue || selectedRestaurantData?.preferredLanguage || "fr",
       phone: phoneValue || selectedRestaurantData?.phone || "",
       website: websiteValue || selectedRestaurantData?.website || "",
-      address: addressField || selectedRestaurantData?.address || "",
+      address: finalAddress,
+      location: fullLocation,
     });
   };
 
