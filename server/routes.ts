@@ -257,7 +257,7 @@ export async function registerRoutes(
       }
       
       const updateData: Record<string, any> = {};
-      const allowedFields = ['name', 'description', 'image', 'photos', 'features', 'cuisine', 'location', 'priceRange', 'openingHours', 'capacity', 'onlineCapacity', 'phone', 'address', 'menuPdfUrl'];
+      const allowedFields = ['name', 'description', 'image', 'photos', 'features', 'cuisine', 'location', 'priceRange', 'openingHours', 'capacity', 'onlineCapacity', 'minGuests', 'maxGuests', 'phone', 'address', 'menuPdfUrl'];
       for (const field of allowedFields) {
         if (req.body[field] !== undefined) {
           updateData[field] = req.body[field];

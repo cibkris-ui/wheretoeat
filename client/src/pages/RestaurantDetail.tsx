@@ -218,7 +218,11 @@ export default function RestaurantDetail() {
             <div className="bg-card border rounded-xl shadow-lg p-6">
               <h3 className="text-xl font-serif font-bold mb-1">Réserver une table</h3>
               <p className="text-sm text-muted-foreground mb-6">Réserver chez {restaurant.name}</p>
-              <BookingForm restaurantId={restaurant.id} />
+              <BookingForm 
+                restaurantId={restaurant.id} 
+                minGuests={restaurant.minGuests ?? 1}
+                maxGuests={restaurant.maxGuests ?? 12}
+              />
             </div>
           </div>
         </div>

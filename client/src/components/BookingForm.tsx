@@ -42,9 +42,11 @@ const formSchema = z.object({
 
 interface BookingFormProps {
   restaurantId: number;
+  minGuests?: number;
+  maxGuests?: number;
 }
 
-export function BookingForm({ restaurantId }: BookingFormProps) {
+export function BookingForm({ restaurantId, minGuests = 1, maxGuests = 12 }: BookingFormProps) {
   const { toast } = useToast();
   const [step, setStep] = useState<Step>("date");
   const [direction, setDirection] = useState(1);
@@ -440,7 +442,7 @@ export function BookingForm({ restaurantId }: BookingFormProps) {
               <h3 className="text-lg font-bold text-center">Nombre de personnes</h3>
               
               <div className="grid grid-cols-4 gap-3">
-                {Array.from({ length: 12 }, (_, i) => i + 1).map((num) => (
+                {Array.from({ length: maxGuests - minGuests + 1 }, (_, i) => i + minGuests).map((num) => (
                   <Button
                     key={num}
                     type="button"

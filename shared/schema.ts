@@ -105,6 +105,8 @@ export const restaurants = pgTable("restaurants", {
   googlePlaceId: text("google_place_id"),
   capacity: integer("capacity").default(40),
   onlineCapacity: integer("online_capacity"),
+  minGuests: integer("min_guests").default(1),
+  maxGuests: integer("max_guests").default(12),
   approvalStatus: text("approval_status").default("pending"),
   isBlocked: boolean("is_blocked").default(false),
   createdAt: timestamp("created_at").defaultNow(),

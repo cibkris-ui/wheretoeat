@@ -293,6 +293,8 @@ export default function Settings() {
   const [newUserRole, setNewUserRole] = useState("staff");
   const [capacityValue, setCapacityValue] = useState<number | null>(null);
   const [onlineCapacityValue, setOnlineCapacityValue] = useState<number | null>(null);
+  const [minGuestsValue, setMinGuestsValue] = useState<number | null>(null);
+  const [maxGuestsValue, setMaxGuestsValue] = useState<number | null>(null);
   
   const profileImageInputRef = useRef<HTMLInputElement>(null);
   const photosInputRef = useRef<HTMLInputElement>(null);
@@ -375,8 +377,8 @@ export default function Settings() {
   });
 
   const saveCapacityMutation = useMutation({
-    mutationFn: async ({ capacity, onlineCapacity }: { capacity: number; onlineCapacity: number }) => {
-      const res = await apiRequest("PUT", `/api/restaurants/${activeRestaurantId}`, { capacity, onlineCapacity });
+    mutationFn: async ({ capacity, onlineCapacity, minGuests, maxGuests }: { capacity: number; onlineCapacity: number; minGuests: number; maxGuests: number }) => {
+      const res = await apiRequest("PUT", `/api/restaurants/${activeRestaurantId}`, { capacity, onlineCapacity, minGuests, maxGuests });
       return res.json();
     },
     onSuccess: () => {
@@ -395,7 +397,9 @@ export default function Settings() {
     if (onlineCapacity > capacity) {
       onlineCapacity = capacity;
     }
-    saveCapacityMutation.mutate({ capacity, onlineCapacity });
+    const minGuests = minGuestsValue ?? selectedRestaurantData?.minGuests ?? 1;
+    const maxGuests = maxGuestsValue ?? selectedRestaurantData?.maxGuests ?? 12;
+    saveCapacityMutation.mutate({ capacity, onlineCapacity, minGuests, maxGuests });
   };
 
   const defaultAddress = selectedRestaurantData?.address || "Rue du Grand-Bureau 16";
@@ -1379,11 +1383,25 @@ export default function Settings() {
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                               <div className="space-y-2">
                                 <Label className="text-sm text-gray-500">Minimum de personnes</Label>
-                                <Input type="number" defaultValue={1} className="border-gray-200" data-testid="input-min-guests" />
+                                <Input 
+                                  type="number" 
+                                  value={minGuestsValue ?? selectedRestaurantData?.minGuests ?? 1}
+                                  onChange={(e) => setMinGuestsValue(parseInt(e.target.value) || 1)}
+                                  min={1}
+                                  className="border-gray-200" 
+                                  data-testid="input-min-guests" 
+                                />
                               </div>
                               <div className="space-y-2">
                                 <Label className="text-sm text-gray-500">Maximum de personnes</Label>
-                                <Input type="number" defaultValue={12} className="border-gray-200" data-testid="input-max-guests" />
+                                <Input 
+                                  type="number" 
+                                  value={maxGuestsValue ?? selectedRestaurantData?.maxGuests ?? 12}
+                                  onChange={(e) => setMaxGuestsValue(parseInt(e.target.value) || 12)}
+                                  min={1}
+                                  className="border-gray-200" 
+                                  data-testid="input-max-guests" 
+                                />
                               </div>
                             </div>
                           </div>
