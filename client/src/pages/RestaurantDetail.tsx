@@ -62,7 +62,6 @@ export default function RestaurantDetail() {
         <div className="absolute bottom-0 left-0 right-0 container px-4 pb-10">
           <div className="flex flex-col md:flex-row md:items-end justify-between gap-4">
             <div>
-              <Badge className="mb-4 bg-primary text-primary-foreground hover:bg-primary/90">{restaurant.cuisine}</Badge>
               <h1 className="text-4xl md:text-6xl font-serif font-bold mb-2">{restaurant.name}</h1>
               <div className="flex items-center gap-4 text-muted-foreground flex-wrap">
                 <div className="flex items-center gap-1">
@@ -78,6 +77,9 @@ export default function RestaurantDetail() {
                 <GoogleRating googlePlaceId={restaurant.googlePlaceId} />
                 <div>{restaurant.priceRange}</div>
               </div>
+              {restaurant.cuisine && (
+                <Badge className="mt-3 bg-primary text-primary-foreground hover:bg-primary/90">{restaurant.cuisine}</Badge>
+              )}
             </div>
           </div>
         </div>
