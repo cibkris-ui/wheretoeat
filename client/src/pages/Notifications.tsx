@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { useAuth } from "@/hooks/useAuth";
@@ -66,8 +66,28 @@ export default function Notifications() {
   const [activeTab, setActiveTab] = useState<"notifications" | "demandes">("notifications");
   const [showUnreadOnly, setShowUnreadOnly] = useState(false);
   const [selectedRestaurant, setSelectedRestaurant] = useState<number | null>(null);
-  const [readNotifications, setReadNotifications] = useState<Set<number>>(new Set());
+  const [readNotifications, setReadNotifications] = useState<Set<number>>(() => {
+    // Load from localStorage on init
+    try {
+      const saved = localStorage.getItem("readNotifications");
+      if (saved) {
+        return new Set(JSON.parse(saved));
+      }
+    } catch (e) {
+      console.error("Error loading read notifications from localStorage:", e);
+    }
+    return new Set();
+  });
   const [selectedNotification, setSelectedNotification] = useState<Notification | null>(null);
+
+  // Save to localStorage when readNotifications changes
+  useEffect(() => {
+    try {
+      localStorage.setItem("readNotifications", JSON.stringify(Array.from(readNotifications)));
+    } catch (e) {
+      console.error("Error saving read notifications to localStorage:", e);
+    }
+  }, [readNotifications]);
 
   const { data: myRestaurants = [] } = useQuery<Restaurant[]>({
     queryKey: ["/api/my-restaurants"],
