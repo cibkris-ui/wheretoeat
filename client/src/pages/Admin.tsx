@@ -10,7 +10,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useState } from "react";
 import { 
   CheckCircle, XCircle, Clock, Store, MapPin, Users, Shield, 
-  Ban, Trash2, Eye, EyeOff, UserPlus, Search, Mail, Phone
+  Ban, Trash2, Eye, EyeOff, UserPlus, Search, Mail, Phone, LogOut
 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
@@ -375,6 +375,20 @@ export default function Admin() {
           <div className="flex items-center gap-4">
             <span className="text-sm opacity-80">{user.email}</span>
             <Badge variant="secondary" className="bg-white/20">Admin</Badge>
+            <Button
+              variant="ghost"
+              size="sm"
+              className="text-white hover:bg-white/20"
+              onClick={async () => {
+                await fetch("/api/auth/logout", { method: "POST", credentials: "include" });
+                queryClient.invalidateQueries({ queryKey: ["auth-user"] });
+                window.location.href = "/";
+              }}
+              data-testid="button-logout"
+            >
+              <LogOut className="w-4 h-4 mr-2" />
+              Déconnexion
+            </Button>
           </div>
         </div>
       </div>
