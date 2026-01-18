@@ -301,6 +301,10 @@ export default function Settings() {
   const [phoneValue, setPhoneValue] = useState<string>("");
   const [websiteValue, setWebsiteValue] = useState<string>("");
   const [descriptionValue, setDescriptionValue] = useState<string>("");
+  const [cuisineValue, setCuisineValue] = useState<string>("");
+  const [priceRangeValue, setPriceRangeValue] = useState<string>("");
+  const [nameValue, setNameValue] = useState<string>("");
+  const [locationValue, setLocationValue] = useState<string>("");
   
   const profileImageInputRef = useRef<HTMLInputElement>(null);
   const photosInputRef = useRef<HTMLInputElement>(null);
@@ -420,7 +424,7 @@ export default function Settings() {
   };
 
   const saveProfileMutation = useMutation({
-    mutationFn: async (data: { description: string }) => {
+    mutationFn: async (data: { name: string; description: string; cuisine: string; priceRange: string; location: string }) => {
       const res = await apiRequest("PUT", `/api/restaurants/${activeRestaurantId}`, data);
       return res.json();
     },
@@ -435,7 +439,11 @@ export default function Settings() {
 
   const handleSaveProfile = () => {
     saveProfileMutation.mutate({
+      name: nameValue || selectedRestaurantData?.name || "",
       description: descriptionValue || selectedRestaurantData?.description || "",
+      cuisine: cuisineValue || selectedRestaurantData?.cuisine || "",
+      priceRange: priceRangeValue || selectedRestaurantData?.priceRange || "",
+      location: locationValue || selectedRestaurantData?.location || "",
     });
   };
 
@@ -1002,6 +1010,67 @@ export default function Settings() {
                     >
                       VOIR MA PAGE SUR WHERETOEAT
                     </Button>
+
+                    <Card className="bg-white border shadow-sm">
+                      <CardContent className="p-0">
+                        <div className="px-6 py-4 border-b bg-gray-50/50">
+                          <h3 className="text-sm font-medium text-gray-600">Informations principales</h3>
+                        </div>
+                        <div className="p-6 space-y-4">
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="space-y-1">
+                              <Label className="text-sm text-gray-500">Nom du restaurant</Label>
+                              <Input 
+                                value={nameValue || selectedRestaurantData?.name || ""}
+                                onChange={(e) => setNameValue(e.target.value)}
+                                placeholder="Nom de votre restaurant"
+                                className="border-gray-200"
+                                data-testid="input-name"
+                              />
+                            </div>
+                            <div className="space-y-1">
+                              <Label className="text-sm text-gray-500">Adresse complète</Label>
+                              <Input 
+                                value={locationValue || selectedRestaurantData?.location || ""}
+                                onChange={(e) => setLocationValue(e.target.value)}
+                                placeholder="Rue, code postal, ville"
+                                className="border-gray-200"
+                                data-testid="input-location"
+                              />
+                            </div>
+                          </div>
+                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div className="space-y-1">
+                              <Label className="text-sm text-gray-500">Type de cuisine</Label>
+                              <Input 
+                                value={cuisineValue || selectedRestaurantData?.cuisine || ""}
+                                onChange={(e) => setCuisineValue(e.target.value)}
+                                placeholder="Ex: Française, Italienne, Méditerranéenne..."
+                                className="border-gray-200"
+                                data-testid="input-cuisine"
+                              />
+                            </div>
+                            <div className="space-y-1">
+                              <Label className="text-sm text-gray-500">Gamme de prix</Label>
+                              <Select 
+                                value={priceRangeValue || selectedRestaurantData?.priceRange || ""}
+                                onValueChange={setPriceRangeValue}
+                              >
+                                <SelectTrigger className="border-gray-200" data-testid="select-price-range">
+                                  <SelectValue placeholder="Sélectionner" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                  <SelectItem value="€">€ - Économique</SelectItem>
+                                  <SelectItem value="€€">€€ - Modéré</SelectItem>
+                                  <SelectItem value="€€€">€€€ - Haut de gamme</SelectItem>
+                                  <SelectItem value="€€€€">€€€€ - Gastronomique</SelectItem>
+                                </SelectContent>
+                              </Select>
+                            </div>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
 
                     <Card className="bg-white border shadow-sm">
                       <CardContent className="p-0">
