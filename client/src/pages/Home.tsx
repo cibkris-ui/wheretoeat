@@ -5,7 +5,7 @@ import { RestaurantCard } from "@/components/RestaurantCard";
 import { Search, MapPin, Calendar, Clock, Users } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import heroImage from '@assets/IMG_2942_1768766459713.jpeg';
+import heroImage from '@assets/IMG_9005_1768766651152.jpeg';
 import { Separator } from "@/components/ui/separator";
 import { useQuery } from "@tanstack/react-query";
 import { fetchRestaurants } from "@/lib/api";
