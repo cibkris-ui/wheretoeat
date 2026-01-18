@@ -232,42 +232,29 @@ export function BookingForm({ restaurantId, minGuests = 1, maxGuests = 12 }: Boo
     ];
 
     return (
-      <div className="flex items-center justify-between bg-muted/30 rounded-full p-1 mb-6 border">
+      <div className="flex items-center justify-between bg-muted/30 rounded-full p-1 mb-6 border overflow-hidden">
         {steps.map((s, index) => {
           const isActive = s.id === step;
           const isCompleted = 
             (s.id === "date" && (step === "time" || step === "guests" || step === "details")) ||
             (s.id === "time" && (step === "guests" || step === "details")) ||
             (s.id === "guests" && step === "details");
-
-          // Determine styling based on state
-          let baseClass = "flex items-center gap-2 px-4 py-2 rounded-full text-sm font-medium transition-all duration-300";
-          if (isActive || isCompleted) {
-            baseClass += " bg-[#00645A] text-white shadow-md";
-          } else {
-            baseClass += " text-muted-foreground hover:bg-muted";
-          }
-
-          // Special logic for the progress bar look from screenshot
-          // The screenshots show a distinct "Segmented Control" look. 
-          // Let's approximate it.
           
           return (
              <button 
                key={s.id}
                onClick={() => {
-                 // Allow navigating back
                  if (isCompleted) setStep(s.id as Step);
                }}
                disabled={!isCompleted && !isActive}
                className={cn(
-                 "flex items-center justify-center gap-2 h-10 px-3 md:px-6 rounded-full text-sm font-medium transition-all",
+                 "flex items-center justify-center gap-1 h-10 px-2 sm:px-4 rounded-full text-xs sm:text-sm font-medium transition-all flex-1 min-w-0",
                  (isActive || isCompleted) ? "bg-[#00645A] text-white shadow-sm" : "text-muted-foreground",
                  !isCompleted && !isActive && "opacity-50 cursor-not-allowed"
                )}
              >
-               <s.icon className="w-4 h-4" />
-               <span className="hidden md:inline">{s.label}</span>
+               <s.icon className="w-4 h-4 flex-shrink-0" />
+               <span className="truncate">{s.label}</span>
              </button>
           );
         })}
@@ -498,14 +485,14 @@ export function BookingForm({ restaurantId, minGuests = 1, maxGuests = 12 }: Boo
             <div className="space-y-6 animate-in slide-in-from-right-8 duration-300">
                <div className="bg-muted/30 p-4 rounded-lg border text-center mb-6">
                  <h3 className="font-bold text-lg">RÉSERVATION</h3>
-                 <div className="flex items-center justify-center gap-2 text-sm mt-1">
-                    <span className="font-medium bg-white px-3 py-1 rounded-full border shadow-sm">
+                 <div className="flex items-center justify-center gap-2 text-xs sm:text-sm mt-1 flex-wrap">
+                    <span className="font-medium bg-white px-2 sm:px-3 py-1 rounded-full border shadow-sm whitespace-nowrap">
                       {formData.guests} Pers.{formData.children > 0 ? ` (${formData.children} enf.)` : ''}
                     </span>
-                    <span className="font-medium bg-white px-3 py-1 rounded-full border shadow-sm">
+                    <span className="font-medium bg-white px-2 sm:px-3 py-1 rounded-full border shadow-sm whitespace-nowrap">
                        {formData.date && format(formData.date, "eee d MMM", { locale: fr })}
                     </span>
-                    <span className="font-medium bg-white px-3 py-1 rounded-full border shadow-sm">
+                    <span className="font-medium bg-white px-2 sm:px-3 py-1 rounded-full border shadow-sm whitespace-nowrap">
                       {formData.time}
                     </span>
                  </div>
