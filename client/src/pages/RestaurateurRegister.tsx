@@ -57,6 +57,8 @@ export default function RestaurateurRegister() {
   const [submitted, setSubmitted] = useState(false);
   const [passwordError, setPasswordError] = useState("");
   const [loginError, setLoginError] = useState("");
+  const [emailError, setEmailError] = useState("");
+  const [isCheckingEmail, setIsCheckingEmail] = useState(false);
 
   const { data: categories = [] } = useQuery<CuisineCategory[]>({
     queryKey: ["cuisine-categories"],
@@ -258,6 +260,9 @@ export default function RestaurateurRegister() {
     if (field === "email" || field === "password") {
       setLoginError("");
     }
+    if (field === "email") {
+      setEmailError("");
+    }
   };
 
   const isStep1Valid = () => {
@@ -417,7 +422,7 @@ export default function RestaurateurRegister() {
                   )}
                   <div className="flex justify-end pt-4">
                     <Button
-                      onClick={() => {
+                      onClick={async () => {
                         if (formData.password !== formData.confirmPassword) {
                           setPasswordError("Les mots de passe ne correspondent pas");
                           return;
@@ -427,14 +432,31 @@ export default function RestaurateurRegister() {
                           return;
                         }
                         setPasswordError("");
+                        setEmailError("");
+                        setIsCheckingEmail(true);
+                        try {
+                          const res = await fetch(`/api/auth/check-email?email=${encodeURIComponent(formData.email)}`);
+                          const data = await res.json();
+                          if (data.exists) {
+                            setEmailError("Un compte avec cet email existe déjà. Veuillez vous connecter.");
+                            setIsCheckingEmail(false);
+                            return;
+                          }
+                        } catch (error) {
+                          console.error("Error checking email:", error);
+                        }
+                        setIsCheckingEmail(false);
                         setStep(2);
                       }}
-                      disabled={!isStep1Valid()}
+                      disabled={!isStep1Valid() || isCheckingEmail}
                       data-testid="button-next-step-1"
                     >
-                      Continuer
+                      {isCheckingEmail ? "Vérification..." : "Continuer"}
                     </Button>
                   </div>
+                  {emailError && (
+                    <p className="text-sm text-red-600">{emailError}</p>
+                  )}
                 </TabsContent>
 
                 <TabsContent value="login" className="space-y-4">

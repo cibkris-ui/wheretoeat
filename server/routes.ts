@@ -68,6 +68,20 @@ export async function registerRoutes(
     }
   });
 
+  app.get("/api/auth/check-email", async (req, res) => {
+    try {
+      const email = req.query.email as string;
+      if (!email) {
+        return res.status(400).json({ message: "Email is required" });
+      }
+      const existingUser = await storage.getUserByEmail(email);
+      res.json({ exists: !!existingUser });
+    } catch (error: any) {
+      console.error("Check email error:", error);
+      res.status(500).json({ message: "Erreur lors de la vérification" });
+    }
+  });
+
   app.post("/api/auth/login", async (req, res) => {
     try {
       const result = loginSchema.safeParse(req.body);
