@@ -16,6 +16,8 @@ import {
   type InsertClient,
   type FloorPlan,
   type FloorPlanData,
+  type RestaurantUser,
+  type InsertRestaurantUser,
   users,
   restaurants,
   bookings,
@@ -23,7 +25,8 @@ import {
   cuisineCategories,
   closedDays,
   clients,
-  floorPlans
+  floorPlans,
+  restaurantUsers
 } from "@shared/schema";
 
 export interface IStorage {
@@ -78,6 +81,11 @@ export interface IStorage {
   
   getFloorPlan(restaurantId: number): Promise<FloorPlan | undefined>;
   saveFloorPlan(restaurantId: number, plan: FloorPlanData): Promise<FloorPlan>;
+  
+  getRestaurantUsers(restaurantId: number): Promise<RestaurantUser[]>;
+  addRestaurantUser(data: InsertRestaurantUser): Promise<RestaurantUser>;
+  removeRestaurantUser(id: number): Promise<void>;
+  getRestaurantUserByEmail(restaurantId: number, email: string): Promise<RestaurantUser | undefined>;
 }
 
 export class DatabaseStorage implements IStorage {
@@ -439,6 +447,29 @@ export class DatabaseStorage implements IStorage {
       plan,
     }).returning();
     return newPlan;
+  }
+
+  async getRestaurantUsers(restaurantId: number): Promise<RestaurantUser[]> {
+    return await db.select().from(restaurantUsers).where(eq(restaurantUsers.restaurantId, restaurantId));
+  }
+
+  async addRestaurantUser(data: InsertRestaurantUser): Promise<RestaurantUser> {
+    const [newUser] = await db.insert(restaurantUsers).values(data).returning();
+    return newUser;
+  }
+
+  async removeRestaurantUser(id: number): Promise<void> {
+    await db.delete(restaurantUsers).where(eq(restaurantUsers.id, id));
+  }
+
+  async getRestaurantUserByEmail(restaurantId: number, email: string): Promise<RestaurantUser | undefined> {
+    const [user] = await db.select().from(restaurantUsers).where(
+      and(
+        eq(restaurantUsers.restaurantId, restaurantId),
+        eq(restaurantUsers.email, email.toLowerCase().trim())
+      )
+    );
+    return user;
   }
 }
 

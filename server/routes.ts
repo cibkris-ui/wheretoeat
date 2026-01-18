@@ -1109,6 +1109,98 @@ export async function registerRoutes(
     }
   });
 
+  app.get("/api/restaurants/:id/users", isAuthenticatedCombined, async (req: any, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid restaurant ID" });
+      }
+      
+      const restaurant = await storage.getRestaurant(id);
+      if (!restaurant) {
+        return res.status(404).json({ message: "Restaurant not found" });
+      }
+      
+      const userId = req.localUserId;
+      if (restaurant.ownerId !== userId) {
+        return res.status(403).json({ message: "Not authorized" });
+      }
+      
+      const users = await storage.getRestaurantUsers(id);
+      res.json(users);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.post("/api/restaurants/:id/users", isAuthenticatedCombined, async (req: any, res) => {
+    try {
+      const id = parseInt(req.params.id);
+      if (isNaN(id)) {
+        return res.status(400).json({ message: "Invalid restaurant ID" });
+      }
+      
+      const restaurant = await storage.getRestaurant(id);
+      if (!restaurant) {
+        return res.status(404).json({ message: "Restaurant not found" });
+      }
+      
+      const userId = req.localUserId;
+      if (restaurant.ownerId !== userId) {
+        return res.status(403).json({ message: "Not authorized" });
+      }
+      
+      const { email, role } = req.body;
+      if (!email) {
+        return res.status(400).json({ message: "Email is required" });
+      }
+      
+      const existing = await storage.getRestaurantUserByEmail(id, email);
+      if (existing) {
+        return res.status(400).json({ message: "User already has access to this restaurant" });
+      }
+      
+      const existingUser = await storage.getUserByEmail(email.toLowerCase().trim());
+      
+      const newUser = await storage.addRestaurantUser({
+        restaurantId: id,
+        email: email.toLowerCase().trim(),
+        role: role || "staff",
+        userId: existingUser?.id || null,
+      });
+      
+      res.status(201).json(newUser);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
+  app.delete("/api/restaurants/:id/users/:userId", isAuthenticatedCombined, async (req: any, res) => {
+    try {
+      const restaurantId = parseInt(req.params.id);
+      const teamUserId = parseInt(req.params.userId);
+      
+      if (isNaN(restaurantId) || isNaN(teamUserId)) {
+        return res.status(400).json({ message: "Invalid ID" });
+      }
+      
+      const restaurant = await storage.getRestaurant(restaurantId);
+      if (!restaurant) {
+        return res.status(404).json({ message: "Restaurant not found" });
+      }
+      
+      const userId = req.localUserId;
+      if (restaurant.ownerId !== userId) {
+        return res.status(403).json({ message: "Not authorized" });
+      }
+      
+      await storage.removeRestaurantUser(teamUserId);
+      res.json({ message: "User removed" });
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
   const isAdmin: RequestHandler = async (req: any, res, next) => {
     const userId = req.session?.userId || req.user?.claims?.sub;
     if (!userId) {
