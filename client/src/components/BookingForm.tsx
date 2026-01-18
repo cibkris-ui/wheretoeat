@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { format, parseISO, isSameDay } from "date-fns";
+import { format, parseISO, isSameDay, isToday } from "date-fns";
 import { fr } from "date-fns/locale";
 import { Calendar as CalendarIcon, Users, Clock, CheckCircle2, ChevronRight, ChevronLeft, Percent } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -59,6 +59,18 @@ export function BookingForm({ restaurantId }: BookingFormProps) {
 
   const isDateClosed = (date: Date) => {
     return closedDates.some(closedDate => isSameDay(date, closedDate));
+  };
+
+  // Check if a time slot is in the past (for today's bookings)
+  const isTimeSlotPassed = (timeSlot: string) => {
+    if (!formData.date || !isToday(formData.date)) {
+      return false;
+    }
+    const now = new Date();
+    const [hours, minutes] = timeSlot.split(':').map(Number);
+    const slotTime = new Date();
+    slotTime.setHours(hours, minutes, 0, 0);
+    return slotTime <= now;
   };
 
   const form = useForm<z.infer<typeof formSchema>>({
@@ -256,44 +268,54 @@ export function BookingForm({ restaurantId }: BookingFormProps) {
               <div className="space-y-4">
                 <div className="text-sm font-medium text-muted-foreground">Midi</div>
                 <div className="grid grid-cols-3 md:grid-cols-4 gap-3">
-                  {["12:00", "12:30", "13:00", "13:30"].map((t) => (
-                    <Button
-                      key={t}
-                      type="button"
-                      variant="outline"
-                      className={cn(
-                        "h-12 text-base hover:border-[#00645A] hover:text-[#00645A]",
-                        formData.time === t && "bg-[#00645A] text-white hover:bg-[#00645A] hover:text-white border-[#00645A]"
-                      )}
-                      onClick={() => {
-                        setValue("time", t);
-                        handleNext("guests");
-                      }}
-                    >
-                      {t}
-                    </Button>
-                  ))}
+                  {["12:00", "12:30", "13:00", "13:30"].map((t) => {
+                    const isPassed = isTimeSlotPassed(t);
+                    return (
+                      <Button
+                        key={t}
+                        type="button"
+                        variant="outline"
+                        disabled={isPassed}
+                        className={cn(
+                          "h-12 text-base hover:border-[#00645A] hover:text-[#00645A]",
+                          formData.time === t && "bg-[#00645A] text-white hover:bg-[#00645A] hover:text-white border-[#00645A]",
+                          isPassed && "opacity-50 cursor-not-allowed"
+                        )}
+                        onClick={() => {
+                          setValue("time", t);
+                          handleNext("guests");
+                        }}
+                      >
+                        {t}
+                      </Button>
+                    );
+                  })}
                 </div>
 
                 <div className="text-sm font-medium text-muted-foreground mt-6">Soir</div>
                 <div className="grid grid-cols-3 md:grid-cols-4 gap-3">
-                  {["19:00", "19:30", "20:00", "20:30", "21:00", "21:30"].map((t) => (
-                    <Button
-                      key={t}
-                      type="button"
-                      variant="outline"
-                      className={cn(
-                        "h-12 text-base hover:border-[#00645A] hover:text-[#00645A]",
-                        formData.time === t && "bg-[#00645A] text-white hover:bg-[#00645A] hover:text-white border-[#00645A]"
-                      )}
-                      onClick={() => {
-                        setValue("time", t);
-                        handleNext("guests");
-                      }}
-                    >
-                      {t}
-                    </Button>
-                  ))}
+                  {["19:00", "19:30", "20:00", "20:30", "21:00", "21:30"].map((t) => {
+                    const isPassed = isTimeSlotPassed(t);
+                    return (
+                      <Button
+                        key={t}
+                        type="button"
+                        variant="outline"
+                        disabled={isPassed}
+                        className={cn(
+                          "h-12 text-base hover:border-[#00645A] hover:text-[#00645A]",
+                          formData.time === t && "bg-[#00645A] text-white hover:bg-[#00645A] hover:text-white border-[#00645A]",
+                          isPassed && "opacity-50 cursor-not-allowed"
+                        )}
+                        onClick={() => {
+                          setValue("time", t);
+                          handleNext("guests");
+                        }}
+                      >
+                        {t}
+                      </Button>
+                    );
+                  })}
                 </div>
               </div>
             </div>
