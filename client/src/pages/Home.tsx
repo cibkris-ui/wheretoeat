@@ -215,7 +215,7 @@ export default function Home() {
               <li className="hover:text-primary cursor-pointer">Zurich</li>
               <li className="hover:text-primary cursor-pointer">Genève</li>
               <li className="hover:text-primary cursor-pointer">Bâle</li>
-              <li className="hover:text-primary cursor-pointer">Zermatt</li>
+              <li className="hover:text-primary cursor-pointer">Crans-Montana</li>
             </ul>
           </div>
           <div>
