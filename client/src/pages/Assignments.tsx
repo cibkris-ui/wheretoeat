@@ -251,10 +251,16 @@ export default function Assignments() {
 
   // Count pending notifications for sidebar badge
   const pendingNotifications = useMemo(() => {
-    return bookings.filter(b => 
+    if (bookings.length === 0) {
+      const cached = localStorage.getItem("pendingNotificationsCount");
+      return cached ? parseInt(cached, 10) : 0;
+    }
+    const count = bookings.filter(b => 
       b.status === "pending" && 
       !b.clientIp?.startsWith("owner-")
     ).length;
+    localStorage.setItem("pendingNotificationsCount", String(count));
+    return count;
   }, [bookings]);
 
   const { data: floorPlanResponse } = useQuery<FloorPlanData>({

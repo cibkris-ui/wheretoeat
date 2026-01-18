@@ -244,6 +244,9 @@ export default function Dashboard() {
       b.status === "pending" && 
       !b.clientIp?.startsWith("owner-")
     ).length;
+    
+    // Update localStorage for cross-page sync
+    localStorage.setItem("pendingNotificationsCount", String(pendingNotifications));
 
     return {
       selectedDateCount: confirmedBookings.length,

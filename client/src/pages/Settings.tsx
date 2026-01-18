@@ -98,10 +98,16 @@ export default function Settings() {
   });
 
   const pendingNotifications = useMemo(() => {
-    return allBookings.filter(b => 
+    if (allBookings.length === 0) {
+      const cached = localStorage.getItem("pendingNotificationsCount");
+      return cached ? parseInt(cached, 10) : 0;
+    }
+    const count = allBookings.filter(b => 
       b.status === "pending" && 
       !b.clientIp?.startsWith("owner-")
     ).length;
+    localStorage.setItem("pendingNotificationsCount", String(count));
+    return count;
   }, [allBookings]);
 
   const defaultAddress = selectedRestaurantData?.address || "Rue du Grand-Bureau 16";
