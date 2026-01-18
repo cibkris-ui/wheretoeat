@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Navbar } from "@/components/layout/Navbar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -12,6 +12,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { Upload, Store, FileText, Image, CheckCircle, User, LogIn, Check } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
+import { useAuth } from "@/hooks/useAuth";
 
 interface UploadResult {
   successful: Array<{ uploadURL: string }>;
@@ -32,10 +33,19 @@ const PRICE_RANGES = [
 
 export default function RestaurateurRegister() {
   const [, setLocation] = useLocation();
+  const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   const [step, setStep] = useState(1);
   const [authMode, setAuthMode] = useState<"register" | "login">("login");
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [loggedInUserId, setLoggedInUserId] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!authLoading && isAuthenticated && user) {
+      setIsLoggedIn(true);
+      setLoggedInUserId(user.id);
+      setStep(2);
+    }
+  }, [authLoading, isAuthenticated, user]);
   const [formData, setFormData] = useState({
     email: "",
     password: "",
