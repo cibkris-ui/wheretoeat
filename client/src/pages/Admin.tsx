@@ -359,12 +359,10 @@ export default function Admin() {
   );
 
   const filteredUsers = users.filter(u =>
-    u.isAdmin && (
-      searchQuery === "" ||
-      (u.email && u.email.toLowerCase().includes(searchQuery.toLowerCase())) ||
-      (u.firstName && u.firstName.toLowerCase().includes(searchQuery.toLowerCase())) ||
-      (u.lastName && u.lastName.toLowerCase().includes(searchQuery.toLowerCase()))
-    )
+    searchQuery === "" ||
+    (u.email && u.email.toLowerCase().includes(searchQuery.toLowerCase())) ||
+    (u.firstName && u.firstName.toLowerCase().includes(searchQuery.toLowerCase())) ||
+    (u.lastName && u.lastName.toLowerCase().includes(searchQuery.toLowerCase()))
   );
 
   return (
@@ -420,8 +418,8 @@ export default function Admin() {
                 <Shield className="w-6 h-6 text-purple-600" />
               </div>
               <div>
-                <p className="text-2xl font-bold">{users.filter(u => u.isAdmin).length}</p>
-                <p className="text-sm text-muted-foreground">Administrateurs</p>
+                <p className="text-2xl font-bold">{users.length}</p>
+                <p className="text-sm text-muted-foreground">Utilisateurs</p>
               </div>
             </CardContent>
           </Card>
@@ -433,7 +431,7 @@ export default function Admin() {
               <TabsList className="grid w-full grid-cols-4">
                 <TabsTrigger value="users" className="gap-2" data-testid="tab-users">
                   <Shield className="w-4 h-4" />
-                  Administrateurs
+                  Utilisateurs
                 </TabsTrigger>
                 <TabsTrigger value="pending" className="gap-2" data-testid="tab-pending">
                   <Clock className="w-4 h-4" />
@@ -684,7 +682,11 @@ export default function Admin() {
                         <TableCell className="font-medium">{u.email}</TableCell>
                         <TableCell>{u.firstName} {u.lastName}</TableCell>
                         <TableCell>
-                          <Badge className="bg-purple-100 text-purple-700 hover:bg-purple-100">Admin</Badge>
+                          {u.isAdmin ? (
+                            <Badge className="bg-purple-100 text-purple-700 hover:bg-purple-100">Admin</Badge>
+                          ) : (
+                            <Badge variant="secondary">Utilisateur</Badge>
+                          )}
                         </TableCell>
                         <TableCell>
                           {u.createdAt ? new Date(u.createdAt).toLocaleDateString("fr-CH") : "-"}
