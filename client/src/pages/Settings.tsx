@@ -1254,15 +1254,6 @@ export default function Settings() {
                         </div>
 
                         <div className="space-y-1">
-                          <Label className="text-sm text-gray-600">Fermetures annuelles</Label>
-                          <Input 
-                            placeholder="Période de fermeture du restaurant"
-                            className="border-0 border-b border-gray-200 rounded-none px-0 focus-visible:ring-0 focus-visible:border-gray-400"
-                            data-testid="input-fermetures"
-                          />
-                        </div>
-
-                        <div className="space-y-1">
                           <Label className="text-sm text-gray-600">Informations supplémentaires</Label>
                           <Input 
                             placeholder="Comment se rendre au restaurant..."
