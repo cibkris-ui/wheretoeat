@@ -1,4 +1,4 @@
-import { useState, useMemo, useRef } from "react";
+import { useState, useMemo, useRef, useEffect } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { useAuth } from "@/hooks/useAuth";
@@ -86,8 +86,17 @@ type DayHours = {
   closeTime2: string;
 };
 
-function ServiceHoursSection({ onBack, onSave }: { onBack: () => void; onSave: () => void }) {
-  const [hours, setHours] = useState<Record<string, DayHours>>(() => {
+function ServiceHoursSection({ onBack, onSave, restaurantId, existingHours }: { 
+  onBack: () => void; 
+  onSave: () => void;
+  restaurantId: number | null;
+  existingHours: Record<string, DayHours> | null;
+}) {
+  const queryClient = useQueryClient();
+  const [isSaving, setIsSaving] = useState(false);
+  const [hasInitialized, setHasInitialized] = useState(false);
+  
+  const getDefaultHours = (): Record<string, DayHours> => {
     const days = ["Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi", "Dimanche"];
     const initial: Record<string, DayHours> = {};
     days.forEach(day => {
@@ -101,13 +110,42 @@ function ServiceHoursSection({ onBack, onSave }: { onBack: () => void; onSave: (
       };
     });
     return initial;
-  });
+  };
+  
+  const [hours, setHours] = useState<Record<string, DayHours>>(getDefaultHours);
+  
+  useEffect(() => {
+    if (existingHours && !hasInitialized) {
+      setHours(existingHours);
+      setHasInitialized(true);
+    }
+  }, [existingHours, hasInitialized]);
 
   const updateDay = (day: string, field: keyof DayHours, value: string | boolean) => {
     setHours(prev => ({
       ...prev,
       [day]: { ...prev[day], [field]: value }
     }));
+  };
+
+  const handleSave = async () => {
+    if (!restaurantId) return;
+    setIsSaving(true);
+    try {
+      const res = await fetch(`/api/restaurants/${restaurantId}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ openingHours: hours }),
+      });
+      if (!res.ok) throw new Error("Erreur lors de la sauvegarde");
+      queryClient.invalidateQueries({ queryKey: ["/api/my-restaurants"] });
+      onSave();
+    } catch (error) {
+      console.error("Error saving hours:", error);
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   return (
@@ -226,8 +264,8 @@ function ServiceHoursSection({ onBack, onSave }: { onBack: () => void; onSave: (
         <Button variant="outline" onClick={onBack} className="px-6">
           ANNULER
         </Button>
-        <Button onClick={onSave} className="px-6" data-testid="save-service-hours">
-          ENREGISTRER
+        <Button onClick={handleSave} disabled={isSaving} className="px-6" data-testid="save-service-hours">
+          {isSaving ? "Enregistrement..." : "ENREGISTRER"}
         </Button>
       </div>
     </div>
@@ -1198,6 +1236,8 @@ export default function Settings() {
                   <ServiceHoursSection 
                     onBack={() => setActiveSection("overview")}
                     onSave={() => toast({ title: "Horaires enregistrés" })}
+                    restaurantId={activeRestaurantId || null}
+                    existingHours={selectedRestaurantData?.openingHours as Record<string, DayHours> | null || null}
                   />
                 )}
 

@@ -54,11 +54,94 @@ export function BookingForm({ restaurantId }: BookingFormProps) {
     queryKey: [`/api/public/restaurants/${restaurantId}/closed-days`],
   });
 
+  // Fetch opening hours for this restaurant
+  type DayHours = {
+    isOpen: boolean;
+    hasSecondService: boolean;
+    openTime1: string;
+    closeTime1: string;
+    openTime2: string;
+    closeTime2: string;
+  };
+  
+  const { data: openingHours } = useQuery<Record<string, DayHours> | null>({
+    queryKey: [`/api/public/restaurants/${restaurantId}/opening-hours`],
+  });
+
+  // Map French day names to JS getDay() values (0 = Sunday)
+  const dayNameToIndex: Record<string, number> = {
+    "Dimanche": 0, "Lundi": 1, "Mardi": 2, "Mercredi": 3, 
+    "Jeudi": 4, "Vendredi": 5, "Samedi": 6
+  };
+  const indexToDayName = ["Dimanche", "Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi"];
+
+  // Generate time slots based on opening hours for the selected date
+  const getTimeSlotsForDate = (date: Date | undefined) => {
+    if (!date || !openingHours) {
+      // Default slots if no opening hours configured
+      return {
+        lunch: ["12:00", "12:30", "13:00", "13:30"],
+        dinner: ["19:00", "19:30", "20:00", "20:30", "21:00", "21:30"]
+      };
+    }
+
+    const dayName = indexToDayName[date.getDay()];
+    const dayHours = openingHours[dayName];
+
+    if (!dayHours || !dayHours.isOpen) {
+      return { lunch: [], dinner: [] };
+    }
+
+    const generateSlots = (startTime: string, endTime: string) => {
+      const slots: string[] = [];
+      const [startH, startM] = startTime.split(':').map(Number);
+      const [endH, endM] = endTime.split(':').map(Number);
+      
+      let currentH = startH;
+      let currentM = startM;
+      
+      while (currentH < endH || (currentH === endH && currentM < endM)) {
+        // Only add slots up to 1 hour before closing (for reservations)
+        const slotMinutes = currentH * 60 + currentM;
+        const endMinutes = endH * 60 + endM;
+        if (endMinutes - slotMinutes >= 60) {
+          slots.push(`${currentH.toString().padStart(2, '0')}:${currentM.toString().padStart(2, '0')}`);
+        }
+        
+        currentM += 30;
+        if (currentM >= 60) {
+          currentH++;
+          currentM = 0;
+        }
+      }
+      return slots;
+    };
+
+    const lunchSlots = generateSlots(dayHours.openTime1, dayHours.closeTime1);
+    const dinnerSlots = dayHours.hasSecondService 
+      ? generateSlots(dayHours.openTime2, dayHours.closeTime2)
+      : [];
+
+    return { lunch: lunchSlots, dinner: dinnerSlots };
+  };
+
   // Convert closed dates to Date objects for comparison
   const closedDates = closedDays.map(cd => parseISO(cd.date));
 
   const isDateClosed = (date: Date) => {
-    return closedDates.some(closedDate => isSameDay(date, closedDate));
+    // Check if explicitly closed
+    if (closedDates.some(closedDate => isSameDay(date, closedDate))) {
+      return true;
+    }
+    // Check if restaurant is closed on this day of week
+    if (openingHours) {
+      const dayName = indexToDayName[date.getDay()];
+      const dayHours = openingHours[dayName];
+      if (!dayHours || !dayHours.isOpen) {
+        return true;
+      }
+    }
+    return false;
   };
 
   // Check if a time slot is in the past (for today's bookings)
@@ -261,65 +344,95 @@ export function BookingForm({ restaurantId }: BookingFormProps) {
           )}
 
           {/* STEP 2: TIME */}
-          {step === "time" && (
-            <div className="space-y-6 animate-in slide-in-from-right-8 duration-300">
-              <h3 className="text-lg font-bold text-center">Sélectionnez une heure</h3>
-              
-              <div className="space-y-4">
-                <div className="text-sm font-medium text-muted-foreground">Midi</div>
-                <div className="grid grid-cols-3 md:grid-cols-4 gap-3">
-                  {["12:00", "12:30", "13:00", "13:30"].map((t) => {
-                    const isPassed = isTimeSlotPassed(t);
-                    return (
-                      <Button
-                        key={t}
-                        type="button"
-                        variant="outline"
-                        disabled={isPassed}
-                        className={cn(
-                          "h-12 text-base hover:border-[#00645A] hover:text-[#00645A]",
-                          formData.time === t && "bg-[#00645A] text-white hover:bg-[#00645A] hover:text-white border-[#00645A]",
-                          isPassed && "opacity-50 cursor-not-allowed"
-                        )}
-                        onClick={() => {
-                          setValue("time", t);
-                          handleNext("guests");
-                        }}
-                      >
-                        {t}
-                      </Button>
-                    );
-                  })}
-                </div>
+          {step === "time" && (() => {
+            const timeSlots = getTimeSlotsForDate(formData.date);
+            const hasLunch = timeSlots.lunch.length > 0;
+            const hasDinner = timeSlots.dinner.length > 0;
+            
+            return (
+              <div className="space-y-6 animate-in slide-in-from-right-8 duration-300">
+                <h3 className="text-lg font-bold text-center">Sélectionnez une heure</h3>
+                
+                {!hasLunch && !hasDinner ? (
+                  <div className="text-center py-8 text-muted-foreground">
+                    <p>Aucun créneau disponible pour cette date.</p>
+                    <Button 
+                      type="button" 
+                      variant="outline" 
+                      className="mt-4"
+                      onClick={() => { setDirection(-1); setStep("date"); }}
+                    >
+                      Choisir une autre date
+                    </Button>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {hasLunch && (
+                      <>
+                        <div className="text-sm font-medium text-muted-foreground">
+                          {hasDinner ? "Midi" : "Créneaux disponibles"}
+                        </div>
+                        <div className="grid grid-cols-3 md:grid-cols-4 gap-3">
+                          {timeSlots.lunch.map((t) => {
+                            const isPassed = isTimeSlotPassed(t);
+                            return (
+                              <Button
+                                key={t}
+                                type="button"
+                                variant="outline"
+                                disabled={isPassed}
+                                className={cn(
+                                  "h-12 text-base hover:border-[#00645A] hover:text-[#00645A]",
+                                  formData.time === t && "bg-[#00645A] text-white hover:bg-[#00645A] hover:text-white border-[#00645A]",
+                                  isPassed && "opacity-50 cursor-not-allowed"
+                                )}
+                                onClick={() => {
+                                  setValue("time", t);
+                                  handleNext("guests");
+                                }}
+                              >
+                                {t}
+                              </Button>
+                            );
+                          })}
+                        </div>
+                      </>
+                    )}
 
-                <div className="text-sm font-medium text-muted-foreground mt-6">Soir</div>
-                <div className="grid grid-cols-3 md:grid-cols-4 gap-3">
-                  {["19:00", "19:30", "20:00", "20:30", "21:00", "21:30"].map((t) => {
-                    const isPassed = isTimeSlotPassed(t);
-                    return (
-                      <Button
-                        key={t}
-                        type="button"
-                        variant="outline"
-                        disabled={isPassed}
-                        className={cn(
-                          "h-12 text-base hover:border-[#00645A] hover:text-[#00645A]",
-                          formData.time === t && "bg-[#00645A] text-white hover:bg-[#00645A] hover:text-white border-[#00645A]",
-                          isPassed && "opacity-50 cursor-not-allowed"
-                        )}
-                        onClick={() => {
-                          setValue("time", t);
-                          handleNext("guests");
-                        }}
-                      >
-                        {t}
-                      </Button>
-                    );
-                  })}
-                </div>
+                    {hasDinner && (
+                      <>
+                        <div className="text-sm font-medium text-muted-foreground mt-6">Soir</div>
+                        <div className="grid grid-cols-3 md:grid-cols-4 gap-3">
+                          {timeSlots.dinner.map((t) => {
+                            const isPassed = isTimeSlotPassed(t);
+                            return (
+                              <Button
+                                key={t}
+                                type="button"
+                                variant="outline"
+                                disabled={isPassed}
+                                className={cn(
+                                  "h-12 text-base hover:border-[#00645A] hover:text-[#00645A]",
+                                  formData.time === t && "bg-[#00645A] text-white hover:bg-[#00645A] hover:text-white border-[#00645A]",
+                                  isPassed && "opacity-50 cursor-not-allowed"
+                                )}
+                                onClick={() => {
+                                  setValue("time", t);
+                                  handleNext("guests");
+                                }}
+                              >
+                                {t}
+                              </Button>
+                            );
+                          })}
+                        </div>
+                      </>
+                    )}
+                  </div>
+                )}
               </div>
-            </div>
-          )}
+            );
+          })()}
 
           {/* STEP 3: GUESTS */}
           {step === "guests" && (

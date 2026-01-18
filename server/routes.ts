@@ -156,6 +156,25 @@ export async function registerRoutes(
     }
   });
 
+  // Public endpoint for opening hours (for booking form time slots)
+  app.get("/api/public/restaurants/:id/opening-hours", async (req, res) => {
+    try {
+      const restaurantId = parseInt(req.params.id);
+      if (isNaN(restaurantId)) {
+        return res.status(400).json({ message: "Invalid restaurant ID" });
+      }
+      
+      const restaurant = await storage.getRestaurant(restaurantId);
+      if (!restaurant) {
+        return res.status(404).json({ message: "Restaurant not found" });
+      }
+      
+      res.json(restaurant.openingHours || null);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
   app.post("/api/restaurants", async (req, res) => {
     try {
       const result = insertRestaurantSchema.safeParse(req.body);
@@ -224,7 +243,7 @@ export async function registerRoutes(
       }
       
       const updateData: Record<string, any> = {};
-      const allowedFields = ['name', 'description', 'image', 'photos', 'features', 'cuisine', 'location', 'priceRange'];
+      const allowedFields = ['name', 'description', 'image', 'photos', 'features', 'cuisine', 'location', 'priceRange', 'openingHours'];
       for (const field of allowedFields) {
         if (req.body[field] !== undefined) {
           updateData[field] = req.body[field];
@@ -262,6 +281,43 @@ export async function registerRoutes(
         return res.status(400).json({ 
           message: "Les réservations ne sont pas disponibles pour cette date." 
         });
+      }
+      
+      // Vérifier si l'heure est dans les horaires d'ouverture
+      if (restaurant.openingHours) {
+        const openingHours = restaurant.openingHours as Record<string, {
+          isOpen: boolean;
+          hasSecondService: boolean;
+          openTime1: string;
+          closeTime1: string;
+          openTime2: string;
+          closeTime2: string;
+        }>;
+        
+        const bookingDate = new Date(result.data.date);
+        const dayNames = ["Dimanche", "Lundi", "Mardi", "Mercredi", "Jeudi", "Vendredi", "Samedi"];
+        const dayName = dayNames[bookingDate.getDay()];
+        const dayHours = openingHours[dayName];
+        
+        if (!dayHours || !dayHours.isOpen) {
+          return res.status(400).json({ 
+            message: "Le restaurant est fermé ce jour-là." 
+          });
+        }
+        
+        const bookingTime = result.data.time;
+        const isTimeInRange = (time: string, start: string, end: string) => {
+          return time >= start && time < end;
+        };
+        
+        const isValidTime = isTimeInRange(bookingTime, dayHours.openTime1, dayHours.closeTime1) ||
+          (dayHours.hasSecondService && isTimeInRange(bookingTime, dayHours.openTime2, dayHours.closeTime2));
+        
+        if (!isValidTime) {
+          return res.status(400).json({ 
+            message: "L'heure de réservation est en dehors des horaires d'ouverture." 
+          });
+        }
       }
       
       const clientIp = req.headers['x-forwarded-for'] as string || req.socket.remoteAddress || 'unknown';
