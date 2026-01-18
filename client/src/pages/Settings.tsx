@@ -898,18 +898,6 @@ export default function Settings() {
                               />
                             </div>
                           </div>
-                          <div className="mt-6 flex items-start gap-3">
-                            <input 
-                              type="checkbox" 
-                              id="certify-legal" 
-                              className="mt-0.5 h-4 w-4 rounded border-gray-300 text-primary"
-                              defaultChecked
-                              data-testid="checkbox-certify"
-                            />
-                            <Label htmlFor="certify-legal" className="text-sm text-gray-600 font-normal leading-relaxed">
-                              Je certifie que je ne proposerai que des produits ou services conformes aux règles applicables du droit de l'Union européenne.
-                            </Label>
-                          </div>
                         </div>
                       </CardContent>
                     </Card>
@@ -923,26 +911,13 @@ export default function Settings() {
                           </h3>
                         </div>
                         <div className="p-6">
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-6">
-                            <div className="space-y-1">
-                              <Label className="text-sm text-gray-500">Site internet du restaurant</Label>
-                              <Input 
-                                placeholder="https://www.mon-restaurant.ch"
-                                className="border-gray-200"
-                                data-testid="input-website"
-                              />
-                            </div>
-                            <div className="space-y-1">
-                              <Label className="text-sm text-gray-500 flex items-center gap-1">
-                                Lien vers la politique de confidentialité
-                                <HelpCircle className="h-3 w-3 text-gray-400" />
-                              </Label>
-                              <Input 
-                                defaultValue="https://example.com/privacy-policy"
-                                className="border-gray-200"
-                                data-testid="input-privacy-policy"
-                              />
-                            </div>
+                          <div className="space-y-1">
+                            <Label className="text-sm text-gray-500">Site internet du restaurant</Label>
+                            <Input 
+                              placeholder="https://www.mon-restaurant.ch"
+                              className="border-gray-200"
+                              data-testid="input-website"
+                            />
                           </div>
                         </div>
                       </CardContent>
