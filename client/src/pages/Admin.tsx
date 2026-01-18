@@ -56,6 +56,26 @@ interface User {
   createdAt: string | null;
 }
 
+interface Registration {
+  id: number;
+  userId: string | null;
+  restaurantName: string;
+  address: string;
+  phone: string;
+  companyName: string;
+  registrationNumber: string | null;
+  cuisineType: string[];
+  priceRange: string;
+  description: string | null;
+  logoUrl: string | null;
+  photos: string[] | null;
+  menuPdfUrl: string | null;
+  status: string;
+  adminNotes: string | null;
+  createdAt: string;
+  updatedAt: string | null;
+}
+
 function LoginForm() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -181,6 +201,49 @@ export default function Admin() {
       return res.json();
     },
     enabled: !!user?.isAdmin,
+  });
+
+  const { data: registrations = [] } = useQuery<Registration[]>({
+    queryKey: ["admin-registrations"],
+    queryFn: async () => {
+      const res = await fetch("/api/registrations", { credentials: "include" });
+      if (!res.ok) throw new Error("Failed to fetch registrations");
+      return res.json();
+    },
+    enabled: !!user?.isAdmin,
+  });
+
+  const approveRegistrationMutation = useMutation({
+    mutationFn: async (id: number) => {
+      const res = await fetch(`/api/registrations/${id}/status`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ status: "approved" }),
+      });
+      if (!res.ok) throw new Error("Failed to approve registration");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-registrations"] });
+      queryClient.invalidateQueries({ queryKey: ["admin-restaurants"] });
+    },
+  });
+
+  const rejectRegistrationMutation = useMutation({
+    mutationFn: async (id: number) => {
+      const res = await fetch(`/api/registrations/${id}/status`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ status: "rejected" }),
+      });
+      if (!res.ok) throw new Error("Failed to reject registration");
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["admin-registrations"] });
+    },
   });
 
   const approveMutation = useMutation({
@@ -444,10 +507,14 @@ export default function Admin() {
         <Card>
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <CardHeader className="border-b pb-0">
-              <TabsList className="grid w-full grid-cols-4">
+              <TabsList className="grid w-full grid-cols-5">
                 <TabsTrigger value="users" className="gap-2" data-testid="tab-users">
                   <Shield className="w-4 h-4" />
                   Utilisateurs
+                </TabsTrigger>
+                <TabsTrigger value="inscriptions" className="gap-2" data-testid="tab-inscriptions">
+                  <UserPlus className="w-4 h-4" />
+                  Inscriptions ({registrations.filter(r => r.status === "pending").length})
                 </TabsTrigger>
                 <TabsTrigger value="pending" className="gap-2" data-testid="tab-pending">
                   <Clock className="w-4 h-4" />
@@ -508,6 +575,84 @@ export default function Admin() {
                             <XCircle className="w-4 h-4 mr-1" />
                             Refuser
                           </Button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </CardContent>
+            </TabsContent>
+
+            <TabsContent value="inscriptions" className="m-0">
+              <CardContent className="p-6">
+                {registrations.filter(r => r.status === "pending").length === 0 ? (
+                  <div className="text-center py-12">
+                    <CheckCircle className="w-12 h-12 mx-auto text-green-500 mb-4" />
+                    <p className="text-muted-foreground">Aucune nouvelle inscription en attente</p>
+                  </div>
+                ) : (
+                  <div className="space-y-4">
+                    {registrations.filter(r => r.status === "pending").map((registration) => (
+                      <div key={registration.id} className="border rounded-lg p-4 bg-gray-50" data-testid={`registration-${registration.id}`}>
+                        <div className="flex items-start justify-between">
+                          <div className="flex items-start gap-4">
+                            {registration.logoUrl ? (
+                              <img src={registration.logoUrl} alt={registration.restaurantName} className="w-16 h-16 object-cover rounded" />
+                            ) : (
+                              <div className="w-16 h-16 bg-gray-200 rounded flex items-center justify-center">
+                                <Store className="w-8 h-8 text-gray-400" />
+                              </div>
+                            )}
+                            <div>
+                              <h3 className="font-semibold text-lg">{registration.restaurantName}</h3>
+                              <p className="text-sm text-muted-foreground flex items-center gap-1">
+                                <MapPin className="w-3 h-3" /> {registration.address}
+                              </p>
+                              <p className="text-sm text-muted-foreground flex items-center gap-1">
+                                <Phone className="w-3 h-3" /> {registration.phone}
+                              </p>
+                              <div className="flex flex-wrap gap-1 mt-2">
+                                {registration.cuisineType?.map((cuisine, idx) => (
+                                  <Badge key={idx} variant="secondary">{cuisine}</Badge>
+                                ))}
+                              </div>
+                              <div className="mt-2 text-sm text-muted-foreground">
+                                <p><strong>Entreprise:</strong> {registration.companyName}</p>
+                                {registration.registrationNumber && <p><strong>N° RC:</strong> {registration.registrationNumber}</p>}
+                                <p><strong>Gamme de prix:</strong> {registration.priceRange}</p>
+                              </div>
+                              {registration.description && (
+                                <p className="mt-2 text-sm">{registration.description}</p>
+                              )}
+                              <p className="mt-2 text-xs text-muted-foreground">
+                                Demande reçue le {new Date(registration.createdAt).toLocaleDateString("fr-CH")}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex gap-2">
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="text-green-600 hover:bg-green-50"
+                              onClick={() => approveRegistrationMutation.mutate(registration.id)}
+                              disabled={approveRegistrationMutation.isPending}
+                              data-testid={`approve-registration-${registration.id}`}
+                            >
+                              <CheckCircle className="w-4 h-4 mr-1" />
+                              Approuver
+                            </Button>
+                            <Button
+                              size="sm"
+                              variant="outline"
+                              className="text-red-600 hover:bg-red-50"
+                              onClick={() => rejectRegistrationMutation.mutate(registration.id)}
+                              disabled={rejectRegistrationMutation.isPending}
+                              data-testid={`reject-registration-${registration.id}`}
+                            >
+                              <XCircle className="w-4 h-4 mr-1" />
+                              Refuser
+                            </Button>
+                          </div>
                         </div>
                       </div>
                     ))}
