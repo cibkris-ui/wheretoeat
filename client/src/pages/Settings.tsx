@@ -1283,7 +1283,7 @@ export default function Settings() {
                     <div className="space-y-6 pt-6">
                       <div className="flex items-center gap-2 text-gray-600">
                         <span className="text-lg">≡</span>
-                        <span className="font-medium">Type de cuisine, services proposés...</span>
+                        <span className="font-medium">Services proposés...</span>
                       </div>
 
                       <div className="space-y-4">
