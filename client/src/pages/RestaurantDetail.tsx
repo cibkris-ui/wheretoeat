@@ -4,7 +4,7 @@ import { Navbar } from "@/components/layout/Navbar";
 import { BookingForm } from "@/components/BookingForm";
 import { GoogleRating } from "@/components/GoogleRating";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Star, ChefHat, Clock, Phone, Globe, FileText, Image, Mail, Train, Car, Info } from "lucide-react";
+import { MapPin, Star, ChefHat, Clock, Phone, Globe, FileText, Image, Mail, Train, Car, Info, CreditCard } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
 import { fetchRestaurant } from "@/lib/api";
@@ -238,6 +238,15 @@ export default function RestaurantDetail() {
                     <div>
                       <h4 className="font-medium">Informations supplémentaires</h4>
                       <p className="text-sm text-muted-foreground">{restaurant.additionalInfo}</p>
+                    </div>
+                  </div>
+                )}
+                {restaurant.paymentMethods && restaurant.paymentMethods.length > 0 && (
+                  <div className="flex items-start gap-3">
+                    <CreditCard className="w-5 h-5 text-muted-foreground mt-0.5" />
+                    <div>
+                      <h4 className="font-medium">Paiements Acceptés</h4>
+                      <p className="text-sm text-muted-foreground">{restaurant.paymentMethods.join(", ")}</p>
                     </div>
                   </div>
                 )}

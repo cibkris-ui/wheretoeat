@@ -117,6 +117,7 @@ export const restaurants = pgTable("restaurants", {
   publicTransport: text("public_transport"),
   nearbyParking: text("nearby_parking"),
   additionalInfo: text("additional_info"),
+  paymentMethods: text("payment_methods").array(),
 });
 
 export const insertRestaurantSchema = createInsertSchema(restaurants).omit({

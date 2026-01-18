@@ -291,6 +291,7 @@ export default function Settings() {
   const [publicTransportField, setPublicTransportField] = useState("");
   const [nearbyParkingField, setNearbyParkingField] = useState("");
   const [additionalInfoField, setAdditionalInfoField] = useState("");
+  const [paymentMethods, setPaymentMethods] = useState<string[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const [addUserDialog, setAddUserDialog] = useState(false);
   const [newUserEmail, setNewUserEmail] = useState("");
@@ -459,7 +460,7 @@ export default function Settings() {
   };
 
   const saveProfileMutation = useMutation({
-    mutationFn: async (data: { name: string; description: string; cuisine: string; priceRange: string; location: string; executiveChef?: string; publicTransport?: string; nearbyParking?: string; additionalInfo?: string }) => {
+    mutationFn: async (data: { name: string; description: string; cuisine: string; priceRange: string; location: string; executiveChef?: string; publicTransport?: string; nearbyParking?: string; additionalInfo?: string; paymentMethods?: string[] }) => {
       const res = await apiRequest("PUT", `/api/restaurants/${activeRestaurantId}`, data);
       return res.json();
     },
@@ -471,6 +472,11 @@ export default function Settings() {
       toast({ title: "Erreur", description: error.message, variant: "destructive" });
     },
   });
+
+  const getCurrentPaymentMethods = (): string[] => {
+    if (paymentMethods.length > 0) return paymentMethods;
+    return selectedRestaurantData?.paymentMethods || [];
+  };
 
   const handleSaveProfile = () => {
     const currentCuisines = getCurrentCuisineTypes();
@@ -484,6 +490,7 @@ export default function Settings() {
       publicTransport: publicTransportField || selectedRestaurantData?.publicTransport || "",
       nearbyParking: nearbyParkingField || selectedRestaurantData?.nearbyParking || "",
       additionalInfo: additionalInfoField || selectedRestaurantData?.additionalInfo || "",
+      paymentMethods: getCurrentPaymentMethods(),
     });
   };
 
@@ -1288,24 +1295,42 @@ export default function Settings() {
 
                       <div className="space-y-4">
                         <div className="space-y-2">
-                          <Label className="text-sm text-gray-600">Cartes bancaires acceptées</Label>
-                          <div className="flex flex-wrap gap-2 pb-2 border-b border-gray-200">
-                            <span className="inline-flex items-center gap-1 px-3 py-1 bg-gray-100 rounded-full text-sm">
-                              Carte Mastercard <button className="ml-1 text-gray-500 hover:text-gray-700">×</button>
-                            </span>
-                            <span className="inline-flex items-center gap-1 px-3 py-1 bg-gray-100 rounded-full text-sm">
-                              Carte Visa <button className="ml-1 text-gray-500 hover:text-gray-700">×</button>
-                            </span>
-                            <Select>
-                              <SelectTrigger className="w-8 h-8 border-0 p-0" data-testid="select-add-card">
-                                <span className="text-gray-400">▼</span>
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="amex">American Express</SelectItem>
-                                <SelectItem value="twint">TWINT</SelectItem>
-                                <SelectItem value="postfinance">PostFinance</SelectItem>
-                              </SelectContent>
-                            </Select>
+                          <Label className="text-sm text-gray-600">Paiements Acceptés</Label>
+                          <div className="grid grid-cols-2 md:grid-cols-3 gap-2 pb-2 border-b border-gray-200">
+                            {[
+                              { value: "Espèces", icon: "💵" },
+                              { value: "Visa", icon: "💳" },
+                              { value: "Mastercard", icon: "💳" },
+                              { value: "American Express", icon: "💳" },
+                              { value: "TWINT", icon: "📱" },
+                              { value: "PostFinance", icon: "🏦" },
+                              { value: "Apple Pay", icon: "🍎" },
+                              { value: "Google Pay", icon: "📱" },
+                            ].map((method) => {
+                              const currentMethods = getCurrentPaymentMethods();
+                              const isSelected = currentMethods.includes(method.value);
+                              return (
+                                <label
+                                  key={method.value}
+                                  className={`flex items-center gap-2 p-2 rounded-lg cursor-pointer transition-colors ${
+                                    isSelected ? "bg-primary/10 border-primary border" : "bg-muted/50 hover:bg-muted border border-transparent"
+                                  }`}
+                                >
+                                  <Checkbox
+                                    checked={isSelected}
+                                    onCheckedChange={(checked) => {
+                                      const current = getCurrentPaymentMethods();
+                                      if (checked) {
+                                        setPaymentMethods([...current, method.value]);
+                                      } else {
+                                        setPaymentMethods(current.filter(m => m !== method.value));
+                                      }
+                                    }}
+                                  />
+                                  <span className="text-sm">{method.icon} {method.value}</span>
+                                </label>
+                              );
+                            })}
                           </div>
                         </div>
 
