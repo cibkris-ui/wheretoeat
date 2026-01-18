@@ -78,8 +78,8 @@ export function BookingForm({ restaurantId }: BookingFormProps) {
     onSuccess: () => {
       setStep("confirmation");
       toast({
-        title: "Réservation confirmée !",
-        description: `Un email a été envoyé à ${formData.email}`,
+        title: "Réservation envoyée !",
+        description: `Vous recevrez une confirmation dès que le restaurant aura validé votre demande.`,
       });
     },
     onError: (error: Error) => {
