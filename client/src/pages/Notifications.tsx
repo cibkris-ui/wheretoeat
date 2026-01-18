@@ -161,6 +161,14 @@ export default function Notifications() {
 
   const unreadCount = notifications.filter(n => !n.read).length;
 
+  // Count pending notifications for sidebar badge (same as pending bookings from public platform)
+  const pendingNotifications = useMemo(() => {
+    return allBookings.filter(b => 
+      b.status === "pending" && 
+      !b.clientIp?.startsWith("owner-")
+    ).length;
+  }, [allBookings]);
+
   const markAllAsRead = () => {
     const allIds = new Set<number>();
     notifications.forEach(n => allIds.add(n.id));

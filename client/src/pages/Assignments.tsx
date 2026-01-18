@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { format, addDays, subDays } from "date-fns";
@@ -249,6 +249,14 @@ export default function Assignments() {
     enabled: !!restaurant?.id,
   });
 
+  // Count pending notifications for sidebar badge
+  const pendingNotifications = useMemo(() => {
+    return bookings.filter(b => 
+      b.status === "pending" && 
+      !b.clientIp?.startsWith("owner-")
+    ).length;
+  }, [bookings]);
+
   const { data: floorPlanResponse } = useQuery<FloorPlanData>({
     queryKey: [`/api/restaurants/${restaurant?.id}/floor-plan`],
     enabled: !!restaurant?.id,
@@ -493,10 +501,15 @@ export default function Assignments() {
                     {item.link ? (
                       <Link href={item.link}>
                         <button
-                          className="w-12 h-12 rounded-lg flex items-center justify-center transition-colors text-gray-500 hover:bg-gray-100"
+                          className="w-12 h-12 rounded-lg flex items-center justify-center transition-colors text-gray-500 hover:bg-gray-100 relative"
                           data-testid={`sidebar-${item.id}`}
                         >
                           <item.icon className="h-5 w-5" />
+                          {item.id === "notifications" && pendingNotifications > 0 && (
+                            <span className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center bg-red-500 text-white text-xs font-bold rounded-full">
+                              {pendingNotifications > 9 ? "9+" : pendingNotifications}
+                            </span>
+                          )}
                         </button>
                       </Link>
                     ) : (

@@ -99,6 +99,25 @@ export default function Clients() {
     enabled: !!activeRestaurantId,
   });
 
+  // Count pending notifications for sidebar badge
+  const { data: allBookings = [] } = useQuery<Booking[]>({
+    queryKey: ["/api/clients-bookings", activeRestaurantId],
+    queryFn: async () => {
+      if (!activeRestaurantId) return [];
+      const res = await fetch(`/api/restaurants/${activeRestaurantId}/bookings`, { credentials: "include" });
+      if (!res.ok) return [];
+      return res.json();
+    },
+    enabled: !!activeRestaurantId,
+  });
+
+  const pendingNotifications = useMemo(() => {
+    return allBookings.filter(b => 
+      b.status === "pending" && 
+      !b.clientIp?.startsWith("owner-")
+    ).length;
+  }, [allBookings]);
+
   const fetchClientDetail = async (clientId: number) => {
     const res = await fetch(`/api/clients/${clientId}`, { credentials: "include" });
     if (!res.ok) return null;
@@ -245,10 +264,15 @@ export default function Clients() {
                   {item.link ? (
                     <Link href={item.link}>
                       <button
-                        className="w-12 h-12 rounded-lg flex items-center justify-center transition-colors text-gray-500 hover:bg-gray-100"
+                        className="w-12 h-12 rounded-lg flex items-center justify-center transition-colors text-gray-500 hover:bg-gray-100 relative"
                         data-testid={`sidebar-${item.id}`}
                       >
                         <item.icon className="h-5 w-5" />
+                        {item.id === "notifications" && pendingNotifications > 0 && (
+                          <span className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center bg-red-500 text-white text-xs font-bold rounded-full">
+                            {pendingNotifications > 9 ? "9+" : pendingNotifications}
+                          </span>
+                        )}
                       </button>
                     </Link>
                   ) : (

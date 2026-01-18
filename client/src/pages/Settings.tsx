@@ -54,7 +54,7 @@ import {
   HelpCircle,
   Grid3X3
 } from "lucide-react";
-import type { Restaurant } from "@shared/schema";
+import type { Restaurant, Booking } from "@shared/schema";
 import { FloorPlanBuilder } from "@/components/floor-plan/FloorPlanBuilder";
 
 type SettingsSection = "overview" | "profile" | "services" | "users" | "legal";
@@ -84,6 +84,25 @@ export default function Settings() {
 
   const activeRestaurantId = selectedRestaurant || myRestaurants[0]?.id;
   const selectedRestaurantData = myRestaurants.find(r => r.id === activeRestaurantId);
+
+  // Fetch bookings for notification badge
+  const { data: allBookings = [] } = useQuery<Booking[]>({
+    queryKey: ["/api/settings-bookings", activeRestaurantId],
+    queryFn: async () => {
+      if (!activeRestaurantId) return [];
+      const res = await fetch(`/api/restaurants/${activeRestaurantId}/bookings`, { credentials: "include" });
+      if (!res.ok) return [];
+      return res.json();
+    },
+    enabled: !!activeRestaurantId,
+  });
+
+  const pendingNotifications = useMemo(() => {
+    return allBookings.filter(b => 
+      b.status === "pending" && 
+      !b.clientIp?.startsWith("owner-")
+    ).length;
+  }, [allBookings]);
 
   const defaultAddress = selectedRestaurantData?.address || "Rue du Grand-Bureau 16";
   const defaultCity = selectedRestaurantData?.location || "1227 Genève";
@@ -327,10 +346,15 @@ export default function Settings() {
                   {item.link ? (
                     <Link href={item.link}>
                       <button
-                        className="w-12 h-12 rounded-lg flex items-center justify-center transition-colors text-gray-500 hover:bg-gray-100"
+                        className="w-12 h-12 rounded-lg flex items-center justify-center transition-colors text-gray-500 hover:bg-gray-100 relative"
                         data-testid={`sidebar-${item.id}`}
                       >
                         <item.icon className="h-5 w-5" />
+                        {item.id === "notifications" && pendingNotifications > 0 && (
+                          <span className="absolute -top-1 -right-1 h-5 w-5 flex items-center justify-center bg-red-500 text-white text-xs font-bold rounded-full">
+                            {pendingNotifications > 9 ? "9+" : pendingNotifications}
+                          </span>
+                        )}
                       </button>
                     </Link>
                   ) : (
