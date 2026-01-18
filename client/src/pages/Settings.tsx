@@ -59,7 +59,7 @@ import { FloorPlanBuilder } from "@/components/floor-plan/FloorPlanBuilder";
 
 type SettingsSection = "overview" | "profile" | "services" | "users" | "legal";
 type ProfileSubSection = "contacts" | "profil" | "photos" | "plan-de-salle";
-type ServicesSubSection = "service-hours" | "capacity" | "time-slots";
+type ServicesSubSection = "service-hours" | "capacity";
 
 // Generate time options from 00:00 to 24:00 in 30-minute increments
 const generateTimeOptions = () => {
@@ -362,7 +362,6 @@ export default function Settings() {
       items: [
         { id: "service-hours", label: "Horaires de service", icon: Clock },
         { id: "capacity", label: "Capacité et couverts", icon: Users },
-        { id: "time-slots", label: "Créneaux horaires", icon: CalendarDays },
       ]
     },
     {
@@ -636,7 +635,7 @@ export default function Settings() {
                                 if (category.id === "profile" && (item.id === "contacts" || item.id === "profil" || item.id === "photos" || item.id === "plan-de-salle")) {
                                   setProfileSubSection(item.id as ProfileSubSection);
                                 }
-                                if (category.id === "services" && (item.id === "service-hours" || item.id === "capacity" || item.id === "time-slots")) {
+                                if (category.id === "services" && (item.id === "service-hours" || item.id === "capacity")) {
                                   setServicesSubSection(item.id as ServicesSubSection);
                                 }
                               }}
@@ -1312,72 +1311,7 @@ export default function Settings() {
                   </div>
                 )}
 
-                {servicesSubSection === "time-slots" && (
-                  <div className="space-y-6 max-w-4xl">
-                    <h2 className="text-2xl font-bold">Créneaux horaires</h2>
-
-                    <Card className="bg-white border shadow-sm">
-                      <CardContent className="p-0">
-                        <div className="px-6 py-4 border-b bg-gray-50/50">
-                          <h3 className="text-sm font-medium text-gray-600 flex items-center gap-2">
-                            <CalendarDays className="h-4 w-4" />
-                            Cadence par créneau horaire
-                          </h3>
-                        </div>
-                        <div className="p-6">
-                          <p className="text-sm text-gray-500 mb-6">
-                            Contrôlez le nombre de clients pour chaque créneau horaire en limitant le nombre de couverts et de réservations.
-                          </p>
-
-                          <div className="space-y-3">
-                            <div className="grid grid-cols-[100px_1fr_1fr] gap-4 text-sm font-medium text-gray-500 pb-2 border-b">
-                              <div>Créneau</div>
-                              <div>Total réservé / maximum</div>
-                              <div>En ligne / maximum</div>
-                            </div>
-                            
-                            {["18:00", "18:15", "18:30", "18:45", "19:00", "19:15", "19:30", "19:45", "20:00"].map(time => (
-                              <div key={time} className="grid grid-cols-[100px_1fr_1fr] gap-4 items-center py-2 border-b border-gray-100">
-                                <div className="flex items-center gap-2">
-                                  <Switch defaultChecked data-testid={`toggle-slot-${time}`} />
-                                  <span className="text-sm font-medium">{time}</span>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                  <span className="text-sm text-gray-500">0 /</span>
-                                  <Input 
-                                    type="number" 
-                                    className="w-20 h-8 text-sm border-gray-200" 
-                                    defaultValue={10}
-                                    data-testid={`input-slot-max-${time}`}
-                                  />
-                                </div>
-                                <div className="flex items-center gap-2">
-                                  <span className="text-sm text-gray-500">0 /</span>
-                                  <Input 
-                                    type="number" 
-                                    className="w-20 h-8 text-sm border-gray-200" 
-                                    defaultValue={10}
-                                    data-testid={`input-slot-online-${time}`}
-                                  />
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        </div>
-                      </CardContent>
-                    </Card>
-
-                    <div className="flex justify-end gap-3 pt-4 pb-6">
-                      <Button variant="outline" onClick={() => setActiveSection("overview")} className="px-6">
-                        ANNULER
-                      </Button>
-                      <Button onClick={() => toast({ title: "Créneaux enregistrés" })} className="px-6" data-testid="save-time-slots">
-                        ENREGISTRER
-                      </Button>
-                    </div>
-                  </div>
-                )}
-              </>
+                              </>
             )}
 
             {activeSection === "users" && (
