@@ -1,5 +1,5 @@
 import { useState, useMemo, useRef, useEffect } from "react";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
@@ -24,6 +24,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuLabel,
 } from "@/components/ui/dropdown-menu";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { 
   LayoutDashboard,
@@ -54,7 +55,7 @@ import {
   HelpCircle,
   Grid3X3
 } from "lucide-react";
-import type { Restaurant, Booking } from "@shared/schema";
+import type { Restaurant, Booking, RestaurantUser } from "@shared/schema";
 import { FloorPlanBuilder } from "@/components/floor-plan/FloorPlanBuilder";
 
 type SettingsSection = "overview" | "profile" | "services" | "users" | "legal";
@@ -284,6 +285,9 @@ export default function Settings() {
   const [addressField, setAddressField] = useState("");
   const [cityField, setCityField] = useState("");
   const [isUploading, setIsUploading] = useState(false);
+  const [addUserDialog, setAddUserDialog] = useState(false);
+  const [newUserEmail, setNewUserEmail] = useState("");
+  const [newUserRole, setNewUserRole] = useState("staff");
   
   const profileImageInputRef = useRef<HTMLInputElement>(null);
   const photosInputRef = useRef<HTMLInputElement>(null);
@@ -320,6 +324,47 @@ export default function Settings() {
     localStorage.setItem("pendingNotificationsCount", String(count));
     return count;
   }, [allBookings]);
+
+  const { data: restaurantUsers = [] } = useQuery<RestaurantUser[]>({
+    queryKey: ["/api/restaurant-users", activeRestaurantId],
+    queryFn: async () => {
+      if (!activeRestaurantId) return [];
+      const res = await fetch(`/api/restaurants/${activeRestaurantId}/users`, { credentials: "include" });
+      if (!res.ok) return [];
+      return res.json();
+    },
+    enabled: !!activeRestaurantId,
+  });
+
+  const addUserMutation = useMutation({
+    mutationFn: async ({ email, role }: { email: string; role: string }) => {
+      const res = await apiRequest("POST", `/api/restaurants/${activeRestaurantId}/users`, { email, role });
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/restaurant-users", activeRestaurantId] });
+      setAddUserDialog(false);
+      setNewUserEmail("");
+      setNewUserRole("staff");
+      toast({ title: "Utilisateur ajouté" });
+    },
+    onError: (error: any) => {
+      toast({ title: "Erreur", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const removeUserMutation = useMutation({
+    mutationFn: async (userId: number) => {
+      await apiRequest("DELETE", `/api/restaurants/${activeRestaurantId}/users/${userId}`);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/restaurant-users", activeRestaurantId] });
+      toast({ title: "Utilisateur supprimé" });
+    },
+    onError: (error: any) => {
+      toast({ title: "Erreur", description: error.message, variant: "destructive" });
+    },
+  });
 
   const defaultAddress = selectedRestaurantData?.address || "Rue du Grand-Bureau 16";
   const defaultCity = selectedRestaurantData?.location || "1227 Genève";
@@ -1333,7 +1378,7 @@ export default function Settings() {
                   <CardContent className="p-6">
                     <div className="flex items-center justify-between mb-6">
                       <h3 className="font-semibold">Équipe</h3>
-                      <Button size="sm" data-testid="add-user">
+                      <Button size="sm" data-testid="add-user" onClick={() => setAddUserDialog(true)}>
                         Ajouter un utilisateur
                       </Button>
                     </div>
@@ -1355,6 +1400,36 @@ export default function Settings() {
                           </span>
                         </div>
                       )}
+                      
+                      {restaurantUsers.map((teamUser) => (
+                        <div key={teamUser.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg" data-testid={`team-user-${teamUser.id}`}>
+                          <div className="flex items-center gap-3">
+                            <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center">
+                              <UserCircle className="h-6 w-6 text-gray-500" />
+                            </div>
+                            <div>
+                              <p className="font-medium">{teamUser.email}</p>
+                              <p className="text-sm text-gray-500">
+                                {teamUser.acceptedAt ? "Accès actif" : "Invitation envoyée"}
+                              </p>
+                            </div>
+                          </div>
+                          <div className="flex items-center gap-2">
+                            <span className="text-xs bg-gray-200 text-gray-700 px-2 py-1 rounded-full font-medium capitalize">
+                              {teamUser.role === "staff" ? "Employé" : teamUser.role === "manager" ? "Manager" : teamUser.role}
+                            </span>
+                            <Button 
+                              variant="ghost" 
+                              size="sm"
+                              onClick={() => removeUserMutation.mutate(teamUser.id)}
+                              className="text-red-600 hover:text-red-700 hover:bg-red-50"
+                              data-testid={`remove-user-${teamUser.id}`}
+                            >
+                              Retirer
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   </CardContent>
                 </Card>
@@ -1417,6 +1492,56 @@ export default function Settings() {
           </main>
         </div>
       </div>
+
+      <Dialog open={addUserDialog} onOpenChange={setAddUserDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Ajouter un utilisateur</DialogTitle>
+            <DialogDescription>Invitez un membre de votre équipe à accéder à ce restaurant</DialogDescription>
+          </DialogHeader>
+          <form onSubmit={(e) => {
+            e.preventDefault();
+            if (newUserEmail) {
+              addUserMutation.mutate({ email: newUserEmail, role: newUserRole });
+            }
+          }}>
+            <div className="space-y-4 py-4">
+              <div className="space-y-2">
+                <Label htmlFor="user-email">Adresse email</Label>
+                <Input
+                  id="user-email"
+                  type="email"
+                  placeholder="email@exemple.com"
+                  value={newUserEmail}
+                  onChange={(e) => setNewUserEmail(e.target.value)}
+                  required
+                  data-testid="input-user-email"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="user-role">Rôle</Label>
+                <Select value={newUserRole} onValueChange={setNewUserRole}>
+                  <SelectTrigger data-testid="select-user-role">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="staff">Employé</SelectItem>
+                    <SelectItem value="manager">Manager</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setAddUserDialog(false)}>
+                Annuler
+              </Button>
+              <Button type="submit" disabled={addUserMutation.isPending} data-testid="submit-add-user">
+                {addUserMutation.isPending ? "Ajout..." : "Ajouter"}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </TooltipProvider>
   );
 }
