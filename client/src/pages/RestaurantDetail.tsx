@@ -4,7 +4,7 @@ import { Navbar } from "@/components/layout/Navbar";
 import { BookingForm } from "@/components/BookingForm";
 import { GoogleRating } from "@/components/GoogleRating";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Star, ChefHat, Clock, Phone, Globe, FileText, Image, Mail, Train, Car, Info, CreditCard, Leaf } from "lucide-react";
+import { MapPin, Star, ChefHat, Clock, Phone, Globe, FileText, Image, Mail, Train, Car, Info, CreditCard, Leaf, Languages } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
 import { fetchRestaurant } from "@/lib/api";
@@ -256,6 +256,15 @@ export default function RestaurantDetail() {
                     <div>
                       <h4 className="font-medium">Régime alimentaire</h4>
                       <p className="text-sm text-muted-foreground">Plats végétariens disponibles</p>
+                    </div>
+                  </div>
+                )}
+                {restaurant.spokenLanguages && restaurant.spokenLanguages.length > 0 && (
+                  <div className="flex items-start gap-3">
+                    <Languages className="w-5 h-5 text-muted-foreground mt-0.5" />
+                    <div>
+                      <h4 className="font-medium">Langues parlées</h4>
+                      <p className="text-sm text-muted-foreground">{restaurant.spokenLanguages.join(", ")}</p>
                     </div>
                   </div>
                 )}

@@ -119,6 +119,7 @@ export const restaurants = pgTable("restaurants", {
   additionalInfo: text("additional_info"),
   paymentMethods: text("payment_methods").array(),
   hasVegetarianOptions: boolean("has_vegetarian_options").default(false),
+  spokenLanguages: text("spoken_languages").array(),
 });
 
 export const insertRestaurantSchema = createInsertSchema(restaurants).omit({

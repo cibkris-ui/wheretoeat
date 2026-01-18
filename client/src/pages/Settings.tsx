@@ -293,6 +293,8 @@ export default function Settings() {
   const [additionalInfoField, setAdditionalInfoField] = useState("");
   const [paymentMethods, setPaymentMethods] = useState<string[]>([]);
   const [hasVegetarianOptions, setHasVegetarianOptions] = useState<boolean | null>(null);
+  const [spokenLanguages, setSpokenLanguages] = useState<string[]>([]);
+  const [customLanguage, setCustomLanguage] = useState("");
   const [isUploading, setIsUploading] = useState(false);
   const [addUserDialog, setAddUserDialog] = useState(false);
   const [newUserEmail, setNewUserEmail] = useState("");
@@ -461,7 +463,7 @@ export default function Settings() {
   };
 
   const saveProfileMutation = useMutation({
-    mutationFn: async (data: { name: string; description: string; cuisine: string; priceRange: string; location: string; executiveChef?: string; publicTransport?: string; nearbyParking?: string; additionalInfo?: string; paymentMethods?: string[]; hasVegetarianOptions?: boolean }) => {
+    mutationFn: async (data: { name: string; description: string; cuisine: string; priceRange: string; location: string; executiveChef?: string; publicTransport?: string; nearbyParking?: string; additionalInfo?: string; paymentMethods?: string[]; hasVegetarianOptions?: boolean; spokenLanguages?: string[] }) => {
       const res = await apiRequest("PUT", `/api/restaurants/${activeRestaurantId}`, data);
       return res.json();
     },
@@ -479,6 +481,11 @@ export default function Settings() {
     return selectedRestaurantData?.paymentMethods || [];
   };
 
+  const getCurrentSpokenLanguages = (): string[] => {
+    if (spokenLanguages.length > 0) return spokenLanguages;
+    return selectedRestaurantData?.spokenLanguages || [];
+  };
+
   const handleSaveProfile = () => {
     const currentCuisines = getCurrentCuisineTypes();
     saveProfileMutation.mutate({
@@ -493,6 +500,7 @@ export default function Settings() {
       additionalInfo: additionalInfoField || selectedRestaurantData?.additionalInfo || "",
       paymentMethods: getCurrentPaymentMethods(),
       hasVegetarianOptions: hasVegetarianOptions ?? selectedRestaurantData?.hasVegetarianOptions ?? false,
+      spokenLanguages: getCurrentSpokenLanguages(),
     });
   };
 
@@ -1352,29 +1360,84 @@ export default function Settings() {
                         </div>
 
                         <div className="space-y-2">
-                          <Label className="text-sm text-gray-600">Services proposés</Label>
-                          <div className="flex flex-wrap gap-2 pb-2 border-b border-gray-200">
-                            <span className="inline-flex items-center gap-1 px-3 py-1 bg-gray-100 rounded-full text-sm">
-                              Anglais parlé <button className="ml-1 text-gray-500 hover:text-gray-700">×</button>
-                            </span>
-                            <span className="inline-flex items-center gap-1 px-3 py-1 bg-gray-100 rounded-full text-sm">
-                              Français parlé <button className="ml-1 text-gray-500 hover:text-gray-700">×</button>
-                            </span>
-                            <span className="inline-flex items-center gap-1 px-3 py-1 bg-gray-100 rounded-full text-sm">
-                              Wifi <button className="ml-1 text-gray-500 hover:text-gray-700">×</button>
-                            </span>
-                            <Select>
-                              <SelectTrigger className="w-8 h-8 border-0 p-0" data-testid="select-add-service">
-                                <span className="text-gray-400">▼</span>
-                              </SelectTrigger>
-                              <SelectContent>
-                                <SelectItem value="terrasse">Terrasse</SelectItem>
-                                <SelectItem value="climatisation">Climatisation</SelectItem>
-                                <SelectItem value="accessible">Accessible PMR</SelectItem>
-                                <SelectItem value="parking">Parking privé</SelectItem>
-                              </SelectContent>
-                            </Select>
+                          <Label className="text-sm text-gray-600">Langues parlées</Label>
+                          <div className="grid grid-cols-2 md:grid-cols-3 gap-2 pb-2">
+                            {[
+                              { value: "Français", icon: "🇫🇷" },
+                              { value: "Allemand", icon: "🇩🇪" },
+                              { value: "Italien", icon: "🇮🇹" },
+                              { value: "Anglais", icon: "🇬🇧" },
+                              { value: "Espagnol", icon: "🇪🇸" },
+                              { value: "Portugais", icon: "🇵🇹" },
+                            ].map((lang) => {
+                              const currentLanguages = getCurrentSpokenLanguages();
+                              const isSelected = currentLanguages.includes(lang.value);
+                              return (
+                                <label
+                                  key={lang.value}
+                                  className={`flex items-center gap-2 p-2 rounded-lg cursor-pointer transition-colors ${
+                                    isSelected ? "bg-primary/10 border-primary border" : "bg-muted/50 hover:bg-muted border border-transparent"
+                                  }`}
+                                >
+                                  <Checkbox
+                                    checked={isSelected}
+                                    onCheckedChange={(checked) => {
+                                      const current = getCurrentSpokenLanguages();
+                                      if (checked) {
+                                        setSpokenLanguages([...current, lang.value]);
+                                      } else {
+                                        setSpokenLanguages(current.filter(l => l !== lang.value));
+                                      }
+                                    }}
+                                  />
+                                  <span className="text-sm">{lang.icon} {lang.value}</span>
+                                </label>
+                              );
+                            })}
                           </div>
+                          <div className="flex gap-2 items-center pb-2 border-b border-gray-200">
+                            <Input
+                              placeholder="Autre langue..."
+                              value={customLanguage}
+                              onChange={(e) => setCustomLanguage(e.target.value)}
+                              className="flex-1 h-8 text-sm"
+                              data-testid="input-custom-language"
+                            />
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => {
+                                if (customLanguage.trim()) {
+                                  const current = getCurrentSpokenLanguages();
+                                  if (!current.includes(customLanguage.trim())) {
+                                    setSpokenLanguages([...current, customLanguage.trim()]);
+                                  }
+                                  setCustomLanguage("");
+                                }
+                              }}
+                              data-testid="button-add-language"
+                            >
+                              Ajouter
+                            </Button>
+                          </div>
+                          {getCurrentSpokenLanguages().filter(l => !["Français", "Allemand", "Italien", "Anglais", "Espagnol", "Portugais"].includes(l)).length > 0 && (
+                            <div className="flex flex-wrap gap-2 pt-1">
+                              {getCurrentSpokenLanguages().filter(l => !["Français", "Allemand", "Italien", "Anglais", "Espagnol", "Portugais"].includes(l)).map((lang) => (
+                                <span key={lang} className="inline-flex items-center gap-1 px-3 py-1 bg-primary/10 border border-primary rounded-full text-sm">
+                                  {lang}
+                                  <button
+                                    type="button"
+                                    className="ml-1 text-gray-500 hover:text-gray-700"
+                                    onClick={() => {
+                                      const current = getCurrentSpokenLanguages();
+                                      setSpokenLanguages(current.filter(l => l !== lang));
+                                    }}
+                                  >×</button>
+                                </span>
+                              ))}
+                            </div>
+                          )}
                         </div>
 
                         <div className="space-y-2">
