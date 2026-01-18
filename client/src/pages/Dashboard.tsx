@@ -225,7 +225,11 @@ export default function Dashboard() {
     const waitingBookings = selectedDateBookings.filter(b => b.status === "waiting");
     const waitingGuests = waitingBookings.reduce((sum, b) => sum + b.guests, 0);
     
-    const upcomingBookings = relevantBookings.filter(b => parseISO(b.date) >= today);
+    const upcomingBookings = relevantBookings.filter(b => 
+      parseISO(b.date) >= today && 
+      !b.arrivalTime && 
+      b.status === "confirmed"
+    );
     
     // Calcul des places disponibles (exclut les clients partis et les en attente)
     const activeBookings = confirmedBookings.filter(b => !b.departureTime);
