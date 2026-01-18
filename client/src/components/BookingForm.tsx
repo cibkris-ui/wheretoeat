@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
-import { format } from "date-fns";
+import { format, parseISO, isSameDay } from "date-fns";
 import { fr } from "date-fns/locale";
 import { Calendar as CalendarIcon, Users, Clock, CheckCircle2, ChevronRight, ChevronLeft, Percent } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -21,7 +21,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { useToast } from "@/hooks/use-toast";
 import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { createBooking } from "@/lib/api";
 
 type Step = "date" | "time" | "guests" | "details" | "confirmation";
@@ -48,6 +48,18 @@ export function BookingForm({ restaurantId }: BookingFormProps) {
   const { toast } = useToast();
   const [step, setStep] = useState<Step>("date");
   const [direction, setDirection] = useState(1);
+
+  // Fetch closed dates for this restaurant (public endpoint)
+  const { data: closedDays = [] } = useQuery<{ id: number; date: string; service: string }[]>({
+    queryKey: [`/api/public/restaurants/${restaurantId}/closed-days`],
+  });
+
+  // Convert closed dates to Date objects for comparison
+  const closedDates = closedDays.map(cd => parseISO(cd.date));
+
+  const isDateClosed = (date: Date) => {
+    return closedDates.some(closedDate => isSameDay(date, closedDate));
+  };
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -222,7 +234,7 @@ export function BookingForm({ restaurantId }: BookingFormProps) {
                         handleNext("time");
                       }
                     }}
-                    disabled={(date) => date < new Date(new Date().setHours(0,0,0,0))}
+                    disabled={(date) => date < new Date(new Date().setHours(0,0,0,0)) || isDateClosed(date)}
                     className="rounded-md border-0"
                     classNames={{
                       day_selected: "bg-[#00645A] text-white hover:bg-[#00645A]/90 focus:bg-[#00645A]",

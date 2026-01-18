@@ -136,6 +136,26 @@ export async function registerRoutes(
     }
   });
 
+  // Public endpoint for closed days (for booking form calendar)
+  app.get("/api/public/restaurants/:id/closed-days", async (req, res) => {
+    try {
+      const restaurantId = parseInt(req.params.id);
+      if (isNaN(restaurantId)) {
+        return res.status(400).json({ message: "Invalid restaurant ID" });
+      }
+      
+      const restaurant = await storage.getRestaurant(restaurantId);
+      if (!restaurant) {
+        return res.status(404).json({ message: "Restaurant not found" });
+      }
+      
+      const closedDays = await storage.getClosedDays(restaurantId);
+      res.json(closedDays);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  });
+
   app.post("/api/restaurants", async (req, res) => {
     try {
       const result = insertRestaurantSchema.safeParse(req.body);
