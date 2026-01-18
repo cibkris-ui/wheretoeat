@@ -409,6 +409,13 @@ export default function Dashboard() {
                         )}
                       </DropdownMenuItem>
                     ))}
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem asChild>
+                      <Link href="/inscrire-restaurant" className="cursor-pointer text-primary" data-testid="link-add-restaurant-dashboard">
+                        <Plus className="mr-2 h-4 w-4" />
+                        Ajouter un restaurant
+                      </Link>
+                    </DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
 
