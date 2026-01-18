@@ -1175,7 +1175,7 @@ export async function registerRoutes(
         );
       }
       
-      const newUser = await storage.addRestaurantUser({
+      const newUser = await storage.addRestaurantUserWithAccess({
         restaurantId: id,
         email: email.toLowerCase().trim(),
         role: role || "staff",
