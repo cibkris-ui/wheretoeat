@@ -976,6 +976,7 @@ export default function Settings() {
                     <Button 
                       className="bg-primary hover:bg-primary/90 text-white"
                       data-testid="btn-view-page"
+                      onClick={() => window.open(`/restaurant/${activeRestaurantId}`, '_blank')}
                     >
                       VOIR MA PAGE SUR WHERETOEAT
                     </Button>
