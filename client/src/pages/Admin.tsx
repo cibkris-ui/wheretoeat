@@ -671,6 +671,7 @@ export default function Admin() {
                     <TableRow>
                       <TableHead>Email</TableHead>
                       <TableHead>Nom</TableHead>
+                      <TableHead>Rôle</TableHead>
                       <TableHead>Date de création</TableHead>
                       <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
@@ -681,15 +682,19 @@ export default function Admin() {
                         <TableCell className="font-medium">{u.email}</TableCell>
                         <TableCell>{u.firstName} {u.lastName}</TableCell>
                         <TableCell>
+                          <Badge className="bg-purple-100 text-purple-700 hover:bg-purple-100">Admin</Badge>
+                        </TableCell>
+                        <TableCell>
                           {u.createdAt ? new Date(u.createdAt).toLocaleDateString("fr-CH") : "-"}
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex justify-end gap-2">
-                            {u.id !== user.id && filteredUsers.filter(usr => usr.isAdmin).length > 1 && (
+                            {u.id !== user.id && (
                               <Button
                                 size="sm"
                                 variant="destructive"
                                 onClick={() => setDeleteConfirm({ type: "user", id: u.id })}
+                                disabled={filteredUsers.length <= 1}
                                 data-testid={`delete-user-${u.id}`}
                               >
                                 <Trash2 className="w-4 h-4" />
