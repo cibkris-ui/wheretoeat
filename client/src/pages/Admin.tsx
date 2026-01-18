@@ -47,6 +47,7 @@ interface Client {
   createdAt: string;
   totalBookings?: number;
   restaurantCount?: number;
+  lastBookingDate?: string | null;
 }
 
 interface User {
@@ -697,7 +698,7 @@ export default function Admin() {
                       <TableHead>Téléphone</TableHead>
                       <TableHead>Réservations</TableHead>
                       <TableHead>Restaurants</TableHead>
-                      <TableHead>Date d'inscription</TableHead>
+                      <TableHead>Dernière réservation</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
@@ -723,7 +724,9 @@ export default function Admin() {
                           <Badge variant="outline">{client.restaurantCount || 0}</Badge>
                         </TableCell>
                         <TableCell>
-                          {new Date(client.createdAt).toLocaleDateString("fr-CH")}
+                          {client.lastBookingDate 
+                            ? new Date(client.lastBookingDate).toLocaleDateString("fr-CH")
+                            : "-"}
                         </TableCell>
                       </TableRow>
                     ))}

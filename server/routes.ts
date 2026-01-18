@@ -1346,10 +1346,14 @@ export async function registerRoutes(
           (b.phone && b.phone === client.phone)
         );
         const uniqueRestaurants = new Set(clientBookings.map(b => b.restaurantId));
+        const lastBooking = clientBookings.sort((a, b) => 
+          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+        )[0];
         return {
           ...client,
           totalBookings: clientBookings.length,
-          restaurantCount: uniqueRestaurants.size
+          restaurantCount: uniqueRestaurants.size,
+          lastBookingDate: lastBooking?.createdAt || null
         };
       });
       
