@@ -1,8 +1,9 @@
-import { useState, useMemo } from "react";
-import { useQuery } from "@tanstack/react-query";
+import { useState, useMemo, useRef } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
+import { apiRequest } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
@@ -63,6 +64,7 @@ type ServicesSubSection = "service-hours" | "capacity" | "time-slots";
 export default function Settings() {
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
   const [activeSection, setActiveSection] = useState<SettingsSection>("overview");
   const [profileSubSection, setProfileSubSection] = useState<ProfileSubSection>("contacts");
@@ -70,6 +72,10 @@ export default function Settings() {
   const [selectedRestaurant, setSelectedRestaurant] = useState<number | null>(null);
   const [addressField, setAddressField] = useState("");
   const [cityField, setCityField] = useState("");
+  const [isUploading, setIsUploading] = useState(false);
+  
+  const profileImageInputRef = useRef<HTMLInputElement>(null);
+  const photosInputRef = useRef<HTMLInputElement>(null);
 
   const { data: myRestaurants = [] } = useQuery<Restaurant[]>({
     queryKey: ["/api/my-restaurants"],
@@ -141,6 +147,98 @@ export default function Settings() {
       ]
     },
   ];
+
+  const uploadFile = async (file: File): Promise<string> => {
+    // Get upload URL from server
+    const uploadRes = await apiRequest("POST", "/api/objects/upload");
+    const { uploadURL } = await uploadRes.json();
+    
+    // Upload file to storage
+    await fetch(uploadURL, {
+      method: "PUT",
+      body: file,
+      headers: {
+        "Content-Type": file.type,
+      },
+    });
+    
+    // Finalize upload and get object path
+    const finalizeRes = await apiRequest("PUT", "/api/objects/finalize", { uploadURL });
+    const { objectPath } = await finalizeRes.json();
+    return objectPath;
+  };
+
+  const handleProfileImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file || !activeRestaurantId) return;
+    
+    if (!file.type.startsWith('image/')) {
+      toast({ title: "Erreur", description: "Veuillez sélectionner une image", variant: "destructive" });
+      return;
+    }
+    
+    if (file.size > 5 * 1024 * 1024) {
+      toast({ title: "Erreur", description: "L'image ne doit pas dépasser 5 Mo", variant: "destructive" });
+      return;
+    }
+    
+    setIsUploading(true);
+    try {
+      const objectPath = await uploadFile(file);
+      await apiRequest("PUT", `/api/restaurants/${activeRestaurantId}`, { image: objectPath });
+      await queryClient.invalidateQueries({ queryKey: ["/api/my-restaurants"] });
+      toast({ title: "Photo de profil mise à jour" });
+    } catch (error) {
+      console.error("Upload error:", error);
+      toast({ title: "Erreur", description: "Échec du téléchargement", variant: "destructive" });
+    } finally {
+      setIsUploading(false);
+      if (profileImageInputRef.current) profileImageInputRef.current.value = "";
+    }
+  };
+
+  const handlePhotosUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = event.target.files;
+    if (!files || files.length === 0 || !activeRestaurantId) return;
+    
+    setIsUploading(true);
+    try {
+      const currentPhotos = selectedRestaurantData?.photos || [];
+      const newPhotos: string[] = [];
+      
+      for (const file of Array.from(files)) {
+        if (!file.type.startsWith('image/')) continue;
+        if (file.size > 5 * 1024 * 1024) continue;
+        
+        const objectPath = await uploadFile(file);
+        newPhotos.push(objectPath);
+      }
+      
+      const allPhotos = [...currentPhotos, ...newPhotos];
+      await apiRequest("PUT", `/api/restaurants/${activeRestaurantId}`, { photos: allPhotos });
+      await queryClient.invalidateQueries({ queryKey: ["/api/my-restaurants"] });
+      toast({ title: `${newPhotos.length} photo(s) ajoutée(s)` });
+    } catch (error) {
+      console.error("Upload error:", error);
+      toast({ title: "Erreur", description: "Échec du téléchargement", variant: "destructive" });
+    } finally {
+      setIsUploading(false);
+      if (photosInputRef.current) photosInputRef.current.value = "";
+    }
+  };
+
+  const removePhoto = async (photoToRemove: string) => {
+    if (!activeRestaurantId || !selectedRestaurantData) return;
+    
+    const updatedPhotos = (selectedRestaurantData.photos || []).filter((p: string) => p !== photoToRemove);
+    try {
+      await apiRequest("PUT", `/api/restaurants/${activeRestaurantId}`, { photos: updatedPhotos });
+      await queryClient.invalidateQueries({ queryKey: ["/api/my-restaurants"] });
+      toast({ title: "Photo supprimée" });
+    } catch (error) {
+      toast({ title: "Erreur", description: "Échec de la suppression", variant: "destructive" });
+    }
+  };
 
   if (authLoading) {
     return (
@@ -768,44 +866,114 @@ export default function Settings() {
 
                 {profileSubSection === "photos" && (
                   <div className="space-y-6 max-w-3xl">
+                    {/* Hidden file inputs */}
+                    <input
+                      ref={profileImageInputRef}
+                      type="file"
+                      accept="image/*"
+                      className="hidden"
+                      onChange={handleProfileImageUpload}
+                      data-testid="input-profile-image"
+                    />
+                    <input
+                      ref={photosInputRef}
+                      type="file"
+                      accept="image/*"
+                      multiple
+                      className="hidden"
+                      onChange={handlePhotosUpload}
+                      data-testid="input-photos"
+                    />
+                    
+                    {/* Photo de profil */}
                     <Card className="bg-white">
                       <CardContent className="p-6">
                         <h3 className="font-semibold flex items-center gap-2 mb-6 text-gray-700">
                           <Image className="h-5 w-5" />
-                          Photos du restaurant
+                          Photo de profil du restaurant
                         </h3>
                         
-                        <div className="border-2 border-dashed border-gray-200 rounded-lg p-8 text-center">
-                          <Image className="h-12 w-12 mx-auto text-gray-300 mb-4" />
-                          <p className="text-gray-600 mb-2">Glissez vos photos ici ou cliquez pour télécharger</p>
-                          <p className="text-sm text-gray-400 mb-4">Format JPG, PNG. Max 5 Mo par image.</p>
-                          <Button variant="outline" data-testid="btn-upload-photos">
-                            Choisir des fichiers
-                          </Button>
-                        </div>
-
-                        {selectedRestaurantData?.image && (
-                          <div className="mt-6">
-                            <Label className="mb-2 block">Photo actuelle</Label>
-                            <div className="w-40 h-28 rounded-lg overflow-hidden bg-gray-100">
+                        <div className="flex items-start gap-6">
+                          {selectedRestaurantData?.image && (
+                            <div className="w-40 h-28 rounded-lg overflow-hidden bg-gray-100 flex-shrink-0">
                               <img 
                                 src={selectedRestaurantData.image} 
                                 alt={selectedRestaurantData.name}
                                 className="w-full h-full object-cover"
                               />
                             </div>
+                          )}
+                          
+                          <div className="flex-1">
+                            <p className="text-sm text-gray-600 mb-3">
+                              Cette photo sera affichée sur la page publique de votre restaurant.
+                            </p>
+                            <Button 
+                              variant="outline" 
+                              onClick={() => profileImageInputRef.current?.click()}
+                              disabled={isUploading}
+                              data-testid="btn-upload-profile"
+                            >
+                              {isUploading ? "Téléchargement..." : "Changer la photo de profil"}
+                            </Button>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                    
+                    {/* Galerie photos */}
+                    <Card className="bg-white">
+                      <CardContent className="p-6">
+                        <h3 className="font-semibold flex items-center gap-2 mb-6 text-gray-700">
+                          <Image className="h-5 w-5" />
+                          Galerie photos
+                        </h3>
+                        
+                        {/* Photos existantes */}
+                        {selectedRestaurantData?.photos && selectedRestaurantData.photos.length > 0 && (
+                          <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                            {selectedRestaurantData.photos.map((photo, index) => (
+                              <div key={index} className="relative group">
+                                <div className="w-full aspect-square rounded-lg overflow-hidden bg-gray-100">
+                                  <img 
+                                    src={photo} 
+                                    alt={`Photo ${index + 1}`}
+                                    className="w-full h-full object-cover"
+                                  />
+                                </div>
+                                <button
+                                  onClick={() => removePhoto(photo)}
+                                  className="absolute top-2 right-2 w-6 h-6 bg-red-500 text-white rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
+                                  data-testid={`btn-remove-photo-${index}`}
+                                >
+                                  ×
+                                </button>
+                              </div>
+                            ))}
                           </div>
                         )}
+                        
+                        {/* Zone d'upload */}
+                        <div 
+                          className="border-2 border-dashed border-gray-200 rounded-lg p-8 text-center cursor-pointer hover:border-primary/50 transition-colors"
+                          onClick={() => photosInputRef.current?.click()}
+                        >
+                          <Image className="h-12 w-12 mx-auto text-gray-300 mb-4" />
+                          <p className="text-gray-600 mb-2">Glissez vos photos ici ou cliquez pour télécharger</p>
+                          <p className="text-sm text-gray-400 mb-4">Format JPG, PNG. Max 5 Mo par image.</p>
+                          <Button 
+                            variant="outline" 
+                            disabled={isUploading}
+                            data-testid="btn-upload-photos"
+                            onClick={(e) => { e.stopPropagation(); photosInputRef.current?.click(); }}
+                          >
+                            {isUploading ? "Téléchargement..." : "Choisir des fichiers"}
+                          </Button>
+                        </div>
 
                         <div className="pt-4 border-t mt-6 flex justify-end gap-3">
                           <Button variant="outline" onClick={() => setActiveSection("overview")}>
-                            Annuler
-                          </Button>
-                          <Button 
-                            onClick={() => toast({ title: "Photos enregistrées" })}
-                            data-testid="save-photos"
-                          >
-                            Enregistrer
+                            Retour
                           </Button>
                         </div>
                       </CardContent>
