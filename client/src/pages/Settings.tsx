@@ -10,6 +10,7 @@ import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import {
   Select,
   SelectContent,
@@ -301,7 +302,7 @@ export default function Settings() {
   const [phoneValue, setPhoneValue] = useState<string>("");
   const [websiteValue, setWebsiteValue] = useState<string>("");
   const [descriptionValue, setDescriptionValue] = useState<string>("");
-  const [cuisineValue, setCuisineValue] = useState<string>("");
+  const [cuisineTypes, setCuisineTypes] = useState<string[]>([]);
   const [priceRangeValue, setPriceRangeValue] = useState<string>("");
   const [nameValue, setNameValue] = useState<string>("");
   const [locationValue, setLocationValue] = useState<string>("");
@@ -314,8 +315,29 @@ export default function Settings() {
     enabled: isAuthenticated,
   });
 
+  interface CuisineCategory {
+    id: number;
+    name: string;
+    icon: string | null;
+  }
+
+  const { data: cuisineCategories = [] } = useQuery<CuisineCategory[]>({
+    queryKey: ["cuisine-categories"],
+    queryFn: async () => {
+      const res = await fetch("/api/cuisine-categories");
+      if (!res.ok) throw new Error("Failed to fetch categories");
+      return res.json();
+    },
+  });
+
   const activeRestaurantId = selectedRestaurant || myRestaurants[0]?.id;
   const selectedRestaurantData = myRestaurants.find(r => r.id === activeRestaurantId);
+
+  const getCurrentCuisineTypes = (): string[] => {
+    if (cuisineTypes.length > 0) return cuisineTypes;
+    const cuisine = selectedRestaurantData?.cuisine || "";
+    return cuisine.split(", ").filter(c => c.trim() !== "");
+  };
 
   // Fetch bookings for notification badge
   const { data: allBookings = [] } = useQuery<Booking[]>({
@@ -438,10 +460,11 @@ export default function Settings() {
   });
 
   const handleSaveProfile = () => {
+    const currentCuisines = getCurrentCuisineTypes();
     saveProfileMutation.mutate({
       name: nameValue || selectedRestaurantData?.name || "",
       description: descriptionValue || selectedRestaurantData?.description || "",
-      cuisine: cuisineValue || selectedRestaurantData?.cuisine || "",
+      cuisine: currentCuisines.join(", "),
       priceRange: priceRangeValue || selectedRestaurantData?.priceRange || "",
       location: locationValue || selectedRestaurantData?.location || "",
     });
@@ -1039,34 +1062,58 @@ export default function Settings() {
                               />
                             </div>
                           </div>
-                          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div className="space-y-1">
-                              <Label className="text-sm text-gray-500">Type de cuisine</Label>
-                              <Input 
-                                value={cuisineValue || selectedRestaurantData?.cuisine || ""}
-                                onChange={(e) => setCuisineValue(e.target.value)}
-                                placeholder="Ex: Française, Italienne, Méditerranéenne..."
-                                className="border-gray-200"
-                                data-testid="input-cuisine"
-                              />
+                          <div className="space-y-1">
+                            <Label className="text-sm text-gray-500">Gamme de prix</Label>
+                            <Select 
+                              value={priceRangeValue || selectedRestaurantData?.priceRange || ""}
+                              onValueChange={setPriceRangeValue}
+                            >
+                              <SelectTrigger className="border-gray-200" data-testid="select-price-range">
+                                <SelectValue placeholder="Sélectionner" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="€">€ - Économique</SelectItem>
+                                <SelectItem value="€€">€€ - Modéré</SelectItem>
+                                <SelectItem value="€€€">€€€ - Haut de gamme</SelectItem>
+                                <SelectItem value="€€€€">€€€€ - Gastronomique</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                          <div className="space-y-2">
+                            <Label className="text-sm text-gray-500">Types de cuisine (plusieurs choix possibles)</Label>
+                            <div className="grid grid-cols-2 md:grid-cols-3 gap-3 p-4 border border-gray-200 rounded-lg max-h-64 overflow-y-auto">
+                              {cuisineCategories.map((cat) => {
+                                const currentTypes = getCurrentCuisineTypes();
+                                const isSelected = currentTypes.includes(cat.name);
+                                return (
+                                  <label
+                                    key={cat.id}
+                                    className={`flex items-center gap-2 p-2 rounded-lg cursor-pointer transition-colors ${
+                                      isSelected ? "bg-primary/10 border-primary border" : "bg-muted/50 hover:bg-muted border border-transparent"
+                                    }`}
+                                    data-testid={`checkbox-cuisine-${cat.id}`}
+                                  >
+                                    <Checkbox
+                                      checked={isSelected}
+                                      onCheckedChange={(checked) => {
+                                        const current = getCurrentCuisineTypes();
+                                        if (checked) {
+                                          setCuisineTypes([...current, cat.name]);
+                                        } else {
+                                          setCuisineTypes(current.filter(c => c !== cat.name));
+                                        }
+                                      }}
+                                    />
+                                    <span className="text-sm">{cat.icon} {cat.name}</span>
+                                  </label>
+                                );
+                              })}
                             </div>
-                            <div className="space-y-1">
-                              <Label className="text-sm text-gray-500">Gamme de prix</Label>
-                              <Select 
-                                value={priceRangeValue || selectedRestaurantData?.priceRange || ""}
-                                onValueChange={setPriceRangeValue}
-                              >
-                                <SelectTrigger className="border-gray-200" data-testid="select-price-range">
-                                  <SelectValue placeholder="Sélectionner" />
-                                </SelectTrigger>
-                                <SelectContent>
-                                  <SelectItem value="€">€ - Économique</SelectItem>
-                                  <SelectItem value="€€">€€ - Modéré</SelectItem>
-                                  <SelectItem value="€€€">€€€ - Haut de gamme</SelectItem>
-                                  <SelectItem value="€€€€">€€€€ - Gastronomique</SelectItem>
-                                </SelectContent>
-                              </Select>
-                            </div>
+                            {getCurrentCuisineTypes().length > 0 && (
+                              <p className="text-xs text-gray-400">
+                                Sélectionné: {getCurrentCuisineTypes().join(", ")}
+                              </p>
+                            )}
                           </div>
                         </div>
                       </CardContent>
