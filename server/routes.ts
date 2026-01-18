@@ -821,6 +821,10 @@ export async function registerRoutes(
         return res.status(404).json({ message: "Client not found" });
       }
       
+      if (!client.restaurantId) {
+        return res.status(400).json({ message: "Client has no restaurant" });
+      }
+      
       const restaurant = await storage.getRestaurant(client.restaurantId);
       if (!restaurant) {
         return res.status(404).json({ message: "Restaurant not found" });

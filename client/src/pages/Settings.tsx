@@ -1917,6 +1917,7 @@ export default function Settings() {
                             toast({ title: "Copié !", description: "Le code a été copié dans le presse-papiers" });
                           }}
                           className="gap-2"
+                          data-testid="button-copy-widget-button"
                         >
                           <Copy className="h-4 w-4" />
                           Copier le code
@@ -1944,6 +1945,7 @@ export default function Settings() {
                               toast({ title: "Copié !", description: "Le code a été copié dans le presse-papiers" });
                             }}
                             className="gap-2"
+                            data-testid="button-copy-widget-iframe"
                           >
                             <Copy className="h-4 w-4" />
                             Copier le code
@@ -1966,6 +1968,7 @@ export default function Settings() {
                               readOnly 
                               value={`${window.location.origin}/restaurant/${activeRestaurantId}`}
                               className="font-mono text-sm"
+                              data-testid="input-widget-link"
                             />
                             <Button 
                               variant="outline" 
@@ -1974,6 +1977,7 @@ export default function Settings() {
                                 navigator.clipboard.writeText(`${window.location.origin}/restaurant/${activeRestaurantId}`);
                                 toast({ title: "Copié !", description: "Le lien a été copié dans le presse-papiers" });
                               }}
+                              data-testid="button-copy-widget-link"
                             >
                               <Copy className="h-4 w-4" />
                             </Button>
