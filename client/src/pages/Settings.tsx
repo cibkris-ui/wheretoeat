@@ -287,6 +287,9 @@ export default function Settings() {
   const [isUploading, setIsUploading] = useState(false);
   const [addUserDialog, setAddUserDialog] = useState(false);
   const [newUserEmail, setNewUserEmail] = useState("");
+  const [newUserPassword, setNewUserPassword] = useState("");
+  const [newUserFirstName, setNewUserFirstName] = useState("");
+  const [newUserLastName, setNewUserLastName] = useState("");
   const [newUserRole, setNewUserRole] = useState("staff");
   
   const profileImageInputRef = useRef<HTMLInputElement>(null);
@@ -337,14 +340,17 @@ export default function Settings() {
   });
 
   const addUserMutation = useMutation({
-    mutationFn: async ({ email, role }: { email: string; role: string }) => {
-      const res = await apiRequest("POST", `/api/restaurants/${activeRestaurantId}/users`, { email, role });
+    mutationFn: async ({ email, password, firstName, lastName, role }: { email: string; password: string; firstName: string; lastName: string; role: string }) => {
+      const res = await apiRequest("POST", `/api/restaurants/${activeRestaurantId}/users`, { email, password, firstName, lastName, role });
       return res.json();
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/restaurant-users", activeRestaurantId] });
       setAddUserDialog(false);
       setNewUserEmail("");
+      setNewUserPassword("");
+      setNewUserFirstName("");
+      setNewUserLastName("");
       setNewUserRole("staff");
       toast({ title: "Utilisateur ajouté" });
     },
@@ -1497,15 +1503,45 @@ export default function Settings() {
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Ajouter un utilisateur</DialogTitle>
-            <DialogDescription>Invitez un membre de votre équipe à accéder à ce restaurant</DialogDescription>
+            <DialogDescription>Créez un compte pour un membre de votre équipe</DialogDescription>
           </DialogHeader>
           <form onSubmit={(e) => {
             e.preventDefault();
-            if (newUserEmail) {
-              addUserMutation.mutate({ email: newUserEmail, role: newUserRole });
+            if (newUserEmail && newUserPassword) {
+              addUserMutation.mutate({ 
+                email: newUserEmail, 
+                password: newUserPassword,
+                firstName: newUserFirstName,
+                lastName: newUserLastName,
+                role: newUserRole 
+              });
             }
           }}>
             <div className="space-y-4 py-4">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="user-firstname">Prénom</Label>
+                  <Input
+                    id="user-firstname"
+                    type="text"
+                    placeholder="Jean"
+                    value={newUserFirstName}
+                    onChange={(e) => setNewUserFirstName(e.target.value)}
+                    data-testid="input-user-firstname"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="user-lastname">Nom</Label>
+                  <Input
+                    id="user-lastname"
+                    type="text"
+                    placeholder="Dupont"
+                    value={newUserLastName}
+                    onChange={(e) => setNewUserLastName(e.target.value)}
+                    data-testid="input-user-lastname"
+                  />
+                </div>
+              </div>
               <div className="space-y-2">
                 <Label htmlFor="user-email">Adresse email</Label>
                 <Input
@@ -1516,6 +1552,19 @@ export default function Settings() {
                   onChange={(e) => setNewUserEmail(e.target.value)}
                   required
                   data-testid="input-user-email"
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="user-password">Mot de passe</Label>
+                <Input
+                  id="user-password"
+                  type="password"
+                  placeholder="••••••••"
+                  value={newUserPassword}
+                  onChange={(e) => setNewUserPassword(e.target.value)}
+                  required
+                  minLength={6}
+                  data-testid="input-user-password"
                 />
               </div>
               <div className="space-y-2">

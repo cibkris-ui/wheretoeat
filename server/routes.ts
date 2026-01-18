@@ -1150,9 +1150,12 @@ export async function registerRoutes(
         return res.status(403).json({ message: "Not authorized" });
       }
       
-      const { email, role } = req.body;
+      const { email, password, firstName, lastName, role } = req.body;
       if (!email) {
         return res.status(400).json({ message: "Email is required" });
+      }
+      if (!password) {
+        return res.status(400).json({ message: "Password is required" });
       }
       
       const existing = await storage.getRestaurantUserByEmail(id, email);
@@ -1160,13 +1163,23 @@ export async function registerRoutes(
         return res.status(400).json({ message: "User already has access to this restaurant" });
       }
       
-      const existingUser = await storage.getUserByEmail(email.toLowerCase().trim());
+      let userAccount = await storage.getUserByEmail(email.toLowerCase().trim());
+      
+      if (!userAccount) {
+        const hashedPassword = await bcrypt.hash(password, 10);
+        userAccount = await storage.createUserWithPassword(
+          email.toLowerCase().trim(), 
+          hashedPassword, 
+          firstName || undefined, 
+          lastName || undefined
+        );
+      }
       
       const newUser = await storage.addRestaurantUser({
         restaurantId: id,
         email: email.toLowerCase().trim(),
         role: role || "staff",
-        userId: existingUser?.id || null,
+        userId: userAccount.id,
       });
       
       res.status(201).json(newUser);
