@@ -291,6 +291,8 @@ export default function Settings() {
   const [newUserFirstName, setNewUserFirstName] = useState("");
   const [newUserLastName, setNewUserLastName] = useState("");
   const [newUserRole, setNewUserRole] = useState("staff");
+  const [capacityValue, setCapacityValue] = useState<number | null>(null);
+  const [onlineCapacityValue, setOnlineCapacityValue] = useState<number | null>(null);
   
   const profileImageInputRef = useRef<HTMLInputElement>(null);
   const photosInputRef = useRef<HTMLInputElement>(null);
@@ -371,6 +373,30 @@ export default function Settings() {
       toast({ title: "Erreur", description: error.message, variant: "destructive" });
     },
   });
+
+  const saveCapacityMutation = useMutation({
+    mutationFn: async ({ capacity, onlineCapacity }: { capacity: number; onlineCapacity: number }) => {
+      const res = await apiRequest("PUT", `/api/restaurants/${activeRestaurantId}`, { capacity, onlineCapacity });
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/my-restaurants"] });
+      toast({ title: "Capacité enregistrée" });
+    },
+    onError: (error: any) => {
+      toast({ title: "Erreur", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const handleSaveCapacity = () => {
+    const capacity = capacityValue ?? selectedRestaurantData?.capacity ?? 40;
+    let onlineCapacity = onlineCapacityValue ?? selectedRestaurantData?.onlineCapacity ?? capacity;
+    // S'assurer que onlineCapacity ne dépasse pas capacity
+    if (onlineCapacity > capacity) {
+      onlineCapacity = capacity;
+    }
+    saveCapacityMutation.mutate({ capacity, onlineCapacity });
+  };
 
   const defaultAddress = selectedRestaurantData?.address || "Rue du Grand-Bureau 16";
   const defaultCity = selectedRestaurantData?.location || "1227 Genève";
@@ -1312,17 +1338,39 @@ export default function Settings() {
                               </Label>
                               <Input 
                                 type="number" 
-                                defaultValue={selectedRestaurantData?.capacity || 40} 
+                                value={capacityValue ?? selectedRestaurantData?.capacity ?? 40}
+                                onChange={(e) => {
+                                  const val = parseInt(e.target.value) || 0;
+                                  setCapacityValue(val);
+                                  // Si onlineCapacity dépasse la nouvelle capacity, l'ajuster
+                                  const currentOnline = onlineCapacityValue ?? selectedRestaurantData?.onlineCapacity ?? val;
+                                  if (currentOnline > val) {
+                                    setOnlineCapacityValue(val);
+                                  }
+                                }}
                                 className="border-gray-200"
                                 data-testid="input-capacity"
                               />
                             </div>
-                            <div className="space-y-2 p-4 bg-gray-50 rounded-lg">
-                              <Label className="text-sm text-gray-500 flex items-center gap-1">
+                            <div className="space-y-2">
+                              <Label className="flex items-center gap-1">
                                 <Globe className="h-4 w-4" />
                                 Maximum de couverts réservables en ligne
+                                <HelpCircle className="h-4 w-4 text-gray-400" />
                               </Label>
-                              <p className="text-2xl font-bold">{selectedRestaurantData?.capacity || 40}</p>
+                              <Input 
+                                type="number" 
+                                value={onlineCapacityValue ?? selectedRestaurantData?.onlineCapacity ?? selectedRestaurantData?.capacity ?? 40}
+                                onChange={(e) => {
+                                  const val = parseInt(e.target.value) || 0;
+                                  const maxVal = capacityValue ?? selectedRestaurantData?.capacity ?? 40;
+                                  setOnlineCapacityValue(Math.min(val, maxVal));
+                                }}
+                                max={capacityValue ?? selectedRestaurantData?.capacity ?? 40}
+                                className="border-gray-200"
+                                data-testid="input-online-capacity"
+                              />
+                              <p className="text-xs text-gray-500">Maximum: {capacityValue ?? selectedRestaurantData?.capacity ?? 40} (égal à la limite de couverts)</p>
                             </div>
                           </div>
 
@@ -1355,7 +1403,7 @@ export default function Settings() {
                       <Button variant="outline" onClick={() => setActiveSection("overview")} className="px-6">
                         ANNULER
                       </Button>
-                      <Button onClick={() => toast({ title: "Capacité enregistrée" })} className="px-6" data-testid="save-capacity">
+                      <Button onClick={handleSaveCapacity} disabled={saveCapacityMutation.isPending} className="px-6" data-testid="save-capacity">
                         ENREGISTRER
                       </Button>
                     </div>

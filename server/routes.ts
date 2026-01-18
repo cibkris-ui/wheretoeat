@@ -363,7 +363,7 @@ export async function registerRoutes(
         });
       }
       
-      // Vérifier la capacité du créneau
+      // Vérifier la capacité du créneau (utiliser onlineCapacity pour les réservations publiques)
       const currentGuests = await storage.getBookedGuestsForSlot(
         result.data.restaurantId, 
         result.data.date, 
@@ -371,9 +371,10 @@ export async function registerRoutes(
       );
       const newGuestsTotal = result.data.guests + (result.data.children || 0);
       const capacity = restaurant.capacity || 40;
+      const onlineCapacity = restaurant.onlineCapacity ?? capacity; // Par défaut = capacité totale
       
-      // Si la capacité serait dépassée, mettre en liste d'attente
-      const bookingStatus = (currentGuests + newGuestsTotal > capacity) ? "waiting" : "pending";
+      // Si la capacité en ligne serait dépassée, mettre en liste d'attente
+      const bookingStatus = (currentGuests + newGuestsTotal > onlineCapacity) ? "waiting" : "pending";
       
       const bookingData = {
         ...result.data,
