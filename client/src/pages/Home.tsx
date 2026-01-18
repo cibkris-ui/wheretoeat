@@ -73,7 +73,7 @@ export default function Home() {
         
         <div className="relative z-10 container text-center text-white space-y-6 px-4">
           <h1 className="text-4xl md:text-6xl font-bold tracking-tight animate-in fade-in slide-in-from-bottom-4 duration-700">
-            Réservez les meilleurs restaurants en Suisse
+            Réservez les meilleurs restaurants de Suisse
           </h1>
           <p className="text-lg md:text-xl font-medium opacity-90 max-w-2xl mx-auto animate-in fade-in slide-in-from-bottom-6 duration-700 delay-100">
             20 000+ restaurants disponibles à la réservation
