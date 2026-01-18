@@ -75,9 +75,6 @@ export default function Home() {
           <h1 className="text-4xl md:text-6xl font-bold tracking-tight animate-in fade-in slide-in-from-bottom-4 duration-700">
             Réservez les meilleurs restaurants de Suisse
           </h1>
-          <p className="text-lg md:text-xl font-medium opacity-90 max-w-2xl mx-auto animate-in fade-in slide-in-from-bottom-6 duration-700 delay-100">
-            20 000+ restaurants disponibles à la réservation
-          </p>
           
           {/* TheFork Style Search Bar */}
           <div className="max-w-5xl mx-auto bg-white rounded-lg shadow-2xl animate-in fade-in slide-in-from-bottom-8 duration-700 delay-200 mt-8">
