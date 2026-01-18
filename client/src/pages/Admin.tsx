@@ -139,7 +139,7 @@ export default function Admin() {
   const [searchQuery, setSearchQuery] = useState("");
   const [deleteConfirm, setDeleteConfirm] = useState<{ type: "restaurant" | "user"; id: number | string } | null>(null);
   const [newUserDialog, setNewUserDialog] = useState(false);
-  const [newUser, setNewUser] = useState({ email: "", password: "", firstName: "", lastName: "", isAdmin: false });
+  const [newUser, setNewUser] = useState({ email: "", password: "", firstName: "", lastName: "", isAdmin: true });
   const [selectedRestaurant, setSelectedRestaurant] = useState<Restaurant | null>(null);
   const [newRestaurantDialog, setNewRestaurantDialog] = useState(false);
   const [newRestaurant, setNewRestaurant] = useState({
@@ -253,7 +253,7 @@ export default function Admin() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["admin-users"] });
       setNewUserDialog(false);
-      setNewUser({ email: "", password: "", firstName: "", lastName: "", isAdmin: false });
+      setNewUser({ email: "", password: "", firstName: "", lastName: "", isAdmin: true });
     },
   });
 
@@ -671,7 +671,6 @@ export default function Admin() {
                     <TableRow>
                       <TableHead>Email</TableHead>
                       <TableHead>Nom</TableHead>
-                      <TableHead>Rôle</TableHead>
                       <TableHead>Date de création</TableHead>
                       <TableHead className="text-right">Actions</TableHead>
                     </TableRow>
@@ -682,37 +681,19 @@ export default function Admin() {
                         <TableCell className="font-medium">{u.email}</TableCell>
                         <TableCell>{u.firstName} {u.lastName}</TableCell>
                         <TableCell>
-                          {u.isAdmin ? (
-                            <Badge className="bg-purple-100 text-purple-700 hover:bg-purple-100">Admin</Badge>
-                          ) : (
-                            <Badge variant="secondary">Utilisateur</Badge>
-                          )}
-                        </TableCell>
-                        <TableCell>
                           {u.createdAt ? new Date(u.createdAt).toLocaleDateString("fr-CH") : "-"}
                         </TableCell>
                         <TableCell className="text-right">
                           <div className="flex justify-end gap-2">
-                            {u.id !== user.id && (
-                              <>
-                                <Button
-                                  size="sm"
-                                  variant="outline"
-                                  onClick={() => toggleAdminMutation.mutate({ id: u.id, isAdmin: !u.isAdmin })}
-                                  disabled={toggleAdminMutation.isPending}
-                                  data-testid={`toggle-admin-${u.id}`}
-                                >
-                                  {u.isAdmin ? "Retirer admin" : "Rendre admin"}
-                                </Button>
-                                <Button
-                                  size="sm"
-                                  variant="destructive"
-                                  onClick={() => setDeleteConfirm({ type: "user", id: u.id })}
-                                  data-testid={`delete-user-${u.id}`}
-                                >
-                                  <Trash2 className="w-4 h-4" />
-                                </Button>
-                              </>
+                            {u.id !== user.id && filteredUsers.filter(usr => usr.isAdmin).length > 1 && (
+                              <Button
+                                size="sm"
+                                variant="destructive"
+                                onClick={() => setDeleteConfirm({ type: "user", id: u.id })}
+                                data-testid={`delete-user-${u.id}`}
+                              >
+                                <Trash2 className="w-4 h-4" />
+                              </Button>
                             )}
                           </div>
                         </TableCell>
@@ -729,8 +710,8 @@ export default function Admin() {
       <Dialog open={newUserDialog} onOpenChange={setNewUserDialog}>
         <DialogContent>
           <DialogHeader>
-            <DialogTitle>Ajouter un utilisateur</DialogTitle>
-            <DialogDescription>Créer un nouveau compte utilisateur</DialogDescription>
+            <DialogTitle>Ajouter un administrateur</DialogTitle>
+            <DialogDescription>Créer un nouveau compte administrateur</DialogDescription>
           </DialogHeader>
           <form onSubmit={(e) => { e.preventDefault(); createUserMutation.mutate(newUser); }} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
@@ -775,15 +756,6 @@ export default function Admin() {
                 minLength={6}
                 data-testid="input-new-password"
               />
-            </div>
-            <div className="flex items-center gap-2">
-              <Checkbox
-                id="isAdmin"
-                checked={newUser.isAdmin}
-                onCheckedChange={(checked) => setNewUser({ ...newUser, isAdmin: checked as boolean })}
-                data-testid="checkbox-is-admin"
-              />
-              <Label htmlFor="isAdmin">Administrateur</Label>
             </div>
             <DialogFooter>
               <Button type="button" variant="outline" onClick={() => setNewUserDialog(false)}>
