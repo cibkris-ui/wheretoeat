@@ -295,6 +295,10 @@ export default function Settings() {
   const [onlineCapacityValue, setOnlineCapacityValue] = useState<number | null>(null);
   const [minGuestsValue, setMinGuestsValue] = useState<number | null>(null);
   const [maxGuestsValue, setMaxGuestsValue] = useState<number | null>(null);
+  const [publicEmailValue, setPublicEmailValue] = useState<string>("");
+  const [preferredLanguageValue, setPreferredLanguageValue] = useState<string>("fr");
+  const [phoneValue, setPhoneValue] = useState<string>("");
+  const [websiteValue, setWebsiteValue] = useState<string>("");
   
   const profileImageInputRef = useRef<HTMLInputElement>(null);
   const photosInputRef = useRef<HTMLInputElement>(null);
@@ -389,6 +393,29 @@ export default function Settings() {
       toast({ title: "Erreur", description: error.message, variant: "destructive" });
     },
   });
+
+  const saveContactsMutation = useMutation({
+    mutationFn: async (data: { publicEmail: string; preferredLanguage: string; phone: string; website: string }) => {
+      const res = await apiRequest("PUT", `/api/restaurants/${activeRestaurantId}`, data);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/my-restaurants"] });
+      toast({ title: "Informations de contact enregistrées" });
+    },
+    onError: (error: any) => {
+      toast({ title: "Erreur", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const handleSaveContacts = () => {
+    saveContactsMutation.mutate({
+      publicEmail: publicEmailValue || selectedRestaurantData?.publicEmail || "",
+      preferredLanguage: preferredLanguageValue || selectedRestaurantData?.preferredLanguage || "fr",
+      phone: phoneValue || selectedRestaurantData?.phone || "",
+      website: websiteValue || selectedRestaurantData?.website || "",
+    });
+  };
 
   const handleSaveCapacity = () => {
     const capacity = capacityValue ?? selectedRestaurantData?.capacity ?? 40;
@@ -765,7 +792,10 @@ export default function Settings() {
                                 Langue préférée du restaurant
                                 <span className="text-red-500">*</span>
                               </Label>
-                              <Select defaultValue="en">
+                              <Select 
+                                value={preferredLanguageValue || selectedRestaurantData?.preferredLanguage || "fr"}
+                                onValueChange={setPreferredLanguageValue}
+                              >
                                 <SelectTrigger className="w-full border-gray-200" data-testid="select-language">
                                   <SelectValue />
                                 </SelectTrigger>
@@ -784,30 +814,22 @@ export default function Settings() {
                               </Label>
                               <Input 
                                 type="email"
-                                defaultValue="infosamyaziza@gmail.com"
+                                value={publicEmailValue || selectedRestaurantData?.publicEmail || ""}
+                                onChange={(e) => setPublicEmailValue(e.target.value)}
+                                placeholder="email@restaurant.ch"
                                 className="border-gray-200"
                                 data-testid="input-email"
                               />
                             </div>
                             <div className="space-y-1">
                               <Label className="text-sm text-gray-500">Téléphone du restaurant (public)</Label>
-                              <div className="flex items-center gap-2">
-                                <Select defaultValue="+41">
-                                  <SelectTrigger className="w-24 border-gray-200" data-testid="select-country-code">
-                                    <SelectValue />
-                                  </SelectTrigger>
-                                  <SelectContent>
-                                    <SelectItem value="+41">🇨🇭 +41</SelectItem>
-                                    <SelectItem value="+33">🇫🇷 +33</SelectItem>
-                                    <SelectItem value="+49">🇩🇪 +49</SelectItem>
-                                  </SelectContent>
-                                </Select>
-                                <Input 
-                                  defaultValue="78 305 31 51"
-                                  className="flex-1 border-gray-200"
-                                  data-testid="input-phone"
-                                />
-                              </div>
+                              <Input 
+                                value={phoneValue || selectedRestaurantData?.phone || ""}
+                                onChange={(e) => setPhoneValue(e.target.value)}
+                                placeholder="+41 78 123 45 67"
+                                className="border-gray-200"
+                                data-testid="input-phone"
+                              />
                             </div>
                           </div>
                         </div>
@@ -914,6 +936,8 @@ export default function Settings() {
                           <div className="space-y-1">
                             <Label className="text-sm text-gray-500">Site internet du restaurant</Label>
                             <Input 
+                              value={websiteValue || selectedRestaurantData?.website || ""}
+                              onChange={(e) => setWebsiteValue(e.target.value)}
                               placeholder="https://www.mon-restaurant.ch"
                               className="border-gray-200"
                               data-testid="input-website"
@@ -932,11 +956,12 @@ export default function Settings() {
                         ANNULER
                       </Button>
                       <Button 
-                        onClick={() => toast({ title: "Modifications enregistrées" })}
+                        onClick={handleSaveContacts}
+                        disabled={saveContactsMutation.isPending}
                         className="px-6 bg-primary hover:bg-primary/90"
                         data-testid="save-contacts"
                       >
-                        ENREGISTRER
+                        {saveContactsMutation.isPending ? "..." : "ENREGISTRER"}
                       </Button>
                     </div>
                   </div>
