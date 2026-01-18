@@ -228,7 +228,6 @@ export function BookingForm({ restaurantId, minGuests = 1, maxGuests = 12 }: Boo
       { id: "date", icon: CalendarIcon, label: formData.date ? format(formData.date, "d MMM", { locale: fr }) : "Date" },
       { id: "time", icon: Clock, label: formData.time || "Heure" },
       { id: "guests", icon: Users, label: formData.guests ? `${formData.guests} Pers.` : "Pers." },
-      { id: "promos", icon: Percent, label: "" } // Placeholder for promo step visual
     ];
 
     return (
