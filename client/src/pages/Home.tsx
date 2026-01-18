@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useState, useMemo } from "react";
 import { useLocation } from "wouter";
 import { Navbar } from "@/components/layout/Navbar";
 import { RestaurantCard } from "@/components/RestaurantCard";
@@ -15,6 +15,8 @@ import type { Restaurant } from "@shared/schema";
 export default function Home() {
   const [, setLocation] = useLocation();
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
+  const [searchQuery, setSearchQuery] = useState("");
+  const [hasSearched, setHasSearched] = useState(false);
   
   const { data: myRestaurants = [] } = useQuery<Restaurant[]>({
     queryKey: ["/api/my-restaurants"],
@@ -25,6 +27,28 @@ export default function Home() {
     queryKey: ["restaurants"],
     queryFn: fetchRestaurants,
   });
+
+  const filteredRestaurants = useMemo(() => {
+    if (!restaurants || !hasSearched || searchQuery.trim() === "") {
+      return restaurants || [];
+    }
+    const query = searchQuery.toLowerCase().trim();
+    return restaurants.filter((r: Restaurant) => 
+      r.name.toLowerCase().includes(query) ||
+      r.cuisine.toLowerCase().includes(query) ||
+      r.location.toLowerCase().includes(query)
+    );
+  }, [restaurants, searchQuery, hasSearched]);
+
+  const handleSearch = () => {
+    setHasSearched(true);
+  };
+
+  const handleKeyPress = (e: React.KeyboardEvent) => {
+    if (e.key === "Enter") {
+      handleSearch();
+    }
+  };
 
   useEffect(() => {
     if (!authLoading && isAuthenticated && myRestaurants.length > 0) {
@@ -64,7 +88,11 @@ export default function Home() {
                 <Search className="h-5 w-5 text-gray-400 mr-3 flex-shrink-0" />
                 <Input 
                   className="border-0 shadow-none focus-visible:ring-0 text-gray-800 placeholder:text-gray-500 h-full p-0 text-base" 
-                  placeholder="Restaurant, cuisine ou adresse" 
+                  placeholder="Restaurant, cuisine ou adresse"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  onKeyDown={handleKeyPress}
+                  data-testid="input-search-restaurant"
                 />
               </div>
 
@@ -87,7 +115,12 @@ export default function Home() {
               </div>
 
               <div className="w-full md:w-auto p-1">
-                <Button size="lg" className="w-full md:w-auto h-12 px-8 text-base font-bold bg-primary hover:bg-primary/90 border-0 rounded-md shadow-sm">
+                <Button 
+                  size="lg" 
+                  className="w-full md:w-auto h-12 px-8 text-base font-bold bg-primary hover:bg-primary/90 border-0 rounded-md shadow-sm"
+                  onClick={handleSearch}
+                  data-testid="button-search-restaurant"
+                >
                   Rechercher
                 </Button>
               </div>
@@ -118,12 +151,32 @@ export default function Home() {
           </div>
         )}
         
-        {restaurants && restaurants.length > 0 && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {restaurants.map((restaurant) => (
-              <RestaurantCard key={restaurant.id} restaurant={restaurant} />
-            ))}
-          </div>
+        {restaurants && (
+          <>
+            {hasSearched && searchQuery.trim() !== "" && (
+              <div className="mb-4">
+                <p className="text-gray-600">
+                  {filteredRestaurants.length} résultat{filteredRestaurants.length !== 1 ? 's' : ''} pour "{searchQuery}"
+                  {filteredRestaurants.length === 0 && (
+                    <Button 
+                      variant="link" 
+                      className="text-primary ml-2 p-0 h-auto"
+                      onClick={() => { setSearchQuery(""); setHasSearched(false); }}
+                    >
+                      Voir tous les restaurants
+                    </Button>
+                  )}
+                </p>
+              </div>
+            )}
+            {filteredRestaurants.length > 0 && (
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                {filteredRestaurants.map((restaurant: Restaurant) => (
+                  <RestaurantCard key={restaurant.id} restaurant={restaurant} />
+                ))}
+              </div>
+            )}
+          </>
         )}
       </section>
 
@@ -133,7 +186,16 @@ export default function Home() {
           <h2 className="text-2xl font-bold mb-8 text-gray-900">Inspiration pour votre prochain repas</h2>
           <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
             {['Italien', 'Français', 'Suisse', 'Japonais', 'Chinois', 'Indien', 'Burgers', 'Pizza', 'Sushi', 'Végétalien', 'Brunch', 'Romantique'].map((cat) => (
-              <div key={cat} className="group cursor-pointer bg-white p-4 rounded-lg border border-gray-200 hover:border-primary hover:shadow-md transition-all text-center">
+              <div 
+                key={cat} 
+                className="group cursor-pointer bg-white p-4 rounded-lg border border-gray-200 hover:border-primary hover:shadow-md transition-all text-center"
+                onClick={() => {
+                  setSearchQuery(cat);
+                  setHasSearched(true);
+                  window.scrollTo({ top: 0, behavior: 'smooth' });
+                }}
+                data-testid={`category-${cat.toLowerCase()}`}
+              >
                 <h3 className="font-medium text-sm text-gray-700 group-hover:text-primary transition-colors">{cat}</h3>
               </div>
             ))}
