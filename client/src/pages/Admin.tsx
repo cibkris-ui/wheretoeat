@@ -135,7 +135,7 @@ function LoginForm() {
 export default function Admin() {
   const { user, isLoading: authLoading } = useAuth();
   const queryClient = useQueryClient();
-  const [activeTab, setActiveTab] = useState("pending");
+  const [activeTab, setActiveTab] = useState("users");
   const [searchQuery, setSearchQuery] = useState("");
   const [deleteConfirm, setDeleteConfirm] = useState<{ type: "restaurant" | "user"; id: number | string } | null>(null);
   const [newUserDialog, setNewUserDialog] = useState(false);
@@ -429,6 +429,10 @@ export default function Admin() {
           <Tabs value={activeTab} onValueChange={setActiveTab}>
             <CardHeader className="border-b pb-0">
               <TabsList className="grid w-full grid-cols-4">
+                <TabsTrigger value="users" className="gap-2" data-testid="tab-users">
+                  <Shield className="w-4 h-4" />
+                  Administrateurs
+                </TabsTrigger>
                 <TabsTrigger value="pending" className="gap-2" data-testid="tab-pending">
                   <Clock className="w-4 h-4" />
                   En attente ({pendingRestaurants.length})
@@ -440,10 +444,6 @@ export default function Admin() {
                 <TabsTrigger value="clients" className="gap-2" data-testid="tab-clients">
                   <Users className="w-4 h-4" />
                   Clients
-                </TabsTrigger>
-                <TabsTrigger value="users" className="gap-2" data-testid="tab-users">
-                  <Shield className="w-4 h-4" />
-                  Utilisateurs
                 </TabsTrigger>
               </TabsList>
             </CardHeader>
