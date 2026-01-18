@@ -69,6 +69,7 @@ export interface IStorage {
   createClosedDay(closedDay: InsertClosedDay): Promise<ClosedDay>;
   deleteClosedDay(id: number): Promise<void>;
   getClosedDay(id: number): Promise<ClosedDay | undefined>;
+  isDateClosed(restaurantId: number, date: string): Promise<boolean>;
   
   getClientsByRestaurant(restaurantId: number, search?: string): Promise<Client[]>;
   getClient(id: number): Promise<Client | undefined>;
@@ -337,6 +338,16 @@ export class DatabaseStorage implements IStorage {
   async getClosedDay(id: number): Promise<ClosedDay | undefined> {
     const [closedDay] = await db.select().from(closedDays).where(eq(closedDays.id, id));
     return closedDay;
+  }
+
+  async isDateClosed(restaurantId: number, date: string): Promise<boolean> {
+    const [closedDay] = await db.select().from(closedDays).where(
+      and(
+        eq(closedDays.restaurantId, restaurantId),
+        eq(closedDays.date, date)
+      )
+    );
+    return !!closedDay;
   }
 
   async getClientsByRestaurant(restaurantId: number, search?: string): Promise<Client[]> {

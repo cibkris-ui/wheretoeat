@@ -236,6 +236,14 @@ export async function registerRoutes(
         return res.status(404).json({ message: "Restaurant not found" });
       }
       
+      // Vérifier si la date est fermée aux réservations
+      const isDateClosed = await storage.isDateClosed(result.data.restaurantId, result.data.date);
+      if (isDateClosed) {
+        return res.status(400).json({ 
+          message: "Les réservations ne sont pas disponibles pour cette date." 
+        });
+      }
+      
       const clientIp = req.headers['x-forwarded-for'] as string || req.socket.remoteAddress || 'unknown';
       const ipAddress = clientIp.split(',')[0].trim();
       
@@ -309,6 +317,14 @@ export async function registerRoutes(
       const userId = req.localUserId;
       if (restaurant.ownerId !== userId) {
         return res.status(403).json({ message: "Not authorized to create bookings for this restaurant" });
+      }
+      
+      // Vérifier si la date est fermée aux réservations
+      const isDateClosed = await storage.isDateClosed(restaurantId, date);
+      if (isDateClosed) {
+        return res.status(400).json({ 
+          message: "Les réservations sont fermées pour cette date." 
+        });
       }
       
       const clientId = `owner_${userId}_${Date.now()}`;

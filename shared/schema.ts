@@ -96,6 +96,7 @@ export const restaurants = pgTable("restaurants", {
   description: text("description").notNull(),
   features: text("features").array().notNull(),
   photos: text("photos").array(),
+  closedDates: text("closed_dates").array(),
   ownerId: varchar("owner_id").references(() => users.id),
   phone: text("phone"),
   address: text("address"),

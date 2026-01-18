@@ -199,8 +199,27 @@ export default function Calendar() {
 
   const handleCloseDay = () => {
     if (!selectedDay) return;
+    
+    // Vérifier s'il y a des réservations actives pour cette journée
+    const dateStr = format(selectedDay, "yyyy-MM-dd");
+    const activeReservations = allBookings.filter(b => 
+      b.date === dateStr && 
+      b.status !== "cancelled" && 
+      b.status !== "refused" &&
+      b.status !== "noshow"
+    );
+    
+    if (activeReservations.length > 0) {
+      toast({ 
+        title: "Impossible de fermer les réservations", 
+        description: `Il y a ${activeReservations.length} réservation(s) active(s) pour cette journée.`,
+        variant: "destructive"
+      });
+      return;
+    }
+    
     createClosedDayMutation.mutate({ 
-      date: format(selectedDay, "yyyy-MM-dd"), 
+      date: dateStr, 
       service: "all" 
     });
   };
@@ -524,7 +543,7 @@ export default function Calendar() {
                     disabled={createClosedDayMutation.isPending}
                   >
                     <Lock className="h-4 w-4 mr-2" />
-                    Clôturer la journée
+                    Fermer les réservations
                   </Button>
                 )}
               </div>
