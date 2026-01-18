@@ -9,6 +9,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -299,6 +300,7 @@ export default function Settings() {
   const [preferredLanguageValue, setPreferredLanguageValue] = useState<string>("fr");
   const [phoneValue, setPhoneValue] = useState<string>("");
   const [websiteValue, setWebsiteValue] = useState<string>("");
+  const [descriptionValue, setDescriptionValue] = useState<string>("");
   
   const profileImageInputRef = useRef<HTMLInputElement>(null);
   const photosInputRef = useRef<HTMLInputElement>(null);
@@ -414,6 +416,26 @@ export default function Settings() {
       preferredLanguage: preferredLanguageValue || selectedRestaurantData?.preferredLanguage || "fr",
       phone: phoneValue || selectedRestaurantData?.phone || "",
       website: websiteValue || selectedRestaurantData?.website || "",
+    });
+  };
+
+  const saveProfileMutation = useMutation({
+    mutationFn: async (data: { description: string }) => {
+      const res = await apiRequest("PUT", `/api/restaurants/${activeRestaurantId}`, data);
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/my-restaurants"] });
+      toast({ title: "Profil enregistré" });
+    },
+    onError: (error: any) => {
+      toast({ title: "Erreur", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const handleSaveProfile = () => {
+    saveProfileMutation.mutate({
+      description: descriptionValue || selectedRestaurantData?.description || "",
     });
   };
 
@@ -981,6 +1003,57 @@ export default function Settings() {
                       VOIR MA PAGE SUR WHERETOEAT
                     </Button>
 
+                    <Card className="bg-white border shadow-sm">
+                      <CardContent className="p-0">
+                        <div className="px-6 py-4 border-b bg-gray-50/50">
+                          <h3 className="text-sm font-medium text-gray-600">À propos</h3>
+                        </div>
+                        <div className="p-6">
+                          <div className="space-y-1">
+                            <Label className="text-sm text-gray-500">Description du restaurant</Label>
+                            <Textarea 
+                              value={descriptionValue || selectedRestaurantData?.description || ""}
+                              onChange={(e) => setDescriptionValue(e.target.value)}
+                              placeholder="Décrivez votre restaurant, son ambiance, sa cuisine..."
+                              className="border-gray-200 min-h-[120px]"
+                              data-testid="input-description"
+                            />
+                            <p className="text-xs text-gray-400">Cette description apparaît sur votre page publique</p>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+
+                    <Card className="bg-white border shadow-sm">
+                      <CardContent className="p-0">
+                        <div className="px-6 py-4 border-b bg-gray-50/50">
+                          <h3 className="text-sm font-medium text-gray-600">À la Carte</h3>
+                        </div>
+                        <div className="p-6">
+                          <div className="space-y-4">
+                            <div className="space-y-1">
+                              <Label className="text-sm text-gray-500">Menu PDF</Label>
+                              {selectedRestaurantData?.menuPdfUrl ? (
+                                <div className="flex items-center gap-2">
+                                  <a 
+                                    href={selectedRestaurantData.menuPdfUrl} 
+                                    target="_blank" 
+                                    rel="noopener noreferrer"
+                                    className="text-primary hover:underline text-sm"
+                                  >
+                                    Voir le menu actuel
+                                  </a>
+                                </div>
+                              ) : (
+                                <p className="text-sm text-gray-400">Aucun menu PDF téléchargé</p>
+                              )}
+                              <p className="text-xs text-gray-400 mt-2">Pour modifier le menu PDF, utilisez la section Photos & Menu</p>
+                            </div>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+
                     <div className="border-b border-primary pb-2 flex items-center justify-between">
                       <h3 className="text-lg font-medium">Informations sur mon restaurant</h3>
                       <Select defaultValue="fr">
@@ -1176,11 +1249,12 @@ export default function Settings() {
                         ANNULER
                       </Button>
                       <Button 
-                        onClick={() => toast({ title: "Profil enregistré avec succès" })}
+                        onClick={handleSaveProfile}
+                        disabled={saveProfileMutation.isPending}
                         className="px-6 bg-primary hover:bg-primary/90"
                         data-testid="save-profil"
                       >
-                        ENREGISTRER
+                        {saveProfileMutation.isPending ? "..." : "ENREGISTRER"}
                       </Button>
                     </div>
                   </div>
