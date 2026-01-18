@@ -113,6 +113,10 @@ export const restaurants = pgTable("restaurants", {
   approvalStatus: text("approval_status").default("pending"),
   isBlocked: boolean("is_blocked").default(false),
   createdAt: timestamp("created_at").defaultNow(),
+  executiveChef: text("executive_chef"),
+  publicTransport: text("public_transport"),
+  nearbyParking: text("nearby_parking"),
+  additionalInfo: text("additional_info"),
 });
 
 export const insertRestaurantSchema = createInsertSchema(restaurants).omit({

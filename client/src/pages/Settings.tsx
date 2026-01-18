@@ -287,6 +287,10 @@ export default function Settings() {
   const [addressField, setAddressField] = useState("");
   const [postalCodeField, setPostalCodeField] = useState("");
   const [cityField, setCityField] = useState("");
+  const [executiveChefField, setExecutiveChefField] = useState("");
+  const [publicTransportField, setPublicTransportField] = useState("");
+  const [nearbyParkingField, setNearbyParkingField] = useState("");
+  const [additionalInfoField, setAdditionalInfoField] = useState("");
   const [isUploading, setIsUploading] = useState(false);
   const [addUserDialog, setAddUserDialog] = useState(false);
   const [newUserEmail, setNewUserEmail] = useState("");
@@ -455,7 +459,7 @@ export default function Settings() {
   };
 
   const saveProfileMutation = useMutation({
-    mutationFn: async (data: { name: string; description: string; cuisine: string; priceRange: string; location: string }) => {
+    mutationFn: async (data: { name: string; description: string; cuisine: string; priceRange: string; location: string; executiveChef?: string; publicTransport?: string; nearbyParking?: string; additionalInfo?: string }) => {
       const res = await apiRequest("PUT", `/api/restaurants/${activeRestaurantId}`, data);
       return res.json();
     },
@@ -476,6 +480,10 @@ export default function Settings() {
       cuisine: currentCuisines.join(", "),
       priceRange: priceRangeValue || selectedRestaurantData?.priceRange || "",
       location: locationValue || selectedRestaurantData?.location || "",
+      executiveChef: executiveChefField || selectedRestaurantData?.executiveChef || "",
+      publicTransport: publicTransportField || selectedRestaurantData?.publicTransport || "",
+      nearbyParking: nearbyParkingField || selectedRestaurantData?.nearbyParking || "",
+      additionalInfo: additionalInfoField || selectedRestaurantData?.additionalInfo || "",
     });
   };
 
@@ -1230,6 +1238,8 @@ export default function Settings() {
                           <Label className="text-sm text-gray-600">Chef exécutif</Label>
                           <Input 
                             placeholder="Nom du chef"
+                            value={executiveChefField || selectedRestaurantData?.executiveChef || ""}
+                            onChange={(e) => setExecutiveChefField(e.target.value)}
                             className="border-0 border-b border-gray-200 rounded-none px-0 focus-visible:ring-0 focus-visible:border-gray-400"
                             data-testid="input-chef"
                           />
@@ -1239,6 +1249,8 @@ export default function Settings() {
                           <Label className="text-sm text-gray-600">Transports en commun</Label>
                           <Input 
                             placeholder="Station de métro, gare la plus proche..."
+                            value={publicTransportField || selectedRestaurantData?.publicTransport || ""}
+                            onChange={(e) => setPublicTransportField(e.target.value)}
                             className="border-0 border-b border-gray-200 rounded-none px-0 focus-visible:ring-0 focus-visible:border-gray-400"
                             data-testid="input-transport"
                           />
@@ -1248,6 +1260,8 @@ export default function Settings() {
                           <Label className="text-sm text-gray-600">Parking à proximité</Label>
                           <Input 
                             placeholder="Parking le plus proche, public ou privé..."
+                            value={nearbyParkingField || selectedRestaurantData?.nearbyParking || ""}
+                            onChange={(e) => setNearbyParkingField(e.target.value)}
                             className="border-0 border-b border-gray-200 rounded-none px-0 focus-visible:ring-0 focus-visible:border-gray-400"
                             data-testid="input-parking"
                           />
@@ -1257,6 +1271,8 @@ export default function Settings() {
                           <Label className="text-sm text-gray-600">Informations supplémentaires</Label>
                           <Input 
                             placeholder="Comment se rendre au restaurant..."
+                            value={additionalInfoField || selectedRestaurantData?.additionalInfo || ""}
+                            onChange={(e) => setAdditionalInfoField(e.target.value)}
                             className="border-0 border-b border-gray-200 rounded-none px-0 focus-visible:ring-0 focus-visible:border-gray-400"
                             data-testid="input-infos-supplementaires"
                           />
