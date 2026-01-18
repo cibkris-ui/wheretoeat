@@ -502,8 +502,8 @@ export default function Admin() {
 
             <TabsContent value="restaurants" className="m-0">
               <CardContent className="p-6">
-                <div className="flex items-center justify-between mb-4">
-                  <div className="relative flex-1 max-w-sm">
+                <div className="mb-4">
+                  <div className="relative max-w-sm">
                     <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
                     <Input
                       placeholder="Rechercher un restaurant..."
@@ -513,10 +513,6 @@ export default function Admin() {
                       data-testid="search-restaurants"
                     />
                   </div>
-                  <Button onClick={() => setNewRestaurantDialog(true)} data-testid="button-add-restaurant">
-                    <Store className="w-4 h-4 mr-2" />
-                    Ajouter un restaurant
-                  </Button>
                 </div>
                 <Table>
                   <TableHeader>
