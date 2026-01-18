@@ -39,7 +39,7 @@ export interface IStorage {
   deleteUser(id: string): Promise<void>;
   
   getAllRestaurants(): Promise<Restaurant[]>;
-  getAllRestaurantsAdmin(): Promise<Restaurant[]>;
+  getAllRestaurantsAdmin(): Promise<(Restaurant & { ownerEmail?: string | null })[]>;
   getRestaurant(id: number): Promise<Restaurant | undefined>;
   getRestaurantsByOwner(ownerId: string): Promise<Restaurant[]>;
   createRestaurant(restaurant: InsertRestaurant): Promise<Restaurant>;
@@ -154,8 +154,34 @@ export class DatabaseStorage implements IStorage {
     );
   }
 
-  async getAllRestaurantsAdmin(): Promise<Restaurant[]> {
-    return await db.select().from(restaurants);
+  async getAllRestaurantsAdmin(): Promise<(Restaurant & { ownerEmail?: string | null })[]> {
+    const results = await db.select({
+      id: restaurants.id,
+      name: restaurants.name,
+      cuisine: restaurants.cuisine,
+      location: restaurants.location,
+      rating: restaurants.rating,
+      priceRange: restaurants.priceRange,
+      image: restaurants.image,
+      description: restaurants.description,
+      features: restaurants.features,
+      photos: restaurants.photos,
+      closedDates: restaurants.closedDates,
+      ownerId: restaurants.ownerId,
+      phone: restaurants.phone,
+      address: restaurants.address,
+      openingHours: restaurants.openingHours,
+      menuPdfUrl: restaurants.menuPdfUrl,
+      googlePlaceId: restaurants.googlePlaceId,
+      capacity: restaurants.capacity,
+      approvalStatus: restaurants.approvalStatus,
+      isBlocked: restaurants.isBlocked,
+      createdAt: restaurants.createdAt,
+      ownerEmail: users.email,
+    })
+    .from(restaurants)
+    .leftJoin(users, eq(restaurants.ownerId, users.id));
+    return results;
   }
 
   async deleteRestaurant(id: number): Promise<void> {

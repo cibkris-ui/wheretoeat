@@ -28,6 +28,7 @@ interface Restaurant {
   description: string;
   features: string[];
   ownerId: string | null;
+  ownerEmail: string | null;
   phone: string | null;
   address: string | null;
   capacity: number | null;
@@ -521,6 +522,7 @@ export default function Admin() {
                   <TableHeader>
                     <TableRow>
                       <TableHead>Restaurant</TableHead>
+                      <TableHead>Email admin</TableHead>
                       <TableHead>Localisation</TableHead>
                       <TableHead>Cuisine</TableHead>
                       <TableHead>Statut</TableHead>
@@ -542,6 +544,7 @@ export default function Admin() {
                             <span className="font-medium">{restaurant.name}</span>
                           </div>
                         </TableCell>
+                        <TableCell className="text-muted-foreground">{restaurant.ownerEmail || "-"}</TableCell>
                         <TableCell>{restaurant.location}</TableCell>
                         <TableCell><Badge variant="secondary">{restaurant.cuisine}</Badge></TableCell>
                         <TableCell>
