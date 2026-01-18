@@ -359,10 +359,12 @@ export default function Admin() {
   );
 
   const filteredUsers = users.filter(u =>
-    searchQuery === "" ||
-    (u.email && u.email.toLowerCase().includes(searchQuery.toLowerCase())) ||
-    (u.firstName && u.firstName.toLowerCase().includes(searchQuery.toLowerCase())) ||
-    (u.lastName && u.lastName.toLowerCase().includes(searchQuery.toLowerCase()))
+    u.isAdmin && (
+      searchQuery === "" ||
+      (u.email && u.email.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (u.firstName && u.firstName.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (u.lastName && u.lastName.toLowerCase().includes(searchQuery.toLowerCase()))
+    )
   );
 
   return (
@@ -418,8 +420,8 @@ export default function Admin() {
                 <Shield className="w-6 h-6 text-purple-600" />
               </div>
               <div>
-                <p className="text-2xl font-bold">{users.length}</p>
-                <p className="text-sm text-muted-foreground">Utilisateurs</p>
+                <p className="text-2xl font-bold">{users.filter(u => u.isAdmin).length}</p>
+                <p className="text-sm text-muted-foreground">Administrateurs</p>
               </div>
             </CardContent>
           </Card>
