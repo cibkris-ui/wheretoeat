@@ -234,21 +234,6 @@ export default function RestaurantDetail() {
             </section>
           )}
 
-          <section>
-            <h2 className="text-2xl font-serif font-bold mb-4">À la Carte</h2>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-               {/* Mock Menu Items */}
-               {[1, 2, 3, 4].map((i) => (
-                 <div key={i} className="flex justify-between items-start border-b border-dashed pb-2">
-                   <div>
-                     <h4 className="font-medium">Plat Signature {i}</h4>
-                     <p className="text-xs text-muted-foreground">Ingrédients frais locaux, sauce spéciale du chef</p>
-                   </div>
-                   <span className="font-medium">CHF {20 + i * 5}.-</span>
-                 </div>
-               ))}
-            </div>
-          </section>
         </div>
 
         {/* Right Sidebar - Booking Form */}
