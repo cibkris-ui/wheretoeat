@@ -152,8 +152,18 @@ export default function RestaurantDetail() {
                   <div>
                     <h4 className="font-medium">Adresse</h4>
                     <p className="text-sm text-muted-foreground">
-                      {restaurant.address && <>{restaurant.address}<br/></>}
-                      {restaurant.location}, Suisse
+                      {(() => {
+                        const address = restaurant.address || "";
+                        const location = restaurant.location || "";
+                        if (address && location && !location.includes(address)) {
+                          return <>{address}<br/>{location}, Suisse</>;
+                        } else if (location) {
+                          return <>{location}, Suisse</>;
+                        } else if (address) {
+                          return <>{address}, Suisse</>;
+                        }
+                        return "Suisse";
+                      })()}
                     </p>
                   </div>
                 </div>
