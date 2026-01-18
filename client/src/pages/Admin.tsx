@@ -10,7 +10,8 @@ import { useAuth } from "@/hooks/useAuth";
 import { useState } from "react";
 import { 
   CheckCircle, XCircle, Clock, Store, MapPin, Users, Shield, 
-  Ban, Trash2, Eye, EyeOff, UserPlus, Search, Mail, Phone, LogOut
+  Ban, Trash2, Eye, EyeOff, UserPlus, Search, Mail, Phone, LogOut,
+  ArrowUpDown, ChevronUp, ChevronDown
 } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
@@ -161,6 +162,7 @@ export default function Admin() {
   const [activeTab, setActiveTab] = useState("users");
   const [searchQuery, setSearchQuery] = useState("");
   const [deleteConfirm, setDeleteConfirm] = useState<{ type: "restaurant" | "user"; id: number | string } | null>(null);
+  const [clientSort, setClientSort] = useState<{ column: string; direction: "asc" | "desc" }>({ column: "lastName", direction: "asc" });
   const [newUserDialog, setNewUserDialog] = useState(false);
   const [newUser, setNewUser] = useState({ email: "", password: "", firstName: "", lastName: "", isAdmin: true });
   const [selectedRestaurant, setSelectedRestaurant] = useState<Restaurant | null>(null);
@@ -417,12 +419,41 @@ export default function Admin() {
   const pendingRestaurants = restaurants.filter(r => r.approvalStatus === "pending");
   const approvedRestaurants = restaurants.filter(r => r.approvalStatus === "approved");
 
-  const filteredClients = clients.filter(c => 
-    searchQuery === "" ||
-    c.firstName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    c.lastName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    c.email.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredClients = clients
+    .filter(c => 
+      searchQuery === "" ||
+      c.firstName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      c.lastName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      c.email.toLowerCase().includes(searchQuery.toLowerCase())
+    )
+    .sort((a, b) => {
+      const dir = clientSort.direction === "asc" ? 1 : -1;
+      switch (clientSort.column) {
+        case "name":
+          return dir * (`${a.lastName} ${a.firstName}`).localeCompare(`${b.lastName} ${b.firstName}`);
+        case "email":
+          return dir * a.email.localeCompare(b.email);
+        case "phone":
+          return dir * a.phone.localeCompare(b.phone);
+        case "totalBookings":
+          return dir * ((a.totalBookings || 0) - (b.totalBookings || 0));
+        case "restaurantCount":
+          return dir * ((a.restaurantCount || 0) - (b.restaurantCount || 0));
+        case "lastBookingDate":
+          const dateA = a.lastBookingDate ? new Date(a.lastBookingDate).getTime() : 0;
+          const dateB = b.lastBookingDate ? new Date(b.lastBookingDate).getTime() : 0;
+          return dir * (dateA - dateB);
+        default:
+          return 0;
+      }
+    });
+
+  const toggleClientSort = (column: string) => {
+    setClientSort(prev => ({
+      column,
+      direction: prev.column === column && prev.direction === "asc" ? "desc" : "asc"
+    }));
+  };
 
   const filteredUsers = users
     .filter(u =>
@@ -693,12 +724,54 @@ export default function Admin() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Nom</TableHead>
-                      <TableHead>Email</TableHead>
-                      <TableHead>Téléphone</TableHead>
-                      <TableHead>Réservations</TableHead>
-                      <TableHead>Restaurants</TableHead>
-                      <TableHead>Dernière réservation</TableHead>
+                      <TableHead className="cursor-pointer hover:bg-muted/50" onClick={() => toggleClientSort("name")}>
+                        <div className="flex items-center gap-1">
+                          Nom
+                          {clientSort.column === "name" ? (
+                            clientSort.direction === "asc" ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />
+                          ) : <ArrowUpDown className="w-4 h-4 opacity-50" />}
+                        </div>
+                      </TableHead>
+                      <TableHead className="cursor-pointer hover:bg-muted/50" onClick={() => toggleClientSort("email")}>
+                        <div className="flex items-center gap-1">
+                          Email
+                          {clientSort.column === "email" ? (
+                            clientSort.direction === "asc" ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />
+                          ) : <ArrowUpDown className="w-4 h-4 opacity-50" />}
+                        </div>
+                      </TableHead>
+                      <TableHead className="cursor-pointer hover:bg-muted/50" onClick={() => toggleClientSort("phone")}>
+                        <div className="flex items-center gap-1">
+                          Téléphone
+                          {clientSort.column === "phone" ? (
+                            clientSort.direction === "asc" ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />
+                          ) : <ArrowUpDown className="w-4 h-4 opacity-50" />}
+                        </div>
+                      </TableHead>
+                      <TableHead className="cursor-pointer hover:bg-muted/50" onClick={() => toggleClientSort("totalBookings")}>
+                        <div className="flex items-center gap-1">
+                          Réservations
+                          {clientSort.column === "totalBookings" ? (
+                            clientSort.direction === "asc" ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />
+                          ) : <ArrowUpDown className="w-4 h-4 opacity-50" />}
+                        </div>
+                      </TableHead>
+                      <TableHead className="cursor-pointer hover:bg-muted/50" onClick={() => toggleClientSort("restaurantCount")}>
+                        <div className="flex items-center gap-1">
+                          Restaurants
+                          {clientSort.column === "restaurantCount" ? (
+                            clientSort.direction === "asc" ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />
+                          ) : <ArrowUpDown className="w-4 h-4 opacity-50" />}
+                        </div>
+                      </TableHead>
+                      <TableHead className="cursor-pointer hover:bg-muted/50" onClick={() => toggleClientSort("lastBookingDate")}>
+                        <div className="flex items-center gap-1">
+                          Dernière réservation
+                          {clientSort.column === "lastBookingDate" ? (
+                            clientSort.direction === "asc" ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />
+                          ) : <ArrowUpDown className="w-4 h-4 opacity-50" />}
+                        </div>
+                      </TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
