@@ -358,12 +358,14 @@ export default function Admin() {
     c.email.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const filteredUsers = users.filter(u =>
-    searchQuery === "" ||
-    (u.email && u.email.toLowerCase().includes(searchQuery.toLowerCase())) ||
-    (u.firstName && u.firstName.toLowerCase().includes(searchQuery.toLowerCase())) ||
-    (u.lastName && u.lastName.toLowerCase().includes(searchQuery.toLowerCase()))
-  );
+  const filteredUsers = users
+    .filter(u =>
+      searchQuery === "" ||
+      (u.email && u.email.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (u.firstName && u.firstName.toLowerCase().includes(searchQuery.toLowerCase())) ||
+      (u.lastName && u.lastName.toLowerCase().includes(searchQuery.toLowerCase()))
+    )
+    .sort((a, b) => (b.isAdmin ? 1 : 0) - (a.isAdmin ? 1 : 0));
 
   return (
     <div className="min-h-screen bg-gray-100">
