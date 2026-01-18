@@ -151,7 +151,7 @@ export type Booking = typeof bookings.$inferSelect;
 // Restaurant clients (derived from bookings)
 export const clients = pgTable("clients", {
   id: serial("id").primaryKey(),
-  restaurantId: integer("restaurant_id").notNull().references(() => restaurants.id),
+  restaurantId: integer("restaurant_id").references(() => restaurants.id),
   firstName: text("first_name").notNull(),
   lastName: text("last_name").notNull(),
   email: text("email").notNull(),
