@@ -450,8 +450,22 @@ export class DatabaseStorage implements IStorage {
     return newPlan;
   }
 
-  async getRestaurantUsers(restaurantId: number): Promise<RestaurantUser[]> {
-    return await db.select().from(restaurantUsers).where(eq(restaurantUsers.restaurantId, restaurantId));
+  async getRestaurantUsers(restaurantId: number): Promise<(RestaurantUser & { firstName?: string | null; lastName?: string | null })[]> {
+    const results = await db.select({
+      id: restaurantUsers.id,
+      restaurantId: restaurantUsers.restaurantId,
+      userId: restaurantUsers.userId,
+      email: restaurantUsers.email,
+      role: restaurantUsers.role,
+      invitedAt: restaurantUsers.invitedAt,
+      acceptedAt: restaurantUsers.acceptedAt,
+      firstName: users.firstName,
+      lastName: users.lastName,
+    })
+    .from(restaurantUsers)
+    .leftJoin(users, eq(restaurantUsers.userId, users.id))
+    .where(eq(restaurantUsers.restaurantId, restaurantId));
+    return results;
   }
 
   async addRestaurantUser(data: InsertRestaurantUser): Promise<RestaurantUser> {

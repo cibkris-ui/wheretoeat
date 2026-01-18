@@ -1407,17 +1407,19 @@ export default function Settings() {
                         </div>
                       )}
                       
-                      {restaurantUsers.map((teamUser) => (
+                      {restaurantUsers.map((teamUser: any) => (
                         <div key={teamUser.id} className="flex items-center justify-between p-4 bg-gray-50 rounded-lg" data-testid={`team-user-${teamUser.id}`}>
                           <div className="flex items-center gap-3">
                             <div className="h-10 w-10 rounded-full bg-gray-200 flex items-center justify-center">
                               <UserCircle className="h-6 w-6 text-gray-500" />
                             </div>
                             <div>
-                              <p className="font-medium">{teamUser.email}</p>
-                              <p className="text-sm text-gray-500">
-                                {teamUser.acceptedAt ? "Accès actif" : "Invitation envoyée"}
+                              <p className="font-medium">
+                                {teamUser.firstName || teamUser.lastName 
+                                  ? `${teamUser.firstName || ""} ${teamUser.lastName || ""}`.trim()
+                                  : teamUser.email}
                               </p>
+                              <p className="text-sm text-gray-500">{teamUser.email}</p>
                             </div>
                           </div>
                           <div className="flex items-center gap-2">
