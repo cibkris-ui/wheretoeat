@@ -700,7 +700,7 @@ export default function Admin() {
                                 size="sm"
                                 variant="destructive"
                                 onClick={() => setDeleteConfirm({ type: "user", id: u.id })}
-                                disabled={filteredUsers.length <= 1}
+                                disabled={u.isAdmin && users.filter(usr => usr.isAdmin).length <= 1}
                                 data-testid={`delete-user-${u.id}`}
                               >
                                 <Trash2 className="w-4 h-4" />
