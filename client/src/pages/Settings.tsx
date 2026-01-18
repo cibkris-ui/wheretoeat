@@ -285,6 +285,7 @@ export default function Settings() {
   const [servicesSubSection, setServicesSubSection] = useState<ServicesSubSection>("service-hours");
   const [selectedRestaurant, setSelectedRestaurant] = useState<number | null>(null);
   const [addressField, setAddressField] = useState("");
+  const [postalCodeField, setPostalCodeField] = useState("");
   const [cityField, setCityField] = useState("");
   const [isUploading, setIsUploading] = useState(false);
   const [addUserDialog, setAddUserDialog] = useState(false);
@@ -438,8 +439,10 @@ export default function Settings() {
 
   const handleSaveContacts = () => {
     const finalAddress = addressField || selectedRestaurantData?.address || "";
-    const finalCity = cityField || defaultCity;
-    const fullLocation = finalCity ? `${finalAddress}, ${finalCity}` : finalAddress;
+    const { postalCode: defPostal, city: defCity } = extractPostalCodeAndCity(selectedRestaurantData?.location);
+    const finalPostalCode = postalCodeField || defPostal;
+    const finalCity = cityField || defCity;
+    const fullLocation = finalPostalCode && finalCity ? `${finalPostalCode} ${finalCity}` : (finalCity || finalPostalCode);
     
     saveContactsMutation.mutate({
       publicEmail: publicEmailValue || selectedRestaurantData?.publicEmail || "",
@@ -488,17 +491,29 @@ export default function Settings() {
     saveCapacityMutation.mutate({ capacity, onlineCapacity, minGuests, maxGuests });
   };
 
-  const defaultAddress = selectedRestaurantData?.address || "Rue du Grand-Bureau 16";
-  const defaultCity = selectedRestaurantData?.location || "1227 Genève";
+  const defaultAddress = selectedRestaurantData?.address || "";
+  
+  const extractPostalCodeAndCity = (location: string | null | undefined): { postalCode: string; city: string } => {
+    if (!location) return { postalCode: "", city: "" };
+    const match = location.match(/(\d{4})\s+(.+)$/);
+    if (match) {
+      return { postalCode: match[1], city: match[2] };
+    }
+    return { postalCode: "", city: location };
+  };
+  
+  const { postalCode: defaultPostalCode, city: defaultCityName } = extractPostalCodeAndCity(selectedRestaurantData?.location);
   
   const currentAddress = addressField || defaultAddress;
-  const currentCity = cityField || defaultCity;
+  const currentPostalCode = postalCodeField || defaultPostalCode;
+  const currentCity = cityField || defaultCityName;
   
   const googleMapsUrl = useMemo(() => {
-    const fullAddress = `${currentAddress}, ${currentCity}, Switzerland`;
+    const cityPart = currentPostalCode && currentCity ? `${currentPostalCode} ${currentCity}` : (currentCity || currentPostalCode);
+    const fullAddress = `${currentAddress}, ${cityPart}, Switzerland`;
     const encodedAddress = encodeURIComponent(fullAddress);
     return `https://www.google.com/maps/embed/v1/place?key=AIzaSyBFw0Qbyq9zTFTd-tUY6dZWTgaQzuU17R8&q=${encodedAddress}`;
-  }, [currentAddress, currentCity]);
+  }, [currentAddress, currentPostalCode, currentCity]);
 
   const sidebarItems = [
     { id: "reservations" as const, icon: LayoutDashboard, label: "Réservations", link: "/dashboard" },
@@ -930,14 +945,28 @@ export default function Settings() {
                                   data-testid="input-address"
                                 />
                               </div>
-                              <div className="space-y-1">
-                                <Label className="text-sm text-gray-500">Code postal et ville</Label>
-                                <Input 
-                                  value={currentCity}
-                                  onChange={(e) => setCityField(e.target.value)}
-                                  className="border-gray-200"
-                                  data-testid="input-city"
-                                />
+                              <div className="grid grid-cols-2 gap-4">
+                                <div className="space-y-1">
+                                  <Label className="text-sm text-gray-500">Code postal</Label>
+                                  <Input 
+                                    value={currentPostalCode}
+                                    onChange={(e) => setPostalCodeField(e.target.value)}
+                                    placeholder="1204"
+                                    maxLength={4}
+                                    className="border-gray-200"
+                                    data-testid="input-postal-code"
+                                  />
+                                </div>
+                                <div className="space-y-1">
+                                  <Label className="text-sm text-gray-500">Ville</Label>
+                                  <Input 
+                                    value={currentCity}
+                                    onChange={(e) => setCityField(e.target.value)}
+                                    placeholder="Genève"
+                                    className="border-gray-200"
+                                    data-testid="input-city"
+                                  />
+                                </div>
                               </div>
                             </div>
                           </div>
