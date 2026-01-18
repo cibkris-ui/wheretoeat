@@ -241,3 +241,23 @@ export interface FloorPlanZone {
 export interface FloorPlanData {
   zones: FloorPlanZone[];
 }
+
+// Restaurant team members (users who can access a restaurant)
+export const restaurantUsers = pgTable("restaurant_users", {
+  id: serial("id").primaryKey(),
+  restaurantId: integer("restaurant_id").notNull().references(() => restaurants.id),
+  userId: varchar("user_id").references(() => users.id),
+  email: text("email").notNull(),
+  role: text("role").notNull().default("staff"),
+  invitedAt: timestamp("invited_at").notNull().defaultNow(),
+  acceptedAt: timestamp("accepted_at"),
+});
+
+export const insertRestaurantUserSchema = createInsertSchema(restaurantUsers).omit({
+  id: true,
+  invitedAt: true,
+  acceptedAt: true,
+});
+
+export type InsertRestaurantUser = z.infer<typeof insertRestaurantUserSchema>;
+export type RestaurantUser = typeof restaurantUsers.$inferSelect;
