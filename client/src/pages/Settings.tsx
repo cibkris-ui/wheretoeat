@@ -423,7 +423,7 @@ export default function Settings() {
   });
 
   const saveContactsMutation = useMutation({
-    mutationFn: async (data: { publicEmail: string; preferredLanguage: string; phone: string; website: string }) => {
+    mutationFn: async (data: { publicEmail: string; preferredLanguage: string; phone: string; website: string; address: string }) => {
       const res = await apiRequest("PUT", `/api/restaurants/${activeRestaurantId}`, data);
       return res.json();
     },
@@ -442,6 +442,7 @@ export default function Settings() {
       preferredLanguage: preferredLanguageValue || selectedRestaurantData?.preferredLanguage || "fr",
       phone: phoneValue || selectedRestaurantData?.phone || "",
       website: websiteValue || selectedRestaurantData?.website || "",
+      address: addressField || selectedRestaurantData?.address || "",
     });
   };
 
