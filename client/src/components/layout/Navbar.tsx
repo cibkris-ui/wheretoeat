@@ -75,15 +75,25 @@ export function Navbar() {
                         </Link>
                       </DropdownMenuItem>
                     ))}
+                    <DropdownMenuItem asChild>
+                      <Link href="/inscrire-restaurant" className="cursor-pointer text-primary" data-testid="link-add-restaurant">
+                        <Store className="mr-2 h-4 w-4" />
+                        + Ajouter un restaurant
+                      </Link>
+                    </DropdownMenuItem>
                   </>
                 )}
-                <DropdownMenuSeparator />
-                <DropdownMenuItem asChild>
-                  <Link href="/inscrire-restaurant" className="cursor-pointer" data-testid="link-register-restaurant">
-                    <Store className="mr-2 h-4 w-4" />
-                    Inscrire un restaurant
-                  </Link>
-                </DropdownMenuItem>
+                {myRestaurants.length === 0 && (
+                  <>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem asChild>
+                      <Link href="/inscrire-restaurant" className="cursor-pointer" data-testid="link-register-restaurant">
+                        <Store className="mr-2 h-4 w-4" />
+                        Inscrire un restaurant
+                      </Link>
+                    </DropdownMenuItem>
+                  </>
+                )}
                 {user?.isAdmin && (
                   <>
                     <DropdownMenuSeparator />
