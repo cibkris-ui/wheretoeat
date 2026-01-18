@@ -363,11 +363,23 @@ export async function registerRoutes(
         });
       }
       
+      // Vérifier la capacité du créneau
+      const currentGuests = await storage.getBookedGuestsForSlot(
+        result.data.restaurantId, 
+        result.data.date, 
+        result.data.time
+      );
+      const newGuestsTotal = result.data.guests + (result.data.children || 0);
+      const capacity = restaurant.capacity || 40;
+      
+      // Si la capacité serait dépassée, mettre en liste d'attente
+      const bookingStatus = (currentGuests + newGuestsTotal > capacity) ? "waiting" : "pending";
+      
       const bookingData = {
         ...result.data,
         clientIp: ipAddress,
         clientId: clientId,
-        status: "pending"
+        status: bookingStatus
       };
       
       const booking = await storage.createBooking(bookingData);
@@ -419,6 +431,17 @@ export async function registerRoutes(
       
       const clientId = `owner_${userId}_${Date.now()}`;
       
+      // Si pas de statut spécifié, vérifier la capacité pour décider du statut
+      let finalStatus = status || "confirmed";
+      if (!status) {
+        const currentGuests = await storage.getBookedGuestsForSlot(restaurantId, date, time);
+        const newGuestsTotal = guests + (children || 0);
+        const capacity = restaurant.capacity || 40;
+        if (currentGuests + newGuestsTotal > capacity) {
+          finalStatus = "waiting";
+        }
+      }
+      
       const bookingData = {
         restaurantId,
         date,
@@ -433,7 +456,7 @@ export async function registerRoutes(
         newsletter: 0,
         clientIp: "owner-created",
         clientId: clientId,
-        status: status || "confirmed",
+        status: finalStatus,
         tableId: tableId || null,
         zoneId: zoneId || null
       };

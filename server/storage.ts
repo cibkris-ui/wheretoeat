@@ -1,4 +1,4 @@
-import { eq, and, or, ilike, desc, sql } from "drizzle-orm";
+import { eq, and, or, ilike, desc, sql, inArray } from "drizzle-orm";
 import { db } from "./db";
 import { 
   type User, 
@@ -51,6 +51,7 @@ export interface IStorage {
   getBooking(id: number): Promise<Booking | undefined>;
   getBookingsByRestaurant(restaurantId: number): Promise<Booking[]>;
   getAllBookings(): Promise<Booking[]>;
+  getBookedGuestsForSlot(restaurantId: number, date: string, time: string): Promise<number>;
   checkExistingBooking(clientIp: string, date: string, time: string): Promise<Booking | undefined>;
   checkIpEmailMismatch(clientIp: string, email: string): Promise<Booking | undefined>;
   checkClientIdEmailMismatch(clientId: string, email: string): Promise<Booking | undefined>;
@@ -242,6 +243,20 @@ export class DatabaseStorage implements IStorage {
 
   async getAllBookings(): Promise<Booking[]> {
     return await db.select().from(bookings);
+  }
+
+  async getBookedGuestsForSlot(restaurantId: number, date: string, time: string): Promise<number> {
+    const slotBookings = await db.select()
+      .from(bookings)
+      .where(
+        and(
+          eq(bookings.restaurantId, restaurantId),
+          eq(bookings.date, date),
+          eq(bookings.time, time),
+          inArray(bookings.status, ['pending', 'confirmed'])
+        )
+      );
+    return slotBookings.reduce((total, b) => total + b.guests + (b.children || 0), 0);
   }
 
   async updateBookingArrival(id: number, arrivalTime: string): Promise<Booking | undefined> {
