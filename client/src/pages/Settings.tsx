@@ -55,12 +55,15 @@ import {
   ChevronLeft,
   Info,
   HelpCircle,
-  Grid3X3
+  Grid3X3,
+  Code,
+  Copy,
+  ExternalLink
 } from "lucide-react";
 import type { Restaurant, Booking, RestaurantUser } from "@shared/schema";
 import { FloorPlanBuilder } from "@/components/floor-plan/FloorPlanBuilder";
 
-type SettingsSection = "overview" | "profile" | "services" | "users" | "legal";
+type SettingsSection = "overview" | "profile" | "services" | "users" | "legal" | "widget";
 type ProfileSubSection = "contacts" | "profil" | "photos" | "plan-de-salle";
 type ServicesSubSection = "service-hours" | "capacity";
 
@@ -586,6 +589,14 @@ export default function Settings() {
       items: [
         { id: "terms", label: "Conditions générales", icon: FileText },
         { id: "privacy", label: "Confidentialité", icon: Shield },
+      ]
+    },
+    {
+      id: "widget",
+      icon: Code,
+      title: "Widget de réservation",
+      items: [
+        { id: "embed", label: "Code d'intégration", icon: Code },
       ]
     },
   ];
@@ -1858,6 +1869,134 @@ export default function Settings() {
                     </a>
                   </CardContent>
                 </Card>
+              </>
+            )}
+
+            {/* Widget Section */}
+            {activeSection === "widget" && (
+              <>
+                <div className="flex items-center gap-4 mb-6">
+                  <Button
+                    variant="ghost"
+                    onClick={() => setActiveSection("overview")}
+                    className="flex items-center gap-2"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                    Retour
+                  </Button>
+                  <h1 className="text-2xl font-bold">Widget de réservation</h1>
+                </div>
+
+                <div className="space-y-6 max-w-3xl">
+                  <Card className="bg-white">
+                    <CardContent className="p-6 space-y-6">
+                      <div>
+                        <h3 className="font-bold text-lg mb-2">Intégrez la réservation sur votre site</h3>
+                        <p className="text-sm text-muted-foreground mb-4">
+                          Copiez le code ci-dessous et collez-le dans votre site web pour permettre à vos clients de réserver directement.
+                        </p>
+                      </div>
+
+                      {/* Button Widget */}
+                      <div className="space-y-3">
+                        <div className="flex items-center gap-2">
+                          <Code className="h-5 w-5 text-primary" />
+                          <h4 className="font-medium">Bouton de réservation</h4>
+                        </div>
+                        <p className="text-sm text-muted-foreground">
+                          Un bouton simple qui redirige vers votre page de réservation.
+                        </p>
+                        <div className="bg-gray-900 text-gray-100 p-4 rounded-lg font-mono text-sm overflow-x-auto">
+                          <code>{`<a href="${window.location.origin}/restaurant/${activeRestaurantId}" target="_blank" style="display:inline-block;padding:12px 24px;background:#00645A;color:white;text-decoration:none;border-radius:8px;font-family:sans-serif;font-weight:600;">Réserver une table</a>`}</code>
+                        </div>
+                        <Button 
+                          variant="outline" 
+                          size="sm"
+                          onClick={() => {
+                            navigator.clipboard.writeText(`<a href="${window.location.origin}/restaurant/${activeRestaurantId}" target="_blank" style="display:inline-block;padding:12px 24px;background:#00645A;color:white;text-decoration:none;border-radius:8px;font-family:sans-serif;font-weight:600;">Réserver une table</a>`);
+                            toast({ title: "Copié !", description: "Le code a été copié dans le presse-papiers" });
+                          }}
+                          className="gap-2"
+                        >
+                          <Copy className="h-4 w-4" />
+                          Copier le code
+                        </Button>
+                      </div>
+
+                      <div className="border-t pt-6">
+                        {/* iFrame Widget */}
+                        <div className="space-y-3">
+                          <div className="flex items-center gap-2">
+                            <Code className="h-5 w-5 text-primary" />
+                            <h4 className="font-medium">Widget intégré (iframe)</h4>
+                          </div>
+                          <p className="text-sm text-muted-foreground">
+                            Intégrez directement le formulaire de réservation dans votre site.
+                          </p>
+                          <div className="bg-gray-900 text-gray-100 p-4 rounded-lg font-mono text-sm overflow-x-auto">
+                            <code>{`<iframe src="${window.location.origin}/restaurant/${activeRestaurantId}?embed=true" width="100%" height="600" frameborder="0" style="border-radius:12px;max-width:400px;"></iframe>`}</code>
+                          </div>
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => {
+                              navigator.clipboard.writeText(`<iframe src="${window.location.origin}/restaurant/${activeRestaurantId}?embed=true" width="100%" height="600" frameborder="0" style="border-radius:12px;max-width:400px;"></iframe>`);
+                              toast({ title: "Copié !", description: "Le code a été copié dans le presse-papiers" });
+                            }}
+                            className="gap-2"
+                          >
+                            <Copy className="h-4 w-4" />
+                            Copier le code
+                          </Button>
+                        </div>
+                      </div>
+
+                      <div className="border-t pt-6">
+                        {/* Link for Instagram/Social */}
+                        <div className="space-y-3">
+                          <div className="flex items-center gap-2">
+                            <ExternalLink className="h-5 w-5 text-primary" />
+                            <h4 className="font-medium">Lien pour Instagram / Réseaux sociaux</h4>
+                          </div>
+                          <p className="text-sm text-muted-foreground">
+                            Ajoutez ce lien dans votre bio Instagram ou sur vos réseaux sociaux.
+                          </p>
+                          <div className="flex items-center gap-2">
+                            <Input 
+                              readOnly 
+                              value={`${window.location.origin}/restaurant/${activeRestaurantId}`}
+                              className="font-mono text-sm"
+                            />
+                            <Button 
+                              variant="outline" 
+                              size="icon"
+                              onClick={() => {
+                                navigator.clipboard.writeText(`${window.location.origin}/restaurant/${activeRestaurantId}`);
+                                toast({ title: "Copié !", description: "Le lien a été copié dans le presse-papiers" });
+                              }}
+                            >
+                              <Copy className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="border-t pt-6">
+                        <div className="bg-primary/5 p-4 rounded-lg">
+                          <h4 className="font-medium mb-2">Aperçu du bouton</h4>
+                          <a 
+                            href={`/restaurant/${activeRestaurantId}`}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="inline-block px-6 py-3 bg-[#00645A] text-white rounded-lg font-semibold hover:bg-[#005249] transition-colors"
+                          >
+                            Réserver une table
+                          </a>
+                        </div>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
               </>
             )}
           </main>
