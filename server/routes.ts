@@ -1338,7 +1338,22 @@ export async function registerRoutes(
   app.get("/api/admin/clients", isAdmin, async (_req, res) => {
     try {
       const allClients = await storage.getAllClients();
-      res.json(allClients);
+      const allBookings = await storage.getAllBookings();
+      
+      const clientsWithStats = allClients.map(client => {
+        const clientBookings = allBookings.filter(b => 
+          (b.email && b.email.toLowerCase() === client.email.toLowerCase()) ||
+          (b.phone && b.phone === client.phone)
+        );
+        const uniqueRestaurants = new Set(clientBookings.map(b => b.restaurantId));
+        return {
+          ...client,
+          totalBookings: clientBookings.length,
+          restaurantCount: uniqueRestaurants.size
+        };
+      });
+      
+      res.json(clientsWithStats);
     } catch (error: any) {
       res.status(500).json({ message: error.message });
     }

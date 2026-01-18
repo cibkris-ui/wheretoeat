@@ -39,12 +39,14 @@ interface Restaurant {
 
 interface Client {
   id: number;
-  restaurantId: number;
+  restaurantId: number | null;
   firstName: string;
   lastName: string;
   email: string;
   phone: string;
   createdAt: string;
+  totalBookings?: number;
+  restaurantCount?: number;
 }
 
 interface User {
@@ -693,6 +695,8 @@ export default function Admin() {
                       <TableHead>Nom</TableHead>
                       <TableHead>Email</TableHead>
                       <TableHead>Téléphone</TableHead>
+                      <TableHead>Réservations</TableHead>
+                      <TableHead>Restaurants</TableHead>
                       <TableHead>Date d'inscription</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -711,6 +715,12 @@ export default function Admin() {
                             <Phone className="w-3 h-3 text-muted-foreground" />
                             {client.phone}
                           </span>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="secondary">{client.totalBookings || 0}</Badge>
+                        </TableCell>
+                        <TableCell>
+                          <Badge variant="outline">{client.restaurantCount || 0}</Badge>
                         </TableCell>
                         <TableCell>
                           {new Date(client.createdAt).toLocaleDateString("fr-CH")}
