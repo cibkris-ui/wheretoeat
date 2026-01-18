@@ -3,7 +3,7 @@ import { Navbar } from "@/components/layout/Navbar";
 import { BookingForm } from "@/components/BookingForm";
 import { GoogleRating } from "@/components/GoogleRating";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Star, ChefHat, Clock, Phone, Globe } from "lucide-react";
+import { MapPin, Star, ChefHat, Clock, Phone, Globe, FileText, Image } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useQuery } from "@tanstack/react-query";
 import { fetchRestaurant } from "@/lib/api";
@@ -98,6 +98,49 @@ export default function RestaurantDetail() {
               ))}
             </div>
           </section>
+
+          {/* Photos Gallery */}
+          {restaurant.photos && restaurant.photos.length > 0 && (
+            <section>
+              <h2 className="text-2xl font-serif font-bold mb-4 flex items-center gap-2">
+                <Image className="w-6 h-6" />
+                Photos
+              </h2>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                {restaurant.photos.map((photo, index) => (
+                  <div key={index} className="aspect-square overflow-hidden rounded-lg">
+                    <img 
+                      src={photo} 
+                      alt={`${restaurant.name} - Photo ${index + 1}`}
+                      className="w-full h-full object-cover hover:scale-105 transition-transform cursor-pointer"
+                      data-testid={`restaurant-photo-${index}`}
+                    />
+                  </div>
+                ))}
+              </div>
+            </section>
+          )}
+
+          {/* Menu PDF */}
+          {restaurant.menuPdfUrl && (
+            <section>
+              <h2 className="text-2xl font-serif font-bold mb-4 flex items-center gap-2">
+                <FileText className="w-6 h-6" />
+                Carte / Menu
+              </h2>
+              <Button 
+                asChild 
+                variant="outline" 
+                className="gap-2"
+                data-testid="button-download-menu"
+              >
+                <a href={restaurant.menuPdfUrl} target="_blank" rel="noopener noreferrer">
+                  <FileText className="w-4 h-4" />
+                  Voir le menu (PDF)
+                </a>
+              </Button>
+            </section>
+          )}
 
           <section>
             <h2 className="text-2xl font-serif font-bold mb-6">Infos & Horaires</h2>
