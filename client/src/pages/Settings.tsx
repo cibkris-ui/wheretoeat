@@ -63,8 +63,8 @@ import {
 import type { Restaurant, Booking, RestaurantUser } from "@shared/schema";
 import { FloorPlanBuilder } from "@/components/floor-plan/FloorPlanBuilder";
 
-type SettingsSection = "overview" | "profile" | "services" | "users" | "legal" | "widget" | "parameters" | "plan-de-salle";
-type ProfileSubSection = "contacts" | "profil" | "photos" | "plan-de-salle";
+type SettingsSection = "overview" | "profile" | "services" | "users" | "legal" | "widget" | "parameters" | "plan-de-salle" | "embed";
+type ProfileSubSection = "contacts" | "profil" | "photos";
 type ServicesSubSection = "service-hours" | "capacity";
 
 // Generate time options from 00:00 to 24:00 in 30-minute increments
@@ -850,8 +850,12 @@ export default function Settings() {
                             <button
                               key={item.id}
                               onClick={() => {
-                                setActiveSection(category.id as SettingsSection);
-                                if (category.id === "profile" && (item.id === "contacts" || item.id === "profil" || item.id === "photos" || item.id === "plan-de-salle")) {
+                                if (item.id === "parameters" || item.id === "plan-de-salle" || item.id === "embed") {
+                                  setActiveSection(item.id as SettingsSection);
+                                } else {
+                                  setActiveSection(category.id as SettingsSection);
+                                }
+                                if (category.id === "profile" && (item.id === "contacts" || item.id === "profil" || item.id === "photos")) {
                                   setProfileSubSection(item.id as ProfileSubSection);
                                 }
                                 if (category.id === "services" && (item.id === "service-hours" || item.id === "capacity")) {
@@ -1611,12 +1615,24 @@ export default function Settings() {
                   </div>
                 )}
 
-                {profileSubSection === "plan-de-salle" && activeRestaurantId && (
-                  <div className="space-y-6">
-                    <FloorPlanBuilder restaurantId={activeRestaurantId} />
-                  </div>
-                )}
               </>
+            )}
+
+            {activeSection === "plan-de-salle" && activeRestaurantId && (
+              <div className="space-y-6">
+                <div className="flex items-center gap-4 mb-6">
+                  <Button
+                    variant="ghost"
+                    onClick={() => setActiveSection("overview")}
+                    className="flex items-center gap-2"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                    Retour
+                  </Button>
+                  <h1 className="text-2xl font-bold">Plan de salle</h1>
+                </div>
+                <FloorPlanBuilder restaurantId={activeRestaurantId} />
+              </div>
             )}
 
             {activeSection === "services" && (
@@ -1910,7 +1926,7 @@ export default function Settings() {
             )}
 
             {/* Widget Section */}
-            {activeSection === "widget" && (
+            {activeSection === "embed" && (
               <>
                 <div className="flex items-center gap-4 mb-6">
                   <Button
