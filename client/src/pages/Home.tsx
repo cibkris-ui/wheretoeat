@@ -156,12 +156,12 @@ export default function Home() {
                        <ChevronDown className="h-4 w-4 text-gray-400" />
                      </button>
                    </PopoverTrigger>
-                   <PopoverContent className="w-48 p-2" align="start">
-                     <div className="grid grid-cols-2 gap-1 max-h-64 overflow-y-auto">
+                   <PopoverContent className="w-32 p-2" align="start">
+                     <div className="flex flex-col gap-1 max-h-64 overflow-y-auto">
                        {TIME_OPTIONS.map((time) => (
                          <button
                            key={time}
-                           className={`px-3 py-2 text-sm rounded-md transition-colors ${
+                           className={`px-3 py-2 text-sm rounded-md transition-colors text-center ${
                              selectedTime === time 
                                ? "bg-primary text-white" 
                                : "hover:bg-gray-100 text-gray-700"
@@ -192,12 +192,12 @@ export default function Home() {
                        <ChevronDown className="h-4 w-4 text-gray-400" />
                      </button>
                    </PopoverTrigger>
-                   <PopoverContent className="w-48 p-2" align="start">
-                     <div className="grid grid-cols-3 gap-1 max-h-64 overflow-y-auto">
+                   <PopoverContent className="w-32 p-2" align="start">
+                     <div className="flex flex-col gap-1 max-h-64 overflow-y-auto">
                        {GUEST_OPTIONS.map((num) => (
                          <button
                            key={num}
-                           className={`px-3 py-2 text-sm rounded-md transition-colors ${
+                           className={`px-3 py-2 text-sm rounded-md transition-colors text-center ${
                              selectedGuests === num 
                                ? "bg-primary text-white" 
                                : "hover:bg-gray-100 text-gray-700"
