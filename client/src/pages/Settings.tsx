@@ -63,7 +63,7 @@ import {
 import type { Restaurant, Booking, RestaurantUser } from "@shared/schema";
 import { FloorPlanBuilder } from "@/components/floor-plan/FloorPlanBuilder";
 
-type SettingsSection = "overview" | "profile" | "services" | "users" | "legal" | "widget";
+type SettingsSection = "overview" | "profile" | "services" | "users" | "legal" | "widget" | "parameters" | "plan-de-salle";
 type ProfileSubSection = "contacts" | "profil" | "photos" | "plan-de-salle";
 type ServicesSubSection = "service-hours" | "capacity";
 
@@ -562,7 +562,6 @@ export default function Settings() {
         { id: "contacts", label: "Contacts", icon: Phone },
         { id: "profil", label: "Profil", icon: FileText },
         { id: "photos", label: "Photos", icon: Image },
-        { id: "plan-de-salle", label: "Plan de salle", icon: LayoutDashboard },
       ]
     },
     {
@@ -597,6 +596,7 @@ export default function Settings() {
       title: "Paramétrage",
       items: [
         { id: "parameters", label: "Paramètres", icon: SettingsIcon },
+        { id: "plan-de-salle", label: "Plan de salle", icon: LayoutDashboard },
         { id: "embed", label: "Widget de réservation", icon: Code },
       ]
     },
