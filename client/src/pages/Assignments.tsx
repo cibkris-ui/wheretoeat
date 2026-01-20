@@ -96,9 +96,15 @@ function DroppableTable({
   zoneId: string;
   isOver: boolean;
 }) {
-  const { setNodeRef } = useDroppable({
+  const { setNodeRef: setDroppableRef } = useDroppable({
     id: `table-${zoneId}-${item.id}`,
     data: { tableId: item.id, zoneId },
+  });
+
+  const { attributes, listeners, setNodeRef: setDraggableRef, transform, isDragging } = useDraggable({
+    id: booking ? `assigned-booking-${booking.id}` : `empty-table-${item.id}`,
+    data: { booking },
+    disabled: !booking || !!booking.departureTime,
   });
 
   const scaleX = CANVAS_WIDTH / 800;
@@ -114,7 +120,7 @@ function DroppableTable({
     return "bg-orange-500";
   };
   
-  const style: React.CSSProperties = {
+  const baseStyle: React.CSSProperties = {
     position: "absolute",
     left: item.x * scaleX,
     top: item.y * scaleY,
@@ -123,15 +129,27 @@ function DroppableTable({
     transform: `rotate(${item.rotation}deg)`,
   };
 
+  const dragStyle: React.CSSProperties = transform ? {
+    ...baseStyle,
+    transform: `translate3d(${transform.x}px, ${transform.y}px, 0) rotate(${item.rotation}deg)`,
+    zIndex: 1000,
+    opacity: 0.8,
+  } : baseStyle;
+
   return (
     <div
-      ref={setNodeRef}
-      style={style}
+      ref={(node) => {
+        setDroppableRef(node);
+        setDraggableRef(node);
+      }}
+      style={dragStyle}
       className={`flex flex-col items-center justify-center text-white text-xs font-medium shadow-md transition-all
         ${item.shape === "round" ? "rounded-full" : item.shape === "rectangle" ? "rounded-lg" : "rounded-md"}
-        ${isOver && !hasBooking ? "ring-4 ring-blue-400 ring-offset-2 scale-105" : ""}
+        ${isOver ? "ring-4 ring-blue-400 ring-offset-2 scale-105" : ""}
+        ${isDragging ? "shadow-2xl cursor-grabbing" : hasBooking && !booking?.departureTime ? "cursor-grab" : ""}
         ${getTableColor()}`}
       data-testid={`assignment-table-${item.id}`}
+      {...(hasBooking && !booking?.departureTime ? { ...listeners, ...attributes } : {})}
     >
       <span className="font-bold text-[10px]">{item.name}</span>
       {hasBooking && (
@@ -326,7 +344,7 @@ export default function Assignments() {
   };
 
   const handleDragStart = (event: DragStartEvent) => {
-    const bookingData = event.active.data.current?.booking as Booking;
+    const bookingData = event.active.data.current?.booking as Booking | undefined;
     if (bookingData) {
       setActiveDragBooking(bookingData);
     }
@@ -357,12 +375,35 @@ export default function Assignments() {
     
     if (!bookingData || !tableData) return;
     
-    const existingBooking = getBookingForTable(tableData.tableId, tableData.zoneId);
-    if (existingBooking) {
-      toast.error("Cette table est déjà occupée");
+    // Don't do anything if dropping on the same table
+    if (bookingData.tableId === tableData.tableId && bookingData.zoneId === tableData.zoneId) {
       return;
     }
     
+    const existingBooking = getBookingForTable(tableData.tableId, tableData.zoneId);
+    
+    if (existingBooking) {
+      // Swap the two bookings
+      // First, move the existing booking to the dragged booking's original table (or unassign if from sidebar)
+      if (bookingData.tableId && bookingData.zoneId) {
+        // Swap tables
+        assignTableMutation.mutate({
+          bookingId: existingBooking.id,
+          tableId: bookingData.tableId,
+          zoneId: bookingData.zoneId,
+        });
+      } else {
+        // The dragged booking was unassigned, unassign the existing one
+        assignTableMutation.mutate({
+          bookingId: existingBooking.id,
+          tableId: null,
+          zoneId: null,
+        });
+      }
+      toast.success("Tables échangées");
+    }
+    
+    // Move the dragged booking to the target table
     assignTableMutation.mutate({
       bookingId: bookingData.id,
       tableId: tableData.tableId,
