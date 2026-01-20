@@ -750,27 +750,6 @@ export default function Assignments() {
                                     <MapPin className="h-3 w-3 mr-1" />
                                     {zone?.name} - {table?.name || "Table"}
                                   </Badge>
-                                  {zones.length > 1 && (
-                                    <select
-                                      className="text-xs border rounded px-1 py-0.5 bg-white"
-                                      value=""
-                                      onChange={(e) => {
-                                        if (e.target.value) {
-                                          const newZoneId = e.target.value;
-                                          assignTableMutation.mutate({
-                                            bookingId: booking.id,
-                                            tableId: null,
-                                            zoneId: null,
-                                          });
-                                        }
-                                      }}
-                                    >
-                                      <option value="">Changer de salle...</option>
-                                      {zones.filter(z => z.id !== booking.zoneId).map(z => (
-                                        <option key={z.id} value={z.id}>{z.name}</option>
-                                      ))}
-                                    </select>
-                                  )}
                                 </div>
                               </div>
                             );
