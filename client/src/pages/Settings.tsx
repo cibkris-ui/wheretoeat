@@ -596,6 +596,7 @@ export default function Settings() {
       icon: Code,
       title: "Paramétrage",
       items: [
+        { id: "parameters", label: "Paramètres", icon: SettingsIcon },
         { id: "embed", label: "Widget de réservation", icon: Code },
       ]
     },
@@ -1869,6 +1870,42 @@ export default function Settings() {
                     </a>
                   </CardContent>
                 </Card>
+              </>
+            )}
+
+            {/* Parameters Section */}
+            {activeSection === "parameters" && (
+              <>
+                <div className="flex items-center gap-4 mb-6">
+                  <Button
+                    variant="ghost"
+                    onClick={() => setActiveSection("overview")}
+                    className="flex items-center gap-2"
+                  >
+                    <ChevronLeft className="h-4 w-4" />
+                    Retour
+                  </Button>
+                  <h1 className="text-2xl font-bold">Paramètres</h1>
+                </div>
+
+                <div className="space-y-6 max-w-3xl">
+                  <Card className="bg-white">
+                    <CardContent className="p-6 space-y-6">
+                      <div>
+                        <h3 className="font-bold text-lg mb-2">Paramètres généraux</h3>
+                        <p className="text-sm text-muted-foreground mb-4">
+                          Configurez les paramètres généraux de votre établissement.
+                        </p>
+                      </div>
+
+                      <div className="space-y-4">
+                        <p className="text-muted-foreground text-center py-8">
+                          Aucun paramètre à configurer pour le moment.
+                        </p>
+                      </div>
+                    </CardContent>
+                  </Card>
+                </div>
               </>
             )}
 
