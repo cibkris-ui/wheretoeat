@@ -8,6 +8,14 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -66,6 +74,8 @@ export default function Dashboard() {
   const [isInitialized, setIsInitialized] = useState(false);
   const [activeSection, setActiveSection] = useState<"reservations" | "restaurants" | "stats" | "settings">("reservations");
   const [serviceFilter, setServiceFilter] = useState<"all" | "lunch" | "dinner">("all");
+  const [billAmountDialog, setBillAmountDialog] = useState<{ bookingId: number; isOpen: boolean } | null>(null);
+  const [billAmountInput, setBillAmountInput] = useState("");
 
   useEffect(() => {
     if (!authLoading && !isAuthenticated) {
@@ -151,10 +161,15 @@ export default function Dashboard() {
   });
 
   const markDepartureMutation = useMutation({
-    mutationFn: async (bookingId: number) => {
+    mutationFn: async ({ bookingId, billAmount }: { bookingId: number; billAmount?: number }) => {
+      const body = billAmount !== undefined ? JSON.stringify({ billAmount }) : undefined;
+      const headers: Record<string, string> = {};
+      if (body) headers["Content-Type"] = "application/json";
       const res = await fetch(`/api/bookings/${bookingId}/departure`, {
         method: "PATCH",
         credentials: "include",
+        headers,
+        body,
       });
       if (!res.ok) throw new Error("Erreur lors de l'enregistrement");
       return res.json();
@@ -164,6 +179,8 @@ export default function Dashboard() {
       restaurantIds.forEach(id => {
         queryClient.invalidateQueries({ queryKey: [`/api/restaurants/${id}/bookings`] });
       });
+      setBillAmountDialog(null);
+      setBillAmountInput("");
       toast({ title: "Client parti", description: "Le départ du client a été enregistré." });
     },
     onError: () => {
@@ -204,6 +221,33 @@ export default function Dashboard() {
       toast({ title: "Erreur", description: "Impossible de mettre à jour le statut.", variant: "destructive" });
     },
   });
+
+  const handleDepartureClick = (booking: Booking) => {
+    const restaurant = myRestaurants.find(r => r.id === booking.restaurantId);
+    if (restaurant?.askBillAmount) {
+      setBillAmountDialog({ bookingId: booking.id, isOpen: true });
+      setBillAmountInput("");
+    } else {
+      markDepartureMutation.mutate({ bookingId: booking.id });
+    }
+  };
+
+  const handleBillAmountSubmit = () => {
+    if (!billAmountDialog) return;
+    let amount: number | undefined = undefined;
+    if (billAmountInput) {
+      const parsed = parseFloat(billAmountInput);
+      if (!isNaN(parsed) && parsed >= 0 && isFinite(parsed)) {
+        amount = parsed;
+      }
+    }
+    markDepartureMutation.mutate({ bookingId: billAmountDialog.bookingId, billAmount: amount });
+  };
+
+  const handleSkipBillAmount = () => {
+    if (!billAmountDialog) return;
+    markDepartureMutation.mutate({ bookingId: billAmountDialog.bookingId });
+  };
 
   const stats = useMemo(() => {
     const selectedDayStart = startOfDay(selectedDate);
@@ -868,7 +912,7 @@ export default function Dashboard() {
                                 size="sm"
                                 variant="outline"
                                 className="border-green-600 text-green-600 hover:bg-green-50"
-                                onClick={() => markDepartureMutation.mutate(booking.id)}
+                                onClick={() => handleDepartureClick(booking)}
                                 disabled={markDepartureMutation.isPending}
                                 data-testid={`btn-departure-${booking.id}`}
                               >
@@ -979,6 +1023,54 @@ export default function Dashboard() {
           </main>
         </div>
       </div>
+
+      <Dialog open={billAmountDialog?.isOpen ?? false} onOpenChange={(open) => !open && setBillAmountDialog(null)}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Montant de la facture</DialogTitle>
+            <DialogDescription>
+              Saisissez le montant de la facture pour ce client (optionnel).
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex items-center gap-2 py-4">
+            <span className="text-lg font-medium">CHF</span>
+            <Input
+              type="number"
+              placeholder="0.00"
+              value={billAmountInput}
+              onChange={(e) => setBillAmountInput(e.target.value)}
+              className="flex-1"
+              min="0"
+              step="0.01"
+              data-testid="input-bill-amount"
+            />
+          </div>
+          <DialogFooter className="flex gap-2 sm:gap-0">
+            <Button
+              variant="outline"
+              onClick={() => setBillAmountDialog(null)}
+              data-testid="btn-cancel-bill"
+            >
+              Annuler
+            </Button>
+            <Button
+              variant="outline"
+              onClick={handleSkipBillAmount}
+              disabled={markDepartureMutation.isPending || !billAmountDialog}
+              data-testid="btn-skip-bill"
+            >
+              Passer
+            </Button>
+            <Button
+              onClick={handleBillAmountSubmit}
+              disabled={markDepartureMutation.isPending || !billAmountDialog}
+              data-testid="btn-confirm-bill"
+            >
+              Confirmer
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </TooltipProvider>
   );
 }
