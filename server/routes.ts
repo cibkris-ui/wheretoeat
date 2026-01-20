@@ -591,11 +591,22 @@ export async function registerRoutes(
       const now = new Date();
       const departureTime = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
       
-      const { billAmount } = req.body || {};
+      const { billAmount: rawBillAmount } = req.body || {};
+      let billAmount: number | undefined = undefined;
+      if (rawBillAmount !== undefined && rawBillAmount !== null && rawBillAmount !== "") {
+        const parsed = parseFloat(rawBillAmount);
+        if (!isNaN(parsed) && isFinite(parsed) && parsed >= 0) {
+          billAmount = parsed;
+        }
+      }
+      
       const updated = await storage.updateBookingDeparture(bookingId, departureTime, billAmount);
       
-      if (billAmount && booking.clientId) {
-        await storage.updateClientTotalSpent(parseInt(booking.clientId), billAmount);
+      if (billAmount !== undefined && billAmount > 0 && booking.clientId) {
+        const numericClientId = parseInt(booking.clientId);
+        if (!isNaN(numericClientId)) {
+          await storage.updateClientTotalSpent(numericClientId, billAmount);
+        }
       }
       
       res.json(updated);
