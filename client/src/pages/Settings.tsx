@@ -318,6 +318,7 @@ export default function Settings() {
   const [priceRangeValue, setPriceRangeValue] = useState<string>("");
   const [nameValue, setNameValue] = useState<string>("");
   const [locationValue, setLocationValue] = useState<string>("");
+  const [askBillAmount, setAskBillAmount] = useState(false);
   
   const profileImageInputRef = useRef<HTMLInputElement>(null);
   const photosInputRef = useRef<HTMLInputElement>(null);
@@ -1915,9 +1916,16 @@ export default function Settings() {
                       </div>
 
                       <div className="space-y-4">
-                        <p className="text-muted-foreground text-center py-8">
-                          Aucun paramètre à configurer pour le moment.
-                        </p>
+                        <div className="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                          <div className="flex-1">
+                            <span className="font-medium text-gray-900">Demander le montant de la facture au départ client</span>
+                          </div>
+                          <Switch 
+                            checked={askBillAmount}
+                            onCheckedChange={setAskBillAmount}
+                            data-testid="switch-ask-bill-amount"
+                          />
+                        </div>
                       </div>
                     </CardContent>
                   </Card>
