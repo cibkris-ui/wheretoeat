@@ -12,7 +12,6 @@ import { fetchRestaurants } from "@/lib/api";
 import { useAuth } from "@/hooks/useAuth";
 import type { Restaurant } from "@shared/schema";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
-import { Calendar as CalendarComponent } from "@/components/ui/calendar";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
 
@@ -22,6 +21,19 @@ const TIME_OPTIONS = [
 ];
 
 const GUEST_OPTIONS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
+
+const generateDateOptions = () => {
+  const dates: Date[] = [];
+  const today = new Date();
+  for (let i = 0; i < 30; i++) {
+    const date = new Date(today);
+    date.setDate(today.getDate() + i);
+    dates.push(date);
+  }
+  return dates;
+};
+
+const DATE_OPTIONS = generateDateOptions();
 
 export default function Home() {
   const [, setLocation] = useLocation();
@@ -126,19 +138,25 @@ export default function Home() {
                        <ChevronDown className="h-4 w-4 text-gray-400" />
                      </button>
                    </PopoverTrigger>
-                   <PopoverContent className="w-auto p-0" align="start">
-                     <CalendarComponent
-                       mode="single"
-                       selected={selectedDate}
-                       onSelect={(date) => {
-                         if (date) {
-                           setSelectedDate(date);
-                           setDateOpen(false);
-                         }
-                       }}
-                       locale={fr}
-                       disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
-                     />
+                   <PopoverContent className="w-40 p-2" align="start">
+                     <div className="flex flex-col gap-1 max-h-64 overflow-y-auto">
+                       {DATE_OPTIONS.map((date, index) => (
+                         <button
+                           key={index}
+                           className={`px-3 py-2 text-sm rounded-md transition-colors text-center ${
+                             selectedDate.toDateString() === date.toDateString()
+                               ? "bg-primary text-white" 
+                               : "hover:bg-gray-100 text-gray-700"
+                           }`}
+                           onClick={() => {
+                             setSelectedDate(date);
+                             setDateOpen(false);
+                           }}
+                         >
+                           {format(date, "EEE d MMM", { locale: fr })}
+                         </button>
+                       ))}
+                     </div>
                    </PopoverContent>
                  </Popover>
 
