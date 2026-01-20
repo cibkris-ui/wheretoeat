@@ -591,7 +591,13 @@ export async function registerRoutes(
       const now = new Date();
       const departureTime = `${now.getHours().toString().padStart(2, '0')}:${now.getMinutes().toString().padStart(2, '0')}`;
       
-      const updated = await storage.updateBookingDeparture(bookingId, departureTime);
+      const { billAmount } = req.body || {};
+      const updated = await storage.updateBookingDeparture(bookingId, departureTime, billAmount);
+      
+      if (billAmount && booking.clientId) {
+        await storage.updateClientTotalSpent(parseInt(booking.clientId), billAmount);
+      }
+      
       res.json(updated);
     } catch (error: any) {
       res.status(500).json({ message: error.message });

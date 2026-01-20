@@ -57,7 +57,8 @@ export interface IStorage {
   checkClientIdEmailMismatch(clientId: string, email: string): Promise<Booking | undefined>;
   updateBookingArrival(id: number, arrivalTime: string): Promise<Booking | undefined>;
   updateBookingBillRequested(id: number, billRequested: boolean): Promise<Booking | undefined>;
-  updateBookingDeparture(id: number, departureTime: string): Promise<Booking | undefined>;
+  updateBookingDeparture(id: number, departureTime: string, billAmount?: number): Promise<Booking | undefined>;
+  updateClientTotalSpent(clientId: number, amount: number): Promise<Client | undefined>;
   updateBookingStatus(id: number, status: string): Promise<Booking | undefined>;
   updateBookingTable(id: number, tableId: string | null, zoneId: string | null): Promise<Booking | undefined>;
   
@@ -277,11 +278,34 @@ export class DatabaseStorage implements IStorage {
     return updated;
   }
 
-  async updateBookingDeparture(id: number, departureTime: string): Promise<Booking | undefined> {
+  async updateBookingDeparture(id: number, departureTime: string, billAmount?: number): Promise<Booking | undefined> {
+    const updateData: { departureTime: string; billAmount?: number } = { departureTime };
+    if (billAmount !== undefined) {
+      updateData.billAmount = billAmount;
+    }
     const [updated] = await db
       .update(bookings)
-      .set({ departureTime })
+      .set(updateData)
       .where(eq(bookings.id, id))
+      .returning();
+    return updated;
+  }
+
+  async updateClientTotalSpent(clientId: number, amount: number): Promise<Client | undefined> {
+    const client = await this.getClient(clientId);
+    if (!client) return undefined;
+    
+    const newTotal = (client.totalSpent || 0) + amount;
+    const newVisitCount = (client.visitCount || 0) + 1;
+    
+    const [updated] = await db
+      .update(clients)
+      .set({ 
+        totalSpent: newTotal, 
+        visitCount: newVisitCount,
+        updatedAt: new Date()
+      })
+      .where(eq(clients.id, clientId))
       .returning();
     return updated;
   }
