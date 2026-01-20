@@ -120,6 +120,7 @@ export const restaurants = pgTable("restaurants", {
   paymentMethods: text("payment_methods").array(),
   hasVegetarianOptions: boolean("has_vegetarian_options").default(false),
   spokenLanguages: text("spoken_languages").array(),
+  askBillAmount: boolean("ask_bill_amount").default(false),
 });
 
 export const insertRestaurantSchema = createInsertSchema(restaurants).omit({
@@ -148,6 +149,7 @@ export const bookings = pgTable("bookings", {
   arrivalTime: text("arrival_time"),
   billRequested: boolean("bill_requested").default(false),
   departureTime: text("departure_time"),
+  billAmount: real("bill_amount"),
   status: text("status").notNull().default("confirmed"),
   tableId: text("table_id"),
   zoneId: text("zone_id"),
@@ -171,6 +173,8 @@ export const clients = pgTable("clients", {
   phone: text("phone").notNull(),
   notes: text("notes"),
   tags: text("tags").array(),
+  totalSpent: real("total_spent").default(0),
+  visitCount: integer("visit_count").default(0),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
 });
