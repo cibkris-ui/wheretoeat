@@ -1025,25 +1025,45 @@ export default function Dashboard() {
       </div>
 
       <Dialog open={billAmountDialog?.isOpen ?? false} onOpenChange={(open) => !open && setBillAmountDialog(null)}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className="sm:max-w-sm">
           <DialogHeader>
             <DialogTitle>Montant de la facture</DialogTitle>
             <DialogDescription>
               Saisissez le montant de la facture pour ce client (optionnel).
             </DialogDescription>
           </DialogHeader>
-          <div className="flex items-center gap-2 py-4">
-            <span className="text-lg font-medium">CHF</span>
-            <Input
-              type="number"
-              placeholder="0.00"
-              value={billAmountInput}
-              onChange={(e) => setBillAmountInput(e.target.value)}
-              className="flex-1"
-              min="0"
-              step="0.01"
-              data-testid="input-bill-amount"
-            />
+          <div className="py-4">
+            <div className="flex items-center justify-center gap-2 mb-4 p-4 bg-gray-100 rounded-lg">
+              <span className="text-xl font-medium text-gray-600">CHF</span>
+              <span className="text-3xl font-bold text-gray-900" data-testid="display-bill-amount">
+                {billAmountInput || "0.00"}
+              </span>
+            </div>
+            <div className="grid grid-cols-3 gap-2">
+              {["1", "2", "3", "4", "5", "6", "7", "8", "9", ".", "0", "C"].map((key) => (
+                <Button
+                  key={key}
+                  variant={key === "C" ? "destructive" : "outline"}
+                  className="h-14 text-xl font-semibold"
+                  onClick={() => {
+                    if (key === "C") {
+                      setBillAmountInput("");
+                    } else if (key === ".") {
+                      if (!billAmountInput.includes(".")) {
+                        setBillAmountInput(prev => prev + ".");
+                      }
+                    } else {
+                      const parts = billAmountInput.split(".");
+                      if (parts[1] && parts[1].length >= 2) return;
+                      setBillAmountInput(prev => prev + key);
+                    }
+                  }}
+                  data-testid={`btn-keypad-${key === "." ? "dot" : key === "C" ? "clear" : key}`}
+                >
+                  {key === "C" ? "⌫" : key}
+                </Button>
+              ))}
+            </div>
           </div>
           <DialogFooter className="flex gap-2 sm:gap-0">
             <Button
