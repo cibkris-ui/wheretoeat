@@ -520,6 +520,25 @@ export default function Settings() {
     saveCapacityMutation.mutate({ capacity, onlineCapacity, minGuests, maxGuests });
   };
 
+  const saveAskBillAmountMutation = useMutation({
+    mutationFn: async (askBillAmount: boolean) => {
+      const res = await apiRequest("PUT", `/api/restaurants/${activeRestaurantId}`, { askBillAmount });
+      return res.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["/api/my-restaurants"] });
+      toast({ title: "Paramètre enregistré" });
+    },
+    onError: (error: any) => {
+      toast({ title: "Erreur", description: error.message, variant: "destructive" });
+    },
+  });
+
+  const handleAskBillAmountChange = (checked: boolean) => {
+    setAskBillAmount(checked);
+    saveAskBillAmountMutation.mutate(checked);
+  };
+
   const defaultAddress = selectedRestaurantData?.address || "";
   
   const extractPostalCodeAndCity = (location: string | null | undefined): { postalCode: string; city: string } => {
@@ -1921,8 +1940,8 @@ export default function Settings() {
                             <span className="font-medium text-gray-900">Demander le montant de la facture au départ client</span>
                           </div>
                           <Switch 
-                            checked={askBillAmount}
-                            onCheckedChange={setAskBillAmount}
+                            checked={askBillAmount || selectedRestaurantData?.askBillAmount || false}
+                            onCheckedChange={handleAskBillAmountChange}
                             data-testid="switch-ask-bill-amount"
                           />
                         </div>
