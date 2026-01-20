@@ -726,12 +726,13 @@ export default function Assignments() {
                                   <span className="font-medium">{booking.firstName} {booking.lastName}</span>
                                   <Button
                                     variant="ghost"
-                                    size="icon"
-                                    className="h-6 w-6"
+                                    size="sm"
+                                    className="h-6 px-2 text-red-500 hover:text-red-700 hover:bg-red-50"
                                     onClick={() => handleUnassign(booking.id)}
                                     data-testid={`unassign-${booking.id}`}
                                   >
-                                    <X className="h-3 w-3" />
+                                    <X className="h-3 w-3 mr-1" />
+                                    Libérer
                                   </Button>
                                 </div>
                                 <div className="flex items-center gap-3 text-sm text-gray-600">
@@ -743,10 +744,33 @@ export default function Assignments() {
                                     <Users className="h-3 w-3 mr-1" />
                                     {booking.guests}{booking.children > 0 ? ` (${booking.children} enf.)` : ''}
                                   </span>
+                                </div>
+                                <div className="flex items-center gap-2 mt-2">
                                   <Badge variant="secondary" className="text-xs">
                                     <MapPin className="h-3 w-3 mr-1" />
-                                    {table?.name || "Table"}
+                                    {zone?.name} - {table?.name || "Table"}
                                   </Badge>
+                                  {zones.length > 1 && (
+                                    <select
+                                      className="text-xs border rounded px-1 py-0.5 bg-white"
+                                      value=""
+                                      onChange={(e) => {
+                                        if (e.target.value) {
+                                          const newZoneId = e.target.value;
+                                          assignTableMutation.mutate({
+                                            bookingId: booking.id,
+                                            tableId: null,
+                                            zoneId: null,
+                                          });
+                                        }
+                                      }}
+                                    >
+                                      <option value="">Changer de salle...</option>
+                                      {zones.filter(z => z.id !== booking.zoneId).map(z => (
+                                        <option key={z.id} value={z.id}>{z.name}</option>
+                                      ))}
+                                    </select>
+                                  )}
                                 </div>
                               </div>
                             );
