@@ -96,6 +96,7 @@ export default function NewBooking() {
     firstName: "",
     phone: "",
     phoneCode: "+41",
+    email: "",
     guests: 2,
     children: 0,
     notes: "",
@@ -180,7 +181,7 @@ export default function NewBooking() {
         children: formData.children,
         firstName: formData.firstName,
         lastName: formData.lastName,
-        email: "",
+        email: formData.email || "",
         phone: formData.phone ? formData.phoneCode + formData.phone : "",
         tableId: formData.tableId || null,
         zoneId: formData.zoneId || null,
@@ -702,6 +703,18 @@ export default function NewBooking() {
                       data-testid="input-phone"
                     />
                   </div>
+                </div>
+
+                <div>
+                  <Label className="text-gray-600 text-sm">Email</Label>
+                  <Input
+                    type="email"
+                    value={formData.email}
+                    onChange={e => setFormData(prev => ({ ...prev, email: e.target.value }))}
+                    placeholder="exemple@email.com"
+                    className="mt-1"
+                    data-testid="input-email"
+                  />
                 </div>
 
                 <div>
