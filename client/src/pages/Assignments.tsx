@@ -332,7 +332,7 @@ export default function Assignments() {
   }, [zones, activeZoneId]);
 
   const getBookingForTable = (tableId: string, zoneId: string) => {
-    return filteredBookings.find(b => b.tableId === tableId && b.zoneId === zoneId);
+    return filteredBookings.find(b => b.tableId === tableId && b.zoneId === zoneId && !b.departureTime);
   };
 
   const handleUnassign = (bookingId: number) => {
