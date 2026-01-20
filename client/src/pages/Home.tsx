@@ -2,7 +2,7 @@ import { useEffect, useState, useMemo } from "react";
 import { useLocation } from "wouter";
 import { Navbar } from "@/components/layout/Navbar";
 import { RestaurantCard } from "@/components/RestaurantCard";
-import { Search, MapPin, Calendar, Clock, Users } from "lucide-react";
+import { Search, MapPin, Calendar, Clock, Users, ChevronDown } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import heroImage from '@assets/IMG_9005_1768766651152.jpeg';
@@ -11,12 +11,29 @@ import { useQuery } from "@tanstack/react-query";
 import { fetchRestaurants } from "@/lib/api";
 import { useAuth } from "@/hooks/useAuth";
 import type { Restaurant } from "@shared/schema";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Calendar as CalendarComponent } from "@/components/ui/calendar";
+import { format } from "date-fns";
+import { fr } from "date-fns/locale";
+
+const TIME_OPTIONS = [
+  "11:00", "11:30", "12:00", "12:30", "13:00", "13:30", "14:00",
+  "18:00", "18:30", "19:00", "19:30", "20:00", "20:30", "21:00", "21:30", "22:00"
+];
+
+const GUEST_OPTIONS = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12];
 
 export default function Home() {
   const [, setLocation] = useLocation();
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   const [searchQuery, setSearchQuery] = useState("");
   const [hasSearched, setHasSearched] = useState(false);
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
+  const [selectedTime, setSelectedTime] = useState("20:00");
+  const [selectedGuests, setSelectedGuests] = useState(2);
+  const [dateOpen, setDateOpen] = useState(false);
+  const [timeOpen, setTimeOpen] = useState(false);
+  const [guestsOpen, setGuestsOpen] = useState(false);
   
   const { data: myRestaurants = [] } = useQuery<Restaurant[]>({
     queryKey: ["/api/my-restaurants"],
@@ -93,22 +110,109 @@ export default function Home() {
                 />
               </div>
 
-              {/* Date/Time/People Selectors (Visual Only) */}
-              <div className="hidden md:flex items-center gap-4 px-4 h-12 md:border-r border-gray-200 min-w-fit cursor-pointer hover:bg-gray-50 transition-colors">
-                 <div className="flex items-center gap-2">
-                    <Calendar className="h-5 w-5 text-gray-400" />
-                    <span className="text-gray-700 font-medium">Aujourd'hui</span>
-                 </div>
+              {/* Date/Time/People Selectors */}
+              <div className="hidden md:flex items-center gap-2 px-4 h-12 md:border-r border-gray-200 min-w-fit">
+                 {/* Date Selector */}
+                 <Popover open={dateOpen} onOpenChange={setDateOpen}>
+                   <PopoverTrigger asChild>
+                     <button 
+                       className="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-gray-100 transition-colors"
+                       data-testid="button-date-selector"
+                     >
+                       <Calendar className="h-5 w-5 text-gray-400" />
+                       <span className="text-gray-700 font-medium">
+                         {format(selectedDate, "d MMM", { locale: fr })}
+                       </span>
+                       <ChevronDown className="h-4 w-4 text-gray-400" />
+                     </button>
+                   </PopoverTrigger>
+                   <PopoverContent className="w-auto p-0" align="start">
+                     <CalendarComponent
+                       mode="single"
+                       selected={selectedDate}
+                       onSelect={(date) => {
+                         if (date) {
+                           setSelectedDate(date);
+                           setDateOpen(false);
+                         }
+                       }}
+                       locale={fr}
+                       disabled={(date) => date < new Date(new Date().setHours(0, 0, 0, 0))}
+                     />
+                   </PopoverContent>
+                 </Popover>
+
                  <Separator orientation="vertical" className="h-6" />
-                 <div className="flex items-center gap-2">
-                    <Clock className="h-5 w-5 text-gray-400" />
-                    <span className="text-gray-700 font-medium">20:00</span>
-                 </div>
+                 
+                 {/* Time Selector */}
+                 <Popover open={timeOpen} onOpenChange={setTimeOpen}>
+                   <PopoverTrigger asChild>
+                     <button 
+                       className="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-gray-100 transition-colors"
+                       data-testid="button-time-selector"
+                     >
+                       <Clock className="h-5 w-5 text-gray-400" />
+                       <span className="text-gray-700 font-medium">{selectedTime}</span>
+                       <ChevronDown className="h-4 w-4 text-gray-400" />
+                     </button>
+                   </PopoverTrigger>
+                   <PopoverContent className="w-48 p-2" align="start">
+                     <div className="grid grid-cols-2 gap-1 max-h-64 overflow-y-auto">
+                       {TIME_OPTIONS.map((time) => (
+                         <button
+                           key={time}
+                           className={`px-3 py-2 text-sm rounded-md transition-colors ${
+                             selectedTime === time 
+                               ? "bg-primary text-white" 
+                               : "hover:bg-gray-100 text-gray-700"
+                           }`}
+                           onClick={() => {
+                             setSelectedTime(time);
+                             setTimeOpen(false);
+                           }}
+                         >
+                           {time}
+                         </button>
+                       ))}
+                     </div>
+                   </PopoverContent>
+                 </Popover>
+
                  <Separator orientation="vertical" className="h-6" />
-                 <div className="flex items-center gap-2">
-                    <Users className="h-5 w-5 text-gray-400" />
-                    <span className="text-gray-700 font-medium">2 pers.</span>
-                 </div>
+                 
+                 {/* Guests Selector */}
+                 <Popover open={guestsOpen} onOpenChange={setGuestsOpen}>
+                   <PopoverTrigger asChild>
+                     <button 
+                       className="flex items-center gap-2 px-3 py-2 rounded-md hover:bg-gray-100 transition-colors"
+                       data-testid="button-guests-selector"
+                     >
+                       <Users className="h-5 w-5 text-gray-400" />
+                       <span className="text-gray-700 font-medium">{selectedGuests} pers.</span>
+                       <ChevronDown className="h-4 w-4 text-gray-400" />
+                     </button>
+                   </PopoverTrigger>
+                   <PopoverContent className="w-48 p-2" align="start">
+                     <div className="grid grid-cols-3 gap-1 max-h-64 overflow-y-auto">
+                       {GUEST_OPTIONS.map((num) => (
+                         <button
+                           key={num}
+                           className={`px-3 py-2 text-sm rounded-md transition-colors ${
+                             selectedGuests === num 
+                               ? "bg-primary text-white" 
+                               : "hover:bg-gray-100 text-gray-700"
+                           }`}
+                           onClick={() => {
+                             setSelectedGuests(num);
+                             setGuestsOpen(false);
+                           }}
+                         >
+                           {num} pers.
+                         </button>
+                       ))}
+                     </div>
+                   </PopoverContent>
+                 </Popover>
               </div>
 
               <div className="w-full md:w-auto p-1">
