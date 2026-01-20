@@ -475,27 +475,50 @@ export class DatabaseStorage implements IStorage {
     const normalizedEmail = email.toLowerCase().trim();
     const normalizedFirstName = firstName.toLowerCase().trim();
     const normalizedLastName = lastName.toLowerCase().trim();
+    const normalizedPhone = phone.replace(/\s+/g, '').trim();
     
-    // Recherche par combinaison nom/prénom/email (une fiche par personne même email)
-    const [existing] = await db.select().from(clients).where(
-      and(
-        eq(clients.restaurantId, restaurantId),
-        eq(sql`LOWER(${clients.email})`, normalizedEmail),
-        eq(sql`LOWER(${clients.firstName})`, normalizedFirstName),
-        eq(sql`LOWER(${clients.lastName})`, normalizedLastName)
-      )
-    );
+    let existing: Client | undefined;
+    
+    // Recherche par téléphone d'abord (plus fiable pour identifier un client)
+    if (normalizedPhone) {
+      const [byPhone] = await db.select().from(clients).where(
+        and(
+          eq(clients.restaurantId, restaurantId),
+          eq(sql`REPLACE(${clients.phone}, ' ', '')`, normalizedPhone)
+        )
+      );
+      existing = byPhone;
+    }
+    
+    // Si pas trouvé par téléphone et email non vide, chercher par email+nom
+    if (!existing && normalizedEmail) {
+      const [byEmail] = await db.select().from(clients).where(
+        and(
+          eq(clients.restaurantId, restaurantId),
+          eq(sql`LOWER(${clients.email})`, normalizedEmail),
+          eq(sql`LOWER(${clients.firstName})`, normalizedFirstName),
+          eq(sql`LOWER(${clients.lastName})`, normalizedLastName)
+        )
+      );
+      existing = byEmail;
+    }
     
     if (existing) {
-      // Met à jour seulement le téléphone si le client existe
+      // Met à jour les infos si le client existe
       const [updated] = await db.update(clients)
-        .set({ phone, updatedAt: new Date() })
+        .set({ 
+          phone: phone || existing.phone, 
+          email: normalizedEmail || existing.email,
+          firstName: firstName || existing.firstName,
+          lastName: lastName || existing.lastName,
+          updatedAt: new Date() 
+        })
         .where(eq(clients.id, existing.id))
         .returning();
       return updated;
     }
     
-    // Crée une nouvelle fiche pour ce nom/prénom
+    // Crée une nouvelle fiche pour ce client
     const [newClient] = await db.insert(clients).values({
       restaurantId,
       firstName,
