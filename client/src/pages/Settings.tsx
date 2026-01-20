@@ -594,9 +594,9 @@ export default function Settings() {
     {
       id: "widget",
       icon: Code,
-      title: "Widget de réservation",
+      title: "Paramétrage",
       items: [
-        { id: "embed", label: "Code d'intégration", icon: Code },
+        { id: "embed", label: "Widget de réservation", icon: Code },
       ]
     },
   ];
