@@ -561,6 +561,15 @@ export default function Clients() {
                       <p className="text-sm text-amber-900">{selectedClient.notes}</p>
                     </div>
                   )}
+
+                  {/* Add reservation button */}
+                  <div className="pt-4 border-t">
+                    <Link href={`/dashboard/nouvelle-reservation?firstName=${encodeURIComponent(selectedClient.firstName || '')}&lastName=${encodeURIComponent(selectedClient.lastName || '')}&email=${encodeURIComponent(selectedClient.email || '')}&phone=${encodeURIComponent(selectedClient.phone || '')}`}>
+                      <Button className="w-full" data-testid="add-reservation-from-client">
+                        Ajouter une réservation
+                      </Button>
+                    </Link>
+                  </div>
                 </div>
               </>
             )}

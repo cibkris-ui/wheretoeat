@@ -1,8 +1,8 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
-import { useLocation } from "wouter";
+import { useLocation, useSearch } from "wouter";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -78,6 +78,7 @@ export default function NewBooking() {
   const { isAuthenticated } = useAuth();
   const { toast } = useToast();
   const [, setLocation] = useLocation();
+  const searchString = useSearch();
   const queryClient = useQueryClient();
 
   const [selectedDate, setSelectedDate] = useState(format(new Date(), "yyyy-MM-dd"));
@@ -107,6 +108,28 @@ export default function NewBooking() {
     tags: "",
     status: "confirmed" as "confirmed" | "waiting",
   });
+
+  // Pre-fill form from URL parameters (from client page)
+  useEffect(() => {
+    if (searchString) {
+      const params = new URLSearchParams(searchString);
+      const firstName = params.get("firstName");
+      const lastName = params.get("lastName");
+      const email = params.get("email");
+      const phone = params.get("phone");
+      
+      if (firstName || lastName || email || phone) {
+        setFormData(prev => ({
+          ...prev,
+          firstName: firstName || prev.firstName,
+          lastName: lastName || prev.lastName,
+          email: email || prev.email,
+          phone: phone?.replace(/^\+41/, "") || prev.phone,
+          phoneCode: phone?.startsWith("+41") ? "+41" : prev.phoneCode,
+        }));
+      }
+    }
+  }, [searchString]);
 
   const { data: myRestaurants = [] } = useQuery<Restaurant[]>({
     queryKey: ["/api/my-restaurants"],
