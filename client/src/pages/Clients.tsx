@@ -470,10 +470,15 @@ export default function Clients() {
                     <div className="w-12 h-12 rounded-full bg-primary/10 flex items-center justify-center">
                       <User className="h-6 w-6 text-primary" />
                     </div>
-                    <div>
+                    <div className="flex-1">
                       <p className="text-xl">{selectedClient.firstName} {selectedClient.lastName}</p>
                       <p className="text-sm font-normal text-gray-500">Client depuis {formatDate(selectedClient.createdAt?.toString() || null)}</p>
                     </div>
+                    <Link href={`/dashboard/nouvelle-reservation?firstName=${encodeURIComponent(selectedClient.firstName || '')}&lastName=${encodeURIComponent(selectedClient.lastName || '')}&email=${encodeURIComponent(selectedClient.email || '')}&phone=${encodeURIComponent(selectedClient.phone || '')}`}>
+                      <Button size="sm" data-testid="add-reservation-from-client">
+                        Ajouter une réservation
+                      </Button>
+                    </Link>
                   </DialogTitle>
                 </DialogHeader>
                 
@@ -561,15 +566,6 @@ export default function Clients() {
                       <p className="text-sm text-amber-900">{selectedClient.notes}</p>
                     </div>
                   )}
-
-                  {/* Add reservation button */}
-                  <div className="pt-4 border-t">
-                    <Link href={`/dashboard/nouvelle-reservation?firstName=${encodeURIComponent(selectedClient.firstName || '')}&lastName=${encodeURIComponent(selectedClient.lastName || '')}&email=${encodeURIComponent(selectedClient.email || '')}&phone=${encodeURIComponent(selectedClient.phone || '')}`}>
-                      <Button className="w-full" data-testid="add-reservation-from-client">
-                        Ajouter une réservation
-                      </Button>
-                    </Link>
-                  </div>
                 </div>
               </>
             )}
