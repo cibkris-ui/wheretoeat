@@ -368,10 +368,11 @@ export async function registerRoutes(
       let clientId = req.cookies?.clientId;
       if (!clientId) {
         clientId = `client_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-        res.cookie('clientId', clientId, { 
+        res.cookie('clientId', clientId, {
           maxAge: 365 * 24 * 60 * 60 * 1000,
           httpOnly: true,
-          sameSite: 'strict'
+          secure: process.env.NODE_ENV === "production",
+          sameSite: process.env.CORS_ORIGIN ? 'none' : 'strict',
         });
       }
       

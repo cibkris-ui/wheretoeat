@@ -13,6 +13,7 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { useQuery } from "@tanstack/react-query";
 import type { Restaurant } from "@shared/schema";
+import { apiUrl } from "@/lib/queryClient";
 
 export function Navbar() {
   const { user, isAuthenticated, isLoading } = useAuth();
@@ -107,7 +108,7 @@ export function Navbar() {
                 )}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem asChild>
-                  <a href="/api/logout" className="cursor-pointer text-red-600" data-testid="link-logout">
+                  <a href={apiUrl("/api/logout")} className="cursor-pointer text-red-600" data-testid="link-logout">
                     <LogOut className="mr-2 h-4 w-4" />
                     Déconnexion
                   </a>

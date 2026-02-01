@@ -13,6 +13,7 @@ import { useLocation } from "wouter";
 import { Upload, Store, FileText, Image, CheckCircle, User, LogIn, Check } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
 import { useAuth } from "@/hooks/useAuth";
+import { apiUrl } from "@/lib/queryClient";
 
 interface UploadResult {
   successful: Array<{ uploadURL: string }>;
@@ -73,7 +74,7 @@ export default function RestaurateurRegister() {
   const { data: categories = [] } = useQuery<CuisineCategory[]>({
     queryKey: ["cuisine-categories"],
     queryFn: async () => {
-      const res = await fetch("/api/cuisine-categories");
+      const res = await fetch(apiUrl("/api/cuisine-categories"));
       if (!res.ok) throw new Error("Failed to fetch categories");
       return res.json();
     },
@@ -81,7 +82,7 @@ export default function RestaurateurRegister() {
 
   const loginMutation = useMutation({
     mutationFn: async (data: { email: string; password: string }) => {
-      const res = await fetch("/api/auth/login", {
+      const res = await fetch(apiUrl("/api/auth/login"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -94,7 +95,7 @@ export default function RestaurateurRegister() {
       return res.json();
     },
     onSuccess: async (data) => {
-      const restaurantsRes = await fetch("/api/my-restaurants", { credentials: "include" });
+      const restaurantsRes = await fetch(apiUrl("/api/my-restaurants"), { credentials: "include" });
       if (restaurantsRes.ok) {
         const restaurants = await restaurantsRes.json();
         if (restaurants.length > 0) {
@@ -114,7 +115,7 @@ export default function RestaurateurRegister() {
 
   const submitWithAccountMutation = useMutation({
     mutationFn: async (data: typeof formData) => {
-      const res = await fetch("/api/registrations/with-account", {
+      const res = await fetch(apiUrl("/api/registrations/with-account"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -149,7 +150,7 @@ export default function RestaurateurRegister() {
 
   const submitExistingUserMutation = useMutation({
     mutationFn: async (data: typeof formData) => {
-      const res = await fetch("/api/registrations", {
+      const res = await fetch(apiUrl("/api/registrations"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -179,7 +180,7 @@ export default function RestaurateurRegister() {
   });
 
   const handleGetUploadParameters = async () => {
-    const res = await fetch("/api/objects/upload", {
+    const res = await fetch(apiUrl("/api/objects/upload"), {
       method: "POST",
       credentials: "include",
     });
@@ -190,7 +191,7 @@ export default function RestaurateurRegister() {
 
   const handleLogoComplete = async (result: UploadResult) => {
     if (result.successful?.[0]?.uploadURL) {
-      const res = await fetch("/api/objects/finalize", {
+      const res = await fetch(apiUrl("/api/objects/finalize"), {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -207,7 +208,7 @@ export default function RestaurateurRegister() {
     const newPhotos: string[] = [];
     for (const file of result.successful || []) {
       if (file.uploadURL) {
-        const res = await fetch("/api/objects/finalize", {
+        const res = await fetch(apiUrl("/api/objects/finalize"), {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           credentials: "include",
@@ -224,7 +225,7 @@ export default function RestaurateurRegister() {
 
   const handleMenuComplete = async (result: UploadResult) => {
     if (result.successful?.[0]?.uploadURL) {
-      const res = await fetch("/api/objects/finalize", {
+      const res = await fetch(apiUrl("/api/objects/finalize"), {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -445,7 +446,7 @@ export default function RestaurateurRegister() {
                         setEmailError("");
                         setIsCheckingEmail(true);
                         try {
-                          const res = await fetch(`/api/auth/check-email?email=${encodeURIComponent(formData.email)}`);
+                          const res = await fetch(apiUrl(`/api/auth/check-email?email=${encodeURIComponent(formData.email)}`));
                           const data = await res.json();
                           if (data.exists) {
                             setEmailError("Un compte avec cet email existe déjà. Veuillez vous connecter.");

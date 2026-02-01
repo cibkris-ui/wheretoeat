@@ -1,5 +1,6 @@
 import { useState, useCallback, useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { apiUrl } from "@/lib/queryClient";
 import {
   DndContext,
   DragEndEvent,
@@ -229,7 +230,7 @@ export function FloorPlanBuilder({ restaurantId }: FloorPlanBuilderProps) {
   const { data: savedPlan, isLoading } = useQuery({
     queryKey: [`/api/restaurants/${restaurantId}/floor-plan`],
     queryFn: async () => {
-      const res = await fetch(`/api/restaurants/${restaurantId}/floor-plan`, { credentials: "include" });
+      const res = await fetch(apiUrl(`/api/restaurants/${restaurantId}/floor-plan`), { credentials: "include" });
       if (!res.ok) throw new Error("Failed to load floor plan");
       return res.json() as Promise<FloorPlanData>;
     },
@@ -246,7 +247,7 @@ export function FloorPlanBuilder({ restaurantId }: FloorPlanBuilderProps) {
 
   const saveMutation = useMutation({
     mutationFn: async (plan: FloorPlanData) => {
-      const res = await fetch(`/api/restaurants/${restaurantId}/floor-plan`, {
+      const res = await fetch(apiUrl(`/api/restaurants/${restaurantId}/floor-plan`), {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         credentials: "include",

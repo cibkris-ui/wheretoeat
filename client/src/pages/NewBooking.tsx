@@ -1,5 +1,6 @@
 import { useState, useMemo, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { apiUrl } from "@/lib/queryClient";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
 import { useLocation, useSearch } from "wouter";
@@ -144,7 +145,7 @@ export default function NewBooking() {
     queryKey: ["/api/restaurants", activeRestaurantId, "bookings"],
     queryFn: async () => {
       if (!activeRestaurantId) return [];
-      const res = await fetch(`/api/restaurants/${activeRestaurantId}/bookings`, { credentials: "include" });
+      const res = await fetch(apiUrl(`/api/restaurants/${activeRestaurantId}/bookings`), { credentials: "include" });
       return res.ok ? res.json() : [];
     },
     enabled: !!activeRestaurantId,

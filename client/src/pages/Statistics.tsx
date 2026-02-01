@@ -46,6 +46,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { format, startOfMonth, endOfMonth, subMonths, parseISO, eachDayOfInterval, isSameMonth, startOfDay, isSameDay } from "date-fns";
 import { fr } from "date-fns/locale";
 import type { Restaurant, Booking } from "@shared/schema";
+import { apiUrl } from "@/lib/queryClient";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Legend, ReferenceLine } from "recharts";
 
@@ -69,7 +70,7 @@ export default function Statistics() {
         variant: "destructive",
       });
       setTimeout(() => {
-        window.location.href = "/api/login";
+        window.location.href = apiUrl("/api/login");
       }, 500);
     }
   }, [isAuthenticated, authLoading, toast]);
@@ -92,7 +93,7 @@ export default function Statistics() {
     queryKey: ["/api/all-bookings", restaurantIds],
     queryFn: async () => {
       const bookingsPromises = restaurantIds.map(id =>
-        fetch(`/api/restaurants/${id}/bookings`, { credentials: "include" })
+        fetch(apiUrl(`/api/restaurants/${id}/bookings`), { credentials: "include" })
           .then(res => res.ok ? res.json() : [])
       );
       const results = await Promise.all(bookingsPromises);
@@ -383,7 +384,7 @@ export default function Statistics() {
                       </div>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem asChild>
-                        <a href="/api/logout" className="cursor-pointer text-red-600">
+                        <a href={apiUrl("/api/logout")} className="cursor-pointer text-red-600">
                           <LogOut className="mr-2 h-4 w-4" />
                           Déconnexion
                         </a>
@@ -437,7 +438,7 @@ export default function Statistics() {
               <Tooltip>
                 <TooltipTrigger asChild>
                   <a
-                    href="/api/logout"
+                    href={apiUrl("/api/logout")}
                     className="w-12 h-12 rounded-lg flex items-center justify-center text-gray-500 hover:bg-red-50 hover:text-red-600 transition-colors"
                     data-testid="sidebar-logout"
                   >

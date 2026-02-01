@@ -3,7 +3,7 @@ import { useQuery, useQueryClient, useMutation } from "@tanstack/react-query";
 import { Link } from "wouter";
 import { useAuth } from "@/hooks/useAuth";
 import { useToast } from "@/hooks/use-toast";
-import { apiRequest } from "@/lib/queryClient";
+import { apiRequest, apiUrl } from "@/lib/queryClient";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Switch } from "@/components/ui/switch";
@@ -138,7 +138,7 @@ function ServiceHoursSection({ onBack, onSave, restaurantId, existingHours }: {
     if (!restaurantId) return;
     setIsSaving(true);
     try {
-      const res = await fetch(`/api/restaurants/${restaurantId}`, {
+      const res = await fetch(apiUrl(`/api/restaurants/${restaurantId}`), {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -337,7 +337,7 @@ export default function Settings() {
   const { data: cuisineCategories = [] } = useQuery<CuisineCategory[]>({
     queryKey: ["cuisine-categories"],
     queryFn: async () => {
-      const res = await fetch("/api/cuisine-categories");
+      const res = await fetch(apiUrl("/api/cuisine-categories"));
       if (!res.ok) throw new Error("Failed to fetch categories");
       return res.json();
     },
@@ -357,7 +357,7 @@ export default function Settings() {
     queryKey: ["/api/settings-bookings", activeRestaurantId],
     queryFn: async () => {
       if (!activeRestaurantId) return [];
-      const res = await fetch(`/api/restaurants/${activeRestaurantId}/bookings`, { credentials: "include" });
+      const res = await fetch(apiUrl(`/api/restaurants/${activeRestaurantId}/bookings`), { credentials: "include" });
       if (!res.ok) return [];
       return res.json();
     },
@@ -381,7 +381,7 @@ export default function Settings() {
     queryKey: ["/api/restaurant-users", activeRestaurantId],
     queryFn: async () => {
       if (!activeRestaurantId) return [];
-      const res = await fetch(`/api/restaurants/${activeRestaurantId}/users`, { credentials: "include" });
+      const res = await fetch(apiUrl(`/api/restaurants/${activeRestaurantId}/users`), { credentials: "include" });
       if (!res.ok) return [];
       return res.json();
     },
@@ -781,7 +781,7 @@ export default function Settings() {
                     </div>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem asChild>
-                      <a href="/api/logout" className="cursor-pointer text-red-600">
+                      <a href={apiUrl("/api/logout")} className="cursor-pointer text-red-600">
                         <LogOut className="mr-2 h-4 w-4" />
                         Déconnexion
                       </a>
@@ -836,7 +836,7 @@ export default function Settings() {
               <Tooltip>
                 <TooltipTrigger asChild>
                   <a
-                    href="/api/logout"
+                    href={apiUrl("/api/logout")}
                     className="w-12 h-12 rounded-lg flex items-center justify-center text-gray-500 hover:bg-red-50 hover:text-red-600 transition-colors"
                     data-testid="sidebar-logout"
                   >

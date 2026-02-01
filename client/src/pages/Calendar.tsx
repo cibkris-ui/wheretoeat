@@ -45,6 +45,7 @@ import { format, addMonths, subMonths, startOfMonth, endOfMonth, eachDayOfInterv
 import { fr } from "date-fns/locale";
 import type { Restaurant, Booking, ClosedDay } from "@shared/schema";
 import { Link } from "wouter";
+import { apiUrl } from "@/lib/queryClient";
 
 type ServiceFilter = "all" | "lunch" | "dinner";
 
@@ -62,7 +63,7 @@ export default function Calendar() {
   const { data: myRestaurants = [] } = useQuery<Restaurant[]>({
     queryKey: ["/api/my-restaurants"],
     queryFn: async () => {
-      const res = await fetch("/api/my-restaurants", { credentials: "include" });
+      const res = await fetch(apiUrl("/api/my-restaurants"), { credentials: "include" });
       if (!res.ok) throw new Error("Failed to fetch restaurants");
       return res.json();
     },
@@ -76,7 +77,7 @@ export default function Calendar() {
     queryKey: ["/api/calendar-bookings", activeRestaurantId, format(currentMonth, "yyyy-MM")],
     queryFn: async () => {
       if (!activeRestaurantId) return [];
-      const res = await fetch(`/api/restaurants/${activeRestaurantId}/bookings`, { credentials: "include" });
+      const res = await fetch(apiUrl(`/api/restaurants/${activeRestaurantId}/bookings`), { credentials: "include" });
       if (!res.ok) throw new Error("Failed to fetch bookings");
       return res.json();
     },
@@ -104,7 +105,7 @@ export default function Calendar() {
       if (!activeRestaurantId) return [];
       const year = currentMonth.getFullYear();
       const month = currentMonth.getMonth() + 1;
-      const res = await fetch(`/api/restaurants/${activeRestaurantId}/closed-days?year=${year}&month=${month}`, { credentials: "include" });
+      const res = await fetch(apiUrl(`/api/restaurants/${activeRestaurantId}/closed-days?year=${year}&month=${month}`), { credentials: "include" });
       if (!res.ok) throw new Error("Failed to fetch closed days");
       return res.json();
     },
@@ -113,7 +114,7 @@ export default function Calendar() {
 
   const createClosedDayMutation = useMutation({
     mutationFn: async ({ date, service }: { date: string; service: string }) => {
-      const res = await fetch(`/api/restaurants/${activeRestaurantId}/closed-days`, {
+      const res = await fetch(apiUrl(`/api/restaurants/${activeRestaurantId}/closed-days`), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -131,7 +132,7 @@ export default function Calendar() {
 
   const deleteClosedDayMutation = useMutation({
     mutationFn: async (id: number) => {
-      const res = await fetch(`/api/closed-days/${id}`, {
+      const res = await fetch(apiUrl(`/api/closed-days/${id}`), {
         method: "DELETE",
         credentials: "include",
       });
@@ -333,7 +334,7 @@ export default function Calendar() {
                       </div>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem asChild>
-                        <a href="/api/logout" className="cursor-pointer text-red-600">
+                        <a href={apiUrl("/api/logout")} className="cursor-pointer text-red-600">
                           <LogOut className="mr-2 h-4 w-4" />
                           Déconnexion
                         </a>
@@ -387,7 +388,7 @@ export default function Calendar() {
               <Tooltip>
                 <TooltipTrigger asChild>
                   <a
-                    href="/api/logout"
+                    href={apiUrl("/api/logout")}
                     className="w-12 h-12 rounded-lg flex items-center justify-center text-gray-500 hover:bg-red-50 hover:text-red-600 transition-colors"
                     data-testid="sidebar-logout"
                   >

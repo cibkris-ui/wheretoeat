@@ -1,11 +1,26 @@
 import "dotenv/config";
 import express, { type Request, Response, NextFunction } from "express";
+import cors from "cors";
 import { registerRoutes } from "./routes";
 import { serveStatic } from "./static";
 import { createServer } from "http";
 
 const app = express();
 const httpServer = createServer(app);
+
+// CORS configuration for split frontend/backend deployment
+const allowedOrigins = process.env.CORS_ORIGIN
+  ? process.env.CORS_ORIGIN.split(",")
+  : [];
+
+if (allowedOrigins.length > 0) {
+  app.use(
+    cors({
+      origin: allowedOrigins,
+      credentials: true,
+    })
+  );
+}
 
 declare module "http" {
   interface IncomingMessage {
@@ -74,8 +89,11 @@ app.use((req, res, next) => {
   // importantly only setup vite in development and after
   // setting up all the other routes so the catch-all route
   // doesn't interfere with the other routes
+  // When SERVE_STATIC=false, skip static serving (frontend hosted separately)
   if (process.env.NODE_ENV === "production") {
-    serveStatic(app);
+    if (process.env.SERVE_STATIC !== "false") {
+      serveStatic(app);
+    }
   } else {
     const { setupVite } = await import("./vite");
     await setupVite(httpServer, app);

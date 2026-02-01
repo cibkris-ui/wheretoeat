@@ -7,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
+import { apiUrl } from "@/lib/queryClient";
 import { useState } from "react";
 import { 
   CheckCircle, XCircle, Clock, Store, MapPin, Users, Shield, 
@@ -92,7 +93,7 @@ function LoginForm() {
     setError("");
     setLoading(true);
     try {
-      const res = await fetch("/api/auth/login", {
+      const res = await fetch(apiUrl("/api/auth/login"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -181,7 +182,7 @@ export default function Admin() {
   const { data: restaurants = [] } = useQuery<Restaurant[]>({
     queryKey: ["admin-restaurants"],
     queryFn: async () => {
-      const res = await fetch("/api/admin/restaurants", { credentials: "include" });
+      const res = await fetch(apiUrl("/api/admin/restaurants"), { credentials: "include" });
       if (!res.ok) throw new Error("Failed to fetch restaurants");
       return res.json();
     },
@@ -191,7 +192,7 @@ export default function Admin() {
   const { data: clients = [] } = useQuery<Client[]>({
     queryKey: ["admin-clients"],
     queryFn: async () => {
-      const res = await fetch("/api/admin/clients", { credentials: "include" });
+      const res = await fetch(apiUrl("/api/admin/clients"), { credentials: "include" });
       if (!res.ok) throw new Error("Failed to fetch clients");
       return res.json();
     },
@@ -201,7 +202,7 @@ export default function Admin() {
   const { data: users = [] } = useQuery<User[]>({
     queryKey: ["admin-users"],
     queryFn: async () => {
-      const res = await fetch("/api/admin/users", { credentials: "include" });
+      const res = await fetch(apiUrl("/api/admin/users"), { credentials: "include" });
       if (!res.ok) throw new Error("Failed to fetch users");
       return res.json();
     },
@@ -211,7 +212,7 @@ export default function Admin() {
   const { data: registrations = [] } = useQuery<Registration[]>({
     queryKey: ["admin-registrations"],
     queryFn: async () => {
-      const res = await fetch("/api/registrations", { credentials: "include" });
+      const res = await fetch(apiUrl("/api/registrations"), { credentials: "include" });
       if (!res.ok) throw new Error("Failed to fetch registrations");
       return res.json();
     },
@@ -220,7 +221,7 @@ export default function Admin() {
 
   const approveRegistrationMutation = useMutation({
     mutationFn: async (id: number) => {
-      const res = await fetch(`/api/registrations/${id}/status`, {
+      const res = await fetch(apiUrl(`/api/registrations/${id}/status`), {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -237,7 +238,7 @@ export default function Admin() {
 
   const rejectRegistrationMutation = useMutation({
     mutationFn: async (id: number) => {
-      const res = await fetch(`/api/registrations/${id}/status`, {
+      const res = await fetch(apiUrl(`/api/registrations/${id}/status`), {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -253,7 +254,7 @@ export default function Admin() {
 
   const approveMutation = useMutation({
     mutationFn: async (id: number) => {
-      const res = await fetch(`/api/admin/restaurants/${id}/approve`, {
+      const res = await fetch(apiUrl(`/api/admin/restaurants/${id}/approve`), {
         method: "PUT",
         credentials: "include",
       });
@@ -265,7 +266,7 @@ export default function Admin() {
 
   const rejectMutation = useMutation({
     mutationFn: async (id: number) => {
-      const res = await fetch(`/api/admin/restaurants/${id}/reject`, {
+      const res = await fetch(apiUrl(`/api/admin/restaurants/${id}/reject`), {
         method: "PUT",
         credentials: "include",
       });
@@ -277,7 +278,7 @@ export default function Admin() {
 
   const blockMutation = useMutation({
     mutationFn: async ({ id, isBlocked }: { id: number; isBlocked: boolean }) => {
-      const res = await fetch(`/api/admin/restaurants/${id}/block`, {
+      const res = await fetch(apiUrl(`/api/admin/restaurants/${id}/block`), {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -291,7 +292,7 @@ export default function Admin() {
 
   const deleteRestaurantMutation = useMutation({
     mutationFn: async (id: number) => {
-      const res = await fetch(`/api/admin/restaurants/${id}`, {
+      const res = await fetch(apiUrl(`/api/admin/restaurants/${id}`), {
         method: "DELETE",
         credentials: "include",
       });
@@ -306,7 +307,7 @@ export default function Admin() {
 
   const createUserMutation = useMutation({
     mutationFn: async (userData: typeof newUser) => {
-      const res = await fetch("/api/admin/users", {
+      const res = await fetch(apiUrl("/api/admin/users"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -327,7 +328,7 @@ export default function Admin() {
 
   const toggleAdminMutation = useMutation({
     mutationFn: async ({ id, isAdmin }: { id: string; isAdmin: boolean }) => {
-      const res = await fetch(`/api/admin/users/${id}`, {
+      const res = await fetch(apiUrl(`/api/admin/users/${id}`), {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -341,7 +342,7 @@ export default function Admin() {
 
   const deleteUserMutation = useMutation({
     mutationFn: async (id: string) => {
-      const res = await fetch(`/api/admin/users/${id}`, {
+      const res = await fetch(apiUrl(`/api/admin/users/${id}`), {
         method: "DELETE",
         credentials: "include",
       });
@@ -356,7 +357,7 @@ export default function Admin() {
 
   const createRestaurantMutation = useMutation({
     mutationFn: async (data: typeof newRestaurant) => {
-      const res = await fetch("/api/restaurants", {
+      const res = await fetch(apiUrl("/api/restaurants"), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -477,7 +478,7 @@ export default function Admin() {
               size="sm"
               className="text-white hover:bg-white/20"
               onClick={async () => {
-                await fetch("/api/auth/logout", { method: "POST", credentials: "include" });
+                await fetch(apiUrl("/api/auth/logout"), { method: "POST", credentials: "include" });
                 queryClient.invalidateQueries({ queryKey: ["auth-user"] });
                 window.location.href = "/";
               }}

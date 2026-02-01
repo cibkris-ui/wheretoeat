@@ -35,7 +35,7 @@ export function getSession() {
     cookie: {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
+      sameSite: process.env.CORS_ORIGIN ? "none" : "lax",
       maxAge: sessionTtl,
     },
   });

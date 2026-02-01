@@ -46,6 +46,7 @@ import {
 import { format, parseISO } from "date-fns";
 import { fr } from "date-fns/locale";
 import type { Restaurant, Booking } from "@shared/schema";
+import { apiUrl } from "@/lib/queryClient";
 
 type NotificationType = "new_booking" | "cancellation" | "modification";
 
@@ -101,7 +102,7 @@ export default function Notifications() {
     queryKey: ["/api/all-bookings-notifications", restaurantIds],
     queryFn: async () => {
       const bookingsPromises = restaurantIds.map(id =>
-        fetch(`/api/restaurants/${id}/bookings`, { credentials: "include" })
+        fetch(apiUrl(`/api/restaurants/${id}/bookings`), { credentials: "include" })
           .then(res => res.ok ? res.json() : [])
       );
       const results = await Promise.all(bookingsPromises);
@@ -112,7 +113,7 @@ export default function Notifications() {
 
   const updateStatusMutation = useMutation({
     mutationFn: async ({ bookingId, status }: { bookingId: number; status: string }) => {
-      const res = await fetch(`/api/bookings/${bookingId}/status`, {
+      const res = await fetch(apiUrl(`/api/bookings/${bookingId}/status`), {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -347,7 +348,7 @@ export default function Notifications() {
                       </div>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem asChild>
-                        <a href="/api/logout" className="cursor-pointer text-red-600">
+                        <a href={apiUrl("/api/logout")} className="cursor-pointer text-red-600">
                           <LogOut className="mr-2 h-4 w-4" />
                           Déconnexion
                         </a>
@@ -396,7 +397,7 @@ export default function Notifications() {
               <Tooltip>
                 <TooltipTrigger asChild>
                   <a
-                    href="/api/logout"
+                    href={apiUrl("/api/logout")}
                     className="w-12 h-12 rounded-lg flex items-center justify-center text-gray-500 hover:bg-red-50 hover:text-red-600 transition-colors"
                     data-testid="sidebar-logout"
                   >

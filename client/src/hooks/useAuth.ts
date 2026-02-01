@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import type { User } from "@shared/schema";
-import { getQueryFn } from "@/lib/queryClient";
+import { getQueryFn, apiUrl } from "@/lib/queryClient";
 
 export function useAuth() {
   const { data: user, isLoading } = useQuery<User | null>({
@@ -10,11 +10,11 @@ export function useAuth() {
   });
 
   const login = () => {
-    window.location.href = "/api/login";
+    window.location.href = apiUrl("/api/login");
   };
 
   const logout = () => {
-    window.location.href = "/api/logout";
+    window.location.href = apiUrl("/api/logout");
   };
 
   return {

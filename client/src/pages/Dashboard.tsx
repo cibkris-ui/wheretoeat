@@ -59,6 +59,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { format, addDays, subDays, isToday, isSameDay, parseISO, startOfDay, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth } from "date-fns";
 import { fr } from "date-fns/locale";
 import type { Restaurant, Booking } from "@shared/schema";
+import { apiUrl } from "@/lib/queryClient";
 
 type FilterType = "all" | "upcoming" | "in_service";
 
@@ -85,7 +86,7 @@ export default function Dashboard() {
         variant: "destructive",
       });
       setTimeout(() => {
-        window.location.href = "/api/login";
+        window.location.href = apiUrl("/api/login");
       }, 500);
     }
   }, [isAuthenticated, authLoading, toast]);
@@ -109,7 +110,7 @@ export default function Dashboard() {
     queryKey: ["/api/all-bookings", restaurantIds],
     queryFn: async () => {
       const bookingsPromises = restaurantIds.map(id =>
-        fetch(`/api/restaurants/${id}/bookings`, { credentials: "include" })
+        fetch(apiUrl(`/api/restaurants/${id}/bookings`), { credentials: "include" })
           .then(res => res.ok ? res.json() : [])
       );
       const results = await Promise.all(bookingsPromises);
@@ -120,7 +121,7 @@ export default function Dashboard() {
 
   const markArrivalMutation = useMutation({
     mutationFn: async (bookingId: number) => {
-      const res = await fetch(`/api/bookings/${bookingId}/arrival`, {
+      const res = await fetch(apiUrl(`/api/bookings/${bookingId}/arrival`), {
         method: "PATCH",
         credentials: "include",
       });
@@ -141,7 +142,7 @@ export default function Dashboard() {
 
   const markBillRequestedMutation = useMutation({
     mutationFn: async (bookingId: number) => {
-      const res = await fetch(`/api/bookings/${bookingId}/bill-requested`, {
+      const res = await fetch(apiUrl(`/api/bookings/${bookingId}/bill-requested`), {
         method: "PATCH",
         credentials: "include",
       });
@@ -165,7 +166,7 @@ export default function Dashboard() {
       const body = billAmount !== undefined ? JSON.stringify({ billAmount }) : undefined;
       const headers: Record<string, string> = {};
       if (body) headers["Content-Type"] = "application/json";
-      const res = await fetch(`/api/bookings/${bookingId}/departure`, {
+      const res = await fetch(apiUrl(`/api/bookings/${bookingId}/departure`), {
         method: "PATCH",
         credentials: "include",
         headers,
@@ -190,7 +191,7 @@ export default function Dashboard() {
 
   const updateStatusMutation = useMutation({
     mutationFn: async ({ bookingId, status }: { bookingId: number; status: string }) => {
-      const res = await fetch(`/api/bookings/${bookingId}/status`, {
+      const res = await fetch(apiUrl(`/api/bookings/${bookingId}/status`), {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -485,7 +486,7 @@ export default function Dashboard() {
                       </div>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem asChild>
-                        <a href="/api/logout" className="cursor-pointer text-red-600">
+                        <a href={apiUrl("/api/logout")} className="cursor-pointer text-red-600">
                           <LogOut className="mr-2 h-4 w-4" />
                           Déconnexion
                         </a>
@@ -540,7 +541,7 @@ export default function Dashboard() {
               <Tooltip>
                 <TooltipTrigger asChild>
                   <a
-                    href="/api/logout"
+                    href={apiUrl("/api/logout")}
                     className="w-12 h-12 rounded-lg flex items-center justify-center text-gray-500 hover:bg-red-50 hover:text-red-600 transition-colors"
                     data-testid="sidebar-logout"
                   >

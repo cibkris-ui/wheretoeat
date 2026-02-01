@@ -35,6 +35,7 @@ import { DndContext, DragEndEvent, DragOverlay, DragStartEvent, useDraggable, us
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import type { Booking, Restaurant, FloorPlanData, FloorPlanTable, FloorPlanDecor } from "@shared/schema";
+import { apiUrl } from "@/lib/queryClient";
 
 const CANVAS_WIDTH = 700;
 const CANVAS_HEIGHT = 400;
@@ -290,7 +291,7 @@ export default function Assignments() {
 
   const assignTableMutation = useMutation({
     mutationFn: async ({ bookingId, tableId, zoneId }: { bookingId: number; tableId: string | null; zoneId: string | null }) => {
-      const res = await fetch(`/api/bookings/${bookingId}/table`, {
+      const res = await fetch(apiUrl(`/api/bookings/${bookingId}/table`), {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -528,7 +529,7 @@ export default function Assignments() {
                       </div>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem asChild>
-                        <a href="/api/logout" className="cursor-pointer text-red-600">
+                        <a href={apiUrl("/api/logout")} className="cursor-pointer text-red-600">
                           <LogOut className="mr-2 h-4 w-4" />
                           Déconnexion
                         </a>

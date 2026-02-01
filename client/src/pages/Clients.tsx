@@ -46,6 +46,7 @@ import {
 import { format, parseISO } from "date-fns";
 import { fr } from "date-fns/locale";
 import type { Restaurant, Booking, Client } from "@shared/schema";
+import { apiUrl } from "@/lib/queryClient";
 
 interface ClientWithStats extends Client {
   visitCount: number;
@@ -73,7 +74,7 @@ export default function Clients() {
         variant: "destructive",
       });
       setTimeout(() => {
-        window.location.href = "/api/login";
+        window.location.href = apiUrl("/api/login");
       }, 500);
     }
   }, [isAuthenticated, authLoading, toast]);
@@ -90,7 +91,7 @@ export default function Clients() {
     queryFn: async () => {
       const params = new URLSearchParams();
       if (searchQuery) params.set("search", searchQuery);
-      const res = await fetch(`/api/restaurants/${activeRestaurantId}/clients?${params}`, {
+      const res = await fetch(apiUrl(`/api/restaurants/${activeRestaurantId}/clients?${params}`), {
         credentials: "include"
       });
       if (!res.ok) return [];
@@ -104,7 +105,7 @@ export default function Clients() {
     queryKey: ["/api/clients-bookings", activeRestaurantId],
     queryFn: async () => {
       if (!activeRestaurantId) return [];
-      const res = await fetch(`/api/restaurants/${activeRestaurantId}/bookings`, { credentials: "include" });
+      const res = await fetch(apiUrl(`/api/restaurants/${activeRestaurantId}/bookings`), { credentials: "include" });
       if (!res.ok) return [];
       return res.json();
     },
@@ -125,7 +126,7 @@ export default function Clients() {
   }, [allBookings]);
 
   const fetchClientDetail = async (clientId: number) => {
-    const res = await fetch(`/api/clients/${clientId}`, { credentials: "include" });
+    const res = await fetch(apiUrl(`/api/clients/${clientId}`), { credentials: "include" });
     if (!res.ok) return null;
     return res.json() as Promise<ClientDetail>;
   };
@@ -250,7 +251,7 @@ export default function Clients() {
                       </div>
                       <DropdownMenuSeparator />
                       <DropdownMenuItem asChild>
-                        <a href="/api/logout" className="cursor-pointer text-red-600">
+                        <a href={apiUrl("/api/logout")} className="cursor-pointer text-red-600">
                           <LogOut className="mr-2 h-4 w-4" />
                           Déconnexion
                         </a>
@@ -304,7 +305,7 @@ export default function Clients() {
               <Tooltip>
                 <TooltipTrigger asChild>
                   <a
-                    href="/api/logout"
+                    href={apiUrl("/api/logout")}
                     className="w-12 h-12 rounded-lg flex items-center justify-center text-gray-500 hover:bg-red-50 hover:text-red-600 transition-colors"
                     data-testid="sidebar-logout"
                   >

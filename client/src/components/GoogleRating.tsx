@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { Star } from "lucide-react";
+import { apiUrl } from "@/lib/queryClient";
 
 interface GooglePlaceDetails {
   rating?: number;
@@ -17,7 +18,7 @@ interface GoogleReview {
 }
 
 async function fetchGooglePlaceDetails(placeId: string): Promise<GooglePlaceDetails | null> {
-  const response = await fetch(`/api/google-places/${placeId}`);
+  const response = await fetch(apiUrl(`/api/google-places/${placeId}`));
   if (!response.ok) {
     if (response.status === 503) {
       return null;
@@ -29,7 +30,7 @@ async function fetchGooglePlaceDetails(placeId: string): Promise<GooglePlaceDeta
 
 async function checkGooglePlacesConfigured(): Promise<boolean> {
   try {
-    const response = await fetch("/api/google-places/configured");
+    const response = await fetch(apiUrl("/api/google-places/configured"));
     const data = await response.json();
     return data.configured;
   } catch {

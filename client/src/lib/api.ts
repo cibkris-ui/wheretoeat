@@ -1,6 +1,6 @@
 import type { Restaurant, Booking } from "@shared/schema";
 
-const API_BASE = "/api";
+export const API_BASE = import.meta.env.VITE_API_URL || "/api";
 
 export async function fetchRestaurants(): Promise<Restaurant[]> {
   const response = await fetch(`${API_BASE}/restaurants`, {
