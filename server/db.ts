@@ -12,6 +12,12 @@ if (!process.env.DATABASE_URL) {
 
 export const pool = new Pool({
   connectionString: process.env.DATABASE_URL,
+  max: parseInt(process.env.DB_POOL_MAX || "20", 10),
+  idleTimeoutMillis: 30000,
+  connectionTimeoutMillis: 5000,
+  ssl: process.env.DATABASE_URL?.includes("rds.amazonaws.com")
+    ? { rejectUnauthorized: false }
+    : undefined,
 });
 
 export const db = drizzle(pool, { schema });

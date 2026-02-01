@@ -8,7 +8,9 @@ import { ObjectStorageService, ObjectNotFoundError } from "./objectStorage";
 import { ObjectPermission } from "./objectAcl";
 import { googlePlacesService } from "./googlePlaces";
 import bcrypt from "bcryptjs";
+import rateLimit from "express-rate-limit";
 import { z } from "zod";
+import { ERRORS } from "./messages";
 
 const isAuthenticatedCombined: RequestHandler = async (req: any, res, next) => {
   if (req.session?.userId) {
@@ -29,7 +31,30 @@ export async function registerRoutes(
   app: Express
 ): Promise<Server> {
   
-  await setupAuth(app);
+  if (process.env.REPL_ID) {
+    await setupAuth(app);
+  } else {
+    const { getSession } = await import("./replitAuth");
+    app.use(getSession());
+  }
+
+  // Rate limiting
+  const authLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 10,
+    message: { message: "Trop de tentatives, veuillez réessayer plus tard." },
+    standardHeaders: true,
+    legacyHeaders: false,
+  });
+
+  const generalLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    max: 100,
+    standardHeaders: true,
+    legacyHeaders: false,
+  });
+
+  app.use("/api/", generalLimiter);
 
   const registerUserSchema = z.object({
     email: z.string().email(),
@@ -43,7 +68,7 @@ export async function registerRoutes(
     password: z.string(),
   });
 
-  app.post("/api/auth/register", async (req, res) => {
+  app.post("/api/auth/register", authLimiter, async (req, res) => {
     try {
       const result = registerUserSchema.safeParse(req.body);
       if (!result.success) {
@@ -54,7 +79,7 @@ export async function registerRoutes(
 
       const existingUser = await storage.getUserByEmail(email);
       if (existingUser) {
-        return res.status(400).json({ message: "Un compte avec cet email existe déjà" });
+        return res.status(400).json({ message: ERRORS.EMAIL_EXISTS });
       }
 
       const hashedPassword = await bcrypt.hash(password, 10);
@@ -64,16 +89,18 @@ export async function registerRoutes(
       res.status(201).json({ user: { id: user.id, email: user.email, firstName: user.firstName, lastName: user.lastName } });
     } catch (error: any) {
       console.error("Registration error:", error);
-      res.status(500).json({ message: "Erreur lors de l'inscription" });
+      res.status(500).json({ message: ERRORS.REGISTRATION_ERROR });
     }
   });
 
-  app.get("/api/auth/check-email", async (req, res) => {
+  app.get("/api/auth/check-email", authLimiter, async (req, res) => {
     try {
-      const email = req.query.email as string;
-      if (!email) {
-        return res.status(400).json({ message: "Email is required" });
+      const emailParam = req.query.email;
+      const emailResult = z.string().email().safeParse(emailParam);
+      if (!emailResult.success) {
+        return res.status(400).json({ message: "Format email invalide" });
       }
+      const email = emailResult.data;
       const existingUser = await storage.getUserByEmail(email);
       res.json({ exists: !!existingUser });
     } catch (error: any) {
@@ -82,7 +109,7 @@ export async function registerRoutes(
     }
   });
 
-  app.post("/api/auth/login", async (req, res) => {
+  app.post("/api/auth/login", authLimiter, async (req, res) => {
     try {
       const result = loginSchema.safeParse(req.body);
       if (!result.success) {
@@ -93,19 +120,19 @@ export async function registerRoutes(
 
       const user = await storage.getUserByEmail(email);
       if (!user || !user.password) {
-        return res.status(401).json({ message: "Email ou mot de passe incorrect" });
+        return res.status(401).json({ message: ERRORS.INVALID_CREDENTIALS });
       }
 
       const validPassword = await bcrypt.compare(password, user.password);
       if (!validPassword) {
-        return res.status(401).json({ message: "Email ou mot de passe incorrect" });
+        return res.status(401).json({ message: ERRORS.INVALID_CREDENTIALS });
       }
 
       (req.session as any).userId = user.id;
       res.json({ user: { id: user.id, email: user.email, firstName: user.firstName, lastName: user.lastName } });
     } catch (error: any) {
       console.error("Login error:", error);
-      res.status(500).json({ message: "Erreur lors de la connexion" });
+      res.status(500).json({ message: ERRORS.LOGIN_ERROR });
     }
   });
 
@@ -114,9 +141,10 @@ export async function registerRoutes(
       const userId = req.localUserId;
       const user = await storage.getUser(userId);
       if (!user) {
-        return res.status(404).json({ message: "User not found" });
+        return res.status(404).json({ message: ERRORS.USER_NOT_FOUND });
       }
-      res.json(user);
+      const { password: _, ...safeUser } = user;
+      res.json(safeUser);
     } catch (error: any) {
       console.error("Error fetching user:", error);
       res.status(500).json({ message: "Failed to fetch user" });
@@ -136,12 +164,12 @@ export async function registerRoutes(
     try {
       const id = parseInt(req.params.id);
       if (isNaN(id)) {
-        return res.status(400).json({ message: "Invalid restaurant ID" });
+        return res.status(400).json({ message: ERRORS.INVALID_RESTAURANT_ID });
       }
       
       const restaurant = await storage.getRestaurant(id);
       if (!restaurant) {
-        return res.status(404).json({ message: "Restaurant not found" });
+        return res.status(404).json({ message: ERRORS.RESTAURANT_NOT_FOUND });
       }
       
       res.json(restaurant);
@@ -155,12 +183,12 @@ export async function registerRoutes(
     try {
       const restaurantId = parseInt(req.params.id);
       if (isNaN(restaurantId)) {
-        return res.status(400).json({ message: "Invalid restaurant ID" });
+        return res.status(400).json({ message: ERRORS.INVALID_RESTAURANT_ID });
       }
       
       const restaurant = await storage.getRestaurant(restaurantId);
       if (!restaurant) {
-        return res.status(404).json({ message: "Restaurant not found" });
+        return res.status(404).json({ message: ERRORS.RESTAURANT_NOT_FOUND });
       }
       
       const closedDays = await storage.getClosedDays(restaurantId);
@@ -175,12 +203,12 @@ export async function registerRoutes(
     try {
       const restaurantId = parseInt(req.params.id);
       if (isNaN(restaurantId)) {
-        return res.status(400).json({ message: "Invalid restaurant ID" });
+        return res.status(400).json({ message: ERRORS.INVALID_RESTAURANT_ID });
       }
       
       const restaurant = await storage.getRestaurant(restaurantId);
       if (!restaurant) {
-        return res.status(404).json({ message: "Restaurant not found" });
+        return res.status(404).json({ message: ERRORS.RESTAURANT_NOT_FOUND });
       }
       
       res.json(restaurant.openingHours || null);
@@ -189,7 +217,7 @@ export async function registerRoutes(
     }
   });
 
-  app.post("/api/restaurants", async (req, res) => {
+  app.post("/api/restaurants", isAuthenticatedCombined, async (req: any, res) => {
     try {
       const result = insertRestaurantSchema.safeParse(req.body);
       if (!result.success) {
@@ -219,16 +247,16 @@ export async function registerRoutes(
     try {
       const id = parseInt(req.params.id);
       if (isNaN(id)) {
-        return res.status(400).json({ message: "Invalid restaurant ID" });
+        return res.status(400).json({ message: ERRORS.INVALID_RESTAURANT_ID });
       }
       
       const restaurant = await storage.getRestaurant(id);
       if (!restaurant) {
-        return res.status(404).json({ message: "Restaurant not found" });
+        return res.status(404).json({ message: ERRORS.RESTAURANT_NOT_FOUND });
       }
       
       if (restaurant.ownerId) {
-        return res.status(400).json({ message: "Restaurant already claimed" });
+        return res.status(400).json({ message: ERRORS.RESTAURANT_CLAIMED });
       }
       
       const userId = req.localUserId;
@@ -243,17 +271,17 @@ export async function registerRoutes(
     try {
       const id = parseInt(req.params.id);
       if (isNaN(id)) {
-        return res.status(400).json({ message: "Invalid restaurant ID" });
+        return res.status(400).json({ message: ERRORS.INVALID_RESTAURANT_ID });
       }
       
       const restaurant = await storage.getRestaurant(id);
       if (!restaurant) {
-        return res.status(404).json({ message: "Restaurant not found" });
+        return res.status(404).json({ message: ERRORS.RESTAURANT_NOT_FOUND });
       }
       
       const userId = req.localUserId;
       if (restaurant.ownerId !== userId) {
-        return res.status(403).json({ message: "Not authorized to edit this restaurant" });
+        return res.status(403).json({ message: ERRORS.NOT_AUTHORIZED_RESTAURANT });
       }
       
       const updateData: Record<string, any> = {};
@@ -265,7 +293,7 @@ export async function registerRoutes(
       }
       
       if (Object.keys(updateData).length === 0) {
-        return res.status(400).json({ message: "No valid fields to update" });
+        return res.status(400).json({ message: ERRORS.NO_VALID_FIELDS });
       }
       
       const updated = await storage.updateRestaurant(id, updateData);
@@ -286,7 +314,7 @@ export async function registerRoutes(
       
       const restaurant = await storage.getRestaurant(result.data.restaurantId);
       if (!restaurant) {
-        return res.status(404).json({ message: "Restaurant not found" });
+        return res.status(404).json({ message: ERRORS.RESTAURANT_NOT_FOUND });
       }
       
       // Vérifier si la date est fermée aux réservations
@@ -414,12 +442,12 @@ export async function registerRoutes(
       
       const restaurant = await storage.getRestaurant(restaurantId);
       if (!restaurant) {
-        return res.status(404).json({ message: "Restaurant not found" });
+        return res.status(404).json({ message: ERRORS.RESTAURANT_NOT_FOUND });
       }
       
       const userId = req.localUserId;
       if (restaurant.ownerId !== userId) {
-        return res.status(403).json({ message: "Not authorized to create bookings for this restaurant" });
+        return res.status(403).json({ message: ERRORS.NOT_AUTHORIZED_RESTAURANT });
       }
       
       // Vérifier si la date est fermée aux réservations
@@ -485,17 +513,17 @@ export async function registerRoutes(
     try {
       const id = parseInt(req.params.id);
       if (isNaN(id)) {
-        return res.status(400).json({ message: "Invalid restaurant ID" });
+        return res.status(400).json({ message: ERRORS.INVALID_RESTAURANT_ID });
       }
       
       const restaurant = await storage.getRestaurant(id);
       if (!restaurant) {
-        return res.status(404).json({ message: "Restaurant not found" });
+        return res.status(404).json({ message: ERRORS.RESTAURANT_NOT_FOUND });
       }
       
       const userId = req.localUserId;
       if (restaurant.ownerId !== userId) {
-        return res.status(403).json({ message: "Not authorized to view bookings" });
+        return res.status(403).json({ message: ERRORS.NOT_AUTHORIZED_RESTAURANT });
       }
       
       const bookings = await storage.getBookingsByRestaurant(id);
@@ -509,22 +537,22 @@ export async function registerRoutes(
     try {
       const bookingId = parseInt(req.params.id);
       if (isNaN(bookingId)) {
-        return res.status(400).json({ message: "Invalid booking ID" });
+        return res.status(400).json({ message: ERRORS.INVALID_BOOKING_ID });
       }
       
       const booking = await storage.getBooking(bookingId);
       if (!booking) {
-        return res.status(404).json({ message: "Booking not found" });
+        return res.status(404).json({ message: ERRORS.BOOKING_NOT_FOUND });
       }
       
       const restaurant = await storage.getRestaurant(booking.restaurantId);
       if (!restaurant) {
-        return res.status(404).json({ message: "Restaurant not found" });
+        return res.status(404).json({ message: ERRORS.RESTAURANT_NOT_FOUND });
       }
       
       const userId = req.localUserId;
       if (restaurant.ownerId !== userId) {
-        return res.status(403).json({ message: "Not authorized" });
+        return res.status(403).json({ message: ERRORS.NOT_AUTHORIZED_RESTAURANT });
       }
       
       const now = new Date();
@@ -541,22 +569,22 @@ export async function registerRoutes(
     try {
       const bookingId = parseInt(req.params.id);
       if (isNaN(bookingId)) {
-        return res.status(400).json({ message: "Invalid booking ID" });
+        return res.status(400).json({ message: ERRORS.INVALID_BOOKING_ID });
       }
       
       const booking = await storage.getBooking(bookingId);
       if (!booking) {
-        return res.status(404).json({ message: "Booking not found" });
+        return res.status(404).json({ message: ERRORS.BOOKING_NOT_FOUND });
       }
       
       const restaurant = await storage.getRestaurant(booking.restaurantId);
       if (!restaurant) {
-        return res.status(404).json({ message: "Restaurant not found" });
+        return res.status(404).json({ message: ERRORS.RESTAURANT_NOT_FOUND });
       }
       
       const userId = req.localUserId;
       if (restaurant.ownerId !== userId) {
-        return res.status(403).json({ message: "Not authorized" });
+        return res.status(403).json({ message: ERRORS.NOT_AUTHORIZED_RESTAURANT });
       }
       
       const updated = await storage.updateBookingBillRequested(bookingId, true);
@@ -570,22 +598,22 @@ export async function registerRoutes(
     try {
       const bookingId = parseInt(req.params.id);
       if (isNaN(bookingId)) {
-        return res.status(400).json({ message: "Invalid booking ID" });
+        return res.status(400).json({ message: ERRORS.INVALID_BOOKING_ID });
       }
       
       const booking = await storage.getBooking(bookingId);
       if (!booking) {
-        return res.status(404).json({ message: "Booking not found" });
+        return res.status(404).json({ message: ERRORS.BOOKING_NOT_FOUND });
       }
       
       const restaurant = await storage.getRestaurant(booking.restaurantId);
       if (!restaurant) {
-        return res.status(404).json({ message: "Restaurant not found" });
+        return res.status(404).json({ message: ERRORS.RESTAURANT_NOT_FOUND });
       }
       
       const userId = req.localUserId;
       if (restaurant.ownerId !== userId) {
-        return res.status(403).json({ message: "Not authorized" });
+        return res.status(403).json({ message: ERRORS.NOT_AUTHORIZED_RESTAURANT });
       }
       
       const now = new Date();
@@ -619,27 +647,27 @@ export async function registerRoutes(
     try {
       const bookingId = parseInt(req.params.id);
       if (isNaN(bookingId)) {
-        return res.status(400).json({ message: "Invalid booking ID" });
+        return res.status(400).json({ message: ERRORS.INVALID_BOOKING_ID });
       }
       
       const { status } = req.body;
       if (!status || !["pending", "confirmed", "waiting", "refused", "cancelled", "noshow"].includes(status)) {
-        return res.status(400).json({ message: "Invalid status" });
+        return res.status(400).json({ message: ERRORS.INVALID_STATUS });
       }
       
       const booking = await storage.getBooking(bookingId);
       if (!booking) {
-        return res.status(404).json({ message: "Booking not found" });
+        return res.status(404).json({ message: ERRORS.BOOKING_NOT_FOUND });
       }
       
       const restaurant = await storage.getRestaurant(booking.restaurantId);
       if (!restaurant) {
-        return res.status(404).json({ message: "Restaurant not found" });
+        return res.status(404).json({ message: ERRORS.RESTAURANT_NOT_FOUND });
       }
       
       const userId = req.localUserId;
       if (restaurant.ownerId !== userId) {
-        return res.status(403).json({ message: "Not authorized" });
+        return res.status(403).json({ message: ERRORS.NOT_AUTHORIZED_RESTAURANT });
       }
       
       const updated = await storage.updateBookingStatus(bookingId, status);
@@ -653,24 +681,24 @@ export async function registerRoutes(
     try {
       const bookingId = parseInt(req.params.id);
       if (isNaN(bookingId)) {
-        return res.status(400).json({ message: "Invalid booking ID" });
+        return res.status(400).json({ message: ERRORS.INVALID_BOOKING_ID });
       }
       
       const { tableId, zoneId } = req.body;
       
       const booking = await storage.getBooking(bookingId);
       if (!booking) {
-        return res.status(404).json({ message: "Booking not found" });
+        return res.status(404).json({ message: ERRORS.BOOKING_NOT_FOUND });
       }
       
       const restaurant = await storage.getRestaurant(booking.restaurantId);
       if (!restaurant) {
-        return res.status(404).json({ message: "Restaurant not found" });
+        return res.status(404).json({ message: ERRORS.RESTAURANT_NOT_FOUND });
       }
       
       const userId = req.localUserId;
       if (restaurant.ownerId !== userId) {
-        return res.status(403).json({ message: "Not authorized" });
+        return res.status(403).json({ message: ERRORS.NOT_AUTHORIZED_RESTAURANT });
       }
       
       const updated = await storage.updateBookingTable(bookingId, tableId || null, zoneId || null);
@@ -693,17 +721,17 @@ export async function registerRoutes(
     try {
       const restaurantId = parseInt(req.params.id);
       if (isNaN(restaurantId)) {
-        return res.status(400).json({ message: "Invalid restaurant ID" });
+        return res.status(400).json({ message: ERRORS.INVALID_RESTAURANT_ID });
       }
       
       const restaurant = await storage.getRestaurant(restaurantId);
       if (!restaurant) {
-        return res.status(404).json({ message: "Restaurant not found" });
+        return res.status(404).json({ message: ERRORS.RESTAURANT_NOT_FOUND });
       }
       
       const userId = req.localUserId;
       if (restaurant.ownerId !== userId) {
-        return res.status(403).json({ message: "Not authorized" });
+        return res.status(403).json({ message: ERRORS.NOT_AUTHORIZED_RESTAURANT });
       }
       
       const { year, month } = req.query;
@@ -724,17 +752,17 @@ export async function registerRoutes(
     try {
       const restaurantId = parseInt(req.params.id);
       if (isNaN(restaurantId)) {
-        return res.status(400).json({ message: "Invalid restaurant ID" });
+        return res.status(400).json({ message: ERRORS.INVALID_RESTAURANT_ID });
       }
       
       const restaurant = await storage.getRestaurant(restaurantId);
       if (!restaurant) {
-        return res.status(404).json({ message: "Restaurant not found" });
+        return res.status(404).json({ message: ERRORS.RESTAURANT_NOT_FOUND });
       }
       
       const userId = req.localUserId;
       if (restaurant.ownerId !== userId) {
-        return res.status(403).json({ message: "Not authorized" });
+        return res.status(403).json({ message: ERRORS.NOT_AUTHORIZED_RESTAURANT });
       }
       
       const { date, service, reason } = req.body;
@@ -769,12 +797,12 @@ export async function registerRoutes(
       
       const restaurant = await storage.getRestaurant(closedDay.restaurantId);
       if (!restaurant) {
-        return res.status(404).json({ message: "Restaurant not found" });
+        return res.status(404).json({ message: ERRORS.RESTAURANT_NOT_FOUND });
       }
       
       const userId = req.localUserId;
       if (restaurant.ownerId !== userId) {
-        return res.status(403).json({ message: "Not authorized" });
+        return res.status(403).json({ message: ERRORS.NOT_AUTHORIZED_RESTAURANT });
       }
       
       await storage.deleteClosedDay(closedDayId);
@@ -788,38 +816,22 @@ export async function registerRoutes(
     try {
       const restaurantId = parseInt(req.params.id);
       if (isNaN(restaurantId)) {
-        return res.status(400).json({ message: "Invalid restaurant ID" });
+        return res.status(400).json({ message: ERRORS.INVALID_RESTAURANT_ID });
       }
       
       const restaurant = await storage.getRestaurant(restaurantId);
       if (!restaurant) {
-        return res.status(404).json({ message: "Restaurant not found" });
+        return res.status(404).json({ message: ERRORS.RESTAURANT_NOT_FOUND });
       }
       
       const userId = req.localUserId;
       if (restaurant.ownerId !== userId) {
-        return res.status(403).json({ message: "Not authorized" });
+        return res.status(403).json({ message: ERRORS.NOT_AUTHORIZED_RESTAURANT });
       }
       
       const search = req.query.search as string | undefined;
-      const clients = await storage.getClientsByRestaurant(restaurantId, search);
-      
-      const clientsWithStats = await Promise.all(clients.map(async (client) => {
-        const clientBookings = await storage.getClientBookings(client.id, restaurantId);
-        const visitCount = clientBookings.length;
-        const lastVisit = clientBookings.length > 0 ? clientBookings[0].date : null;
-        const avgGuests = visitCount > 0 
-          ? Math.round(clientBookings.reduce((sum, b) => sum + b.guests, 0) / visitCount)
-          : 0;
-        
-        return {
-          ...client,
-          visitCount,
-          lastVisit,
-          avgGuests
-        };
-      }));
-      
+      const clientsWithStats = await storage.getClientsWithStatsByRestaurant(restaurantId, search);
+
       res.json(clientsWithStats);
     } catch (error: any) {
       res.status(500).json({ message: error.message });
@@ -835,7 +847,7 @@ export async function registerRoutes(
       
       const client = await storage.getClient(clientId);
       if (!client) {
-        return res.status(404).json({ message: "Client not found" });
+        return res.status(404).json({ message: ERRORS.CLIENT_NOT_FOUND });
       }
       
       if (!client.restaurantId) {
@@ -844,12 +856,12 @@ export async function registerRoutes(
       
       const restaurant = await storage.getRestaurant(client.restaurantId);
       if (!restaurant) {
-        return res.status(404).json({ message: "Restaurant not found" });
+        return res.status(404).json({ message: ERRORS.RESTAURANT_NOT_FOUND });
       }
       
       const userId = req.localUserId;
       if (restaurant.ownerId !== userId) {
-        return res.status(403).json({ message: "Not authorized" });
+        return res.status(403).json({ message: ERRORS.NOT_AUTHORIZED_RESTAURANT });
       }
       
       const clientBookings = await storage.getClientBookings(clientId, client.restaurantId);
@@ -900,7 +912,7 @@ export async function registerRoutes(
 
       const existingUser = await storage.getUserByEmail(email);
       if (existingUser) {
-        return res.status(400).json({ message: "Un compte avec cet email existe déjà" });
+        return res.status(400).json({ message: ERRORS.EMAIL_EXISTS });
       }
 
       const hashedPassword = await bcrypt.hash(password, 10);
@@ -930,7 +942,7 @@ export async function registerRoutes(
       res.status(201).json({ user: { id: user.id, email: user.email }, restaurant });
     } catch (error: any) {
       console.error("Registration with account error:", error);
-      res.status(500).json({ message: "Erreur lors de l'inscription" });
+      res.status(500).json({ message: ERRORS.REGISTRATION_ERROR });
     }
   });
 
@@ -994,7 +1006,7 @@ export async function registerRoutes(
       const userId = req.localUserId;
       const user = await storage.getUser(userId);
       if (!user?.isAdmin) {
-        return res.status(403).json({ message: "Admin access required" });
+        return res.status(403).json({ message: ERRORS.ADMIN_REQUIRED });
       }
       const id = parseInt(req.params.id);
       if (isNaN(id)) {
@@ -1002,7 +1014,7 @@ export async function registerRoutes(
       }
       const { status, adminNotes } = req.body;
       if (!["pending", "approved", "rejected"].includes(status)) {
-        return res.status(400).json({ message: "Invalid status" });
+        return res.status(400).json({ message: ERRORS.INVALID_STATUS });
       }
       const registration = await storage.updateRegistrationStatus(id, status, adminNotes);
       if (!registration) {
@@ -1130,17 +1142,17 @@ export async function registerRoutes(
     try {
       const id = parseInt(req.params.id);
       if (isNaN(id)) {
-        return res.status(400).json({ message: "Invalid restaurant ID" });
+        return res.status(400).json({ message: ERRORS.INVALID_RESTAURANT_ID });
       }
       
       const restaurant = await storage.getRestaurant(id);
       if (!restaurant) {
-        return res.status(404).json({ message: "Restaurant not found" });
+        return res.status(404).json({ message: ERRORS.RESTAURANT_NOT_FOUND });
       }
       
       const userId = req.localUserId;
       if (restaurant.ownerId !== userId) {
-        return res.status(403).json({ message: "Not authorized to edit this restaurant" });
+        return res.status(403).json({ message: ERRORS.NOT_AUTHORIZED_RESTAURANT });
       }
       
       const { googlePlaceId } = req.body;
@@ -1155,17 +1167,17 @@ export async function registerRoutes(
     try {
       const id = parseInt(req.params.id);
       if (isNaN(id)) {
-        return res.status(400).json({ message: "Invalid restaurant ID" });
+        return res.status(400).json({ message: ERRORS.INVALID_RESTAURANT_ID });
       }
       
       const restaurant = await storage.getRestaurant(id);
       if (!restaurant) {
-        return res.status(404).json({ message: "Restaurant not found" });
+        return res.status(404).json({ message: ERRORS.RESTAURANT_NOT_FOUND });
       }
       
       const userId = req.localUserId;
       if (restaurant.ownerId !== userId) {
-        return res.status(403).json({ message: "Not authorized" });
+        return res.status(403).json({ message: ERRORS.NOT_AUTHORIZED_RESTAURANT });
       }
       
       const floorPlan = await storage.getFloorPlan(id);
@@ -1179,17 +1191,17 @@ export async function registerRoutes(
     try {
       const id = parseInt(req.params.id);
       if (isNaN(id)) {
-        return res.status(400).json({ message: "Invalid restaurant ID" });
+        return res.status(400).json({ message: ERRORS.INVALID_RESTAURANT_ID });
       }
       
       const restaurant = await storage.getRestaurant(id);
       if (!restaurant) {
-        return res.status(404).json({ message: "Restaurant not found" });
+        return res.status(404).json({ message: ERRORS.RESTAURANT_NOT_FOUND });
       }
       
       const userId = req.localUserId;
       if (restaurant.ownerId !== userId) {
-        return res.status(403).json({ message: "Not authorized" });
+        return res.status(403).json({ message: ERRORS.NOT_AUTHORIZED_RESTAURANT });
       }
       
       const plan = req.body;
@@ -1204,17 +1216,17 @@ export async function registerRoutes(
     try {
       const id = parseInt(req.params.id);
       if (isNaN(id)) {
-        return res.status(400).json({ message: "Invalid restaurant ID" });
+        return res.status(400).json({ message: ERRORS.INVALID_RESTAURANT_ID });
       }
       
       const restaurant = await storage.getRestaurant(id);
       if (!restaurant) {
-        return res.status(404).json({ message: "Restaurant not found" });
+        return res.status(404).json({ message: ERRORS.RESTAURANT_NOT_FOUND });
       }
       
       const userId = req.localUserId;
       if (restaurant.ownerId !== userId) {
-        return res.status(403).json({ message: "Not authorized" });
+        return res.status(403).json({ message: ERRORS.NOT_AUTHORIZED_RESTAURANT });
       }
       
       const users = await storage.getRestaurantUsers(id);
@@ -1228,17 +1240,17 @@ export async function registerRoutes(
     try {
       const id = parseInt(req.params.id);
       if (isNaN(id)) {
-        return res.status(400).json({ message: "Invalid restaurant ID" });
+        return res.status(400).json({ message: ERRORS.INVALID_RESTAURANT_ID });
       }
       
       const restaurant = await storage.getRestaurant(id);
       if (!restaurant) {
-        return res.status(404).json({ message: "Restaurant not found" });
+        return res.status(404).json({ message: ERRORS.RESTAURANT_NOT_FOUND });
       }
       
       const userId = req.localUserId;
       if (restaurant.ownerId !== userId) {
-        return res.status(403).json({ message: "Not authorized" });
+        return res.status(403).json({ message: ERRORS.NOT_AUTHORIZED_RESTAURANT });
       }
       
       const { email, password, firstName, lastName, role } = req.body;
@@ -1251,7 +1263,7 @@ export async function registerRoutes(
       
       const existing = await storage.getRestaurantUserByEmail(id, email);
       if (existing) {
-        return res.status(400).json({ message: "User already has access to this restaurant" });
+        return res.status(400).json({ message: ERRORS.USER_ALREADY_HAS_ACCESS });
       }
       
       let userAccount = await storage.getUserByEmail(email.toLowerCase().trim());
@@ -1290,12 +1302,12 @@ export async function registerRoutes(
       
       const restaurant = await storage.getRestaurant(restaurantId);
       if (!restaurant) {
-        return res.status(404).json({ message: "Restaurant not found" });
+        return res.status(404).json({ message: ERRORS.RESTAURANT_NOT_FOUND });
       }
       
       const userId = req.localUserId;
       if (restaurant.ownerId !== userId) {
-        return res.status(403).json({ message: "Not authorized" });
+        return res.status(403).json({ message: ERRORS.NOT_AUTHORIZED_RESTAURANT });
       }
       
       await storage.removeRestaurantUser(teamUserId);
@@ -1312,7 +1324,7 @@ export async function registerRoutes(
     }
     const user = await storage.getUser(userId);
     if (!user?.isAdmin) {
-      return res.status(403).json({ message: "Admin access required" });
+      return res.status(403).json({ message: ERRORS.ADMIN_REQUIRED });
     }
     req.localUserId = userId;
     next();
@@ -1331,7 +1343,7 @@ export async function registerRoutes(
     try {
       const id = parseInt(req.params.id);
       if (isNaN(id)) {
-        return res.status(400).json({ message: "Invalid restaurant ID" });
+        return res.status(400).json({ message: ERRORS.INVALID_RESTAURANT_ID });
       }
       const updated = await storage.updateRestaurant(id, { approvalStatus: "approved" });
       res.json(updated);
@@ -1344,7 +1356,7 @@ export async function registerRoutes(
     try {
       const id = parseInt(req.params.id);
       if (isNaN(id)) {
-        return res.status(400).json({ message: "Invalid restaurant ID" });
+        return res.status(400).json({ message: ERRORS.INVALID_RESTAURANT_ID });
       }
       const updated = await storage.updateRestaurant(id, { approvalStatus: "rejected" });
       res.json(updated);
@@ -1357,7 +1369,7 @@ export async function registerRoutes(
     try {
       const id = parseInt(req.params.id);
       if (isNaN(id)) {
-        return res.status(400).json({ message: "Invalid restaurant ID" });
+        return res.status(400).json({ message: ERRORS.INVALID_RESTAURANT_ID });
       }
       const { isBlocked } = req.body;
       const updated = await storage.updateRestaurant(id, { isBlocked: isBlocked ?? true });
@@ -1371,7 +1383,7 @@ export async function registerRoutes(
     try {
       const id = parseInt(req.params.id);
       if (isNaN(id)) {
-        return res.status(400).json({ message: "Invalid restaurant ID" });
+        return res.status(400).json({ message: ERRORS.INVALID_RESTAURANT_ID });
       }
       await storage.deleteRestaurant(id);
       res.json({ success: true });
@@ -1382,26 +1394,7 @@ export async function registerRoutes(
 
   app.get("/api/admin/clients", isAdmin, async (_req, res) => {
     try {
-      const allClients = await storage.getAllClients();
-      const allBookings = await storage.getAllBookings();
-      
-      const clientsWithStats = allClients.map(client => {
-        const clientBookings = allBookings.filter(b => 
-          (b.email && b.email.toLowerCase() === client.email.toLowerCase()) ||
-          (b.phone && b.phone === client.phone)
-        );
-        const uniqueRestaurants = new Set(clientBookings.map(b => b.restaurantId));
-        const lastBooking = clientBookings.sort((a, b) => 
-          new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-        )[0];
-        return {
-          ...client,
-          totalBookings: clientBookings.length,
-          restaurantCount: uniqueRestaurants.size,
-          lastBookingDate: lastBooking?.createdAt || null
-        };
-      });
-      
+      const clientsWithStats = await storage.getAllClientsWithStats();
       res.json(clientsWithStats);
     } catch (error: any) {
       res.status(500).json({ message: error.message });
@@ -1425,7 +1418,7 @@ export async function registerRoutes(
       }
       const existing = await storage.getUserByEmail(email);
       if (existing) {
-        return res.status(400).json({ message: "User already exists" });
+        return res.status(400).json({ message: ERRORS.USER_ALREADY_EXISTS });
       }
       const hashedPassword = await bcrypt.hash(password, 10);
       const user = await storage.createUserWithPassword(email, hashedPassword, firstName, lastName);
@@ -1447,7 +1440,7 @@ export async function registerRoutes(
         const { password: _, ...safeUser } = updated;
         res.json(safeUser);
       } else {
-        res.status(404).json({ message: "User not found" });
+        res.status(404).json({ message: ERRORS.USER_NOT_FOUND });
       }
     } catch (error: any) {
       res.status(500).json({ message: error.message });
@@ -1463,14 +1456,19 @@ export async function registerRoutes(
     }
   });
 
+  // Admin seeding moved to server/seed.ts - use ADMIN_EMAIL and ADMIN_PASSWORD env vars
   const initDefaultAdmin = async () => {
-    const adminEmail = "admin@admin.com";
+    const adminEmail = process.env.ADMIN_EMAIL;
+    const adminPassword = process.env.ADMIN_PASSWORD;
+    if (!adminEmail || !adminPassword) {
+      return;
+    }
     const existing = await storage.getUserByEmail(adminEmail);
     if (!existing) {
-      const hashedPassword = await bcrypt.hash("adminadmin", 10);
+      const hashedPassword = await bcrypt.hash(adminPassword, 10);
       const admin = await storage.createUserWithPassword(adminEmail, hashedPassword, "Admin", "User");
       await storage.updateUser(admin.id, { isAdmin: true });
-      console.log("Default admin created: admin@admin.com / adminadmin");
+      console.log(`Default admin created: ${adminEmail}`);
     }
   };
   initDefaultAdmin();
