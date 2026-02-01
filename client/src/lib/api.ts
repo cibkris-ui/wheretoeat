@@ -3,7 +3,9 @@ import type { Restaurant, Booking } from "@shared/schema";
 const API_BASE = "/api";
 
 export async function fetchRestaurants(): Promise<Restaurant[]> {
-  const response = await fetch(`${API_BASE}/restaurants`);
+  const response = await fetch(`${API_BASE}/restaurants`, {
+    credentials: "include",
+  });
   if (!response.ok) {
     throw new Error("Failed to fetch restaurants");
   }
@@ -11,7 +13,9 @@ export async function fetchRestaurants(): Promise<Restaurant[]> {
 }
 
 export async function fetchRestaurant(id: number): Promise<Restaurant> {
-  const response = await fetch(`${API_BASE}/restaurants/${id}`);
+  const response = await fetch(`${API_BASE}/restaurants/${id}`, {
+    credentials: "include",
+  });
   if (!response.ok) {
     throw new Error("Failed to fetch restaurant");
   }
@@ -36,13 +40,14 @@ export async function createBooking(booking: {
     headers: {
       "Content-Type": "application/json",
     },
+    credentials: "include",
     body: JSON.stringify(booking),
   });
-  
+
   if (!response.ok) {
     const error = await response.json();
     throw new Error(error.message || "Failed to create booking");
   }
-  
+
   return response.json();
 }

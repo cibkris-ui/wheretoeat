@@ -1,5 +1,5 @@
 import { sql } from "drizzle-orm";
-import { pgTable, text, varchar, serial, integer, real, timestamp, index, jsonb, boolean } from "drizzle-orm/pg-core";
+import { pgTable, text, varchar, serial, integer, real, timestamp, index, jsonb, boolean, uniqueIndex } from "drizzle-orm/pg-core";
 import { createInsertSchema } from "drizzle-zod";
 import { z } from "zod";
 
@@ -121,7 +121,10 @@ export const restaurants = pgTable("restaurants", {
   hasVegetarianOptions: boolean("has_vegetarian_options").default(false),
   spokenLanguages: text("spoken_languages").array(),
   askBillAmount: boolean("ask_bill_amount").default(false),
-});
+}, (table) => [
+  index("idx_restaurants_owner_id").on(table.ownerId),
+  index("idx_restaurants_approval_status").on(table.approvalStatus),
+]);
 
 export const insertRestaurantSchema = createInsertSchema(restaurants).omit({
   id: true,
@@ -153,7 +156,13 @@ export const bookings = pgTable("bookings", {
   status: text("status").notNull().default("confirmed"),
   tableId: text("table_id"),
   zoneId: text("zone_id"),
-});
+}, (table) => [
+  index("idx_bookings_restaurant_date_time").on(table.restaurantId, table.date, table.time),
+  index("idx_bookings_client_ip").on(table.clientIp),
+  index("idx_bookings_email").on(table.email),
+  index("idx_bookings_client_id").on(table.clientId),
+  index("idx_bookings_restaurant_id").on(table.restaurantId),
+]);
 
 export const insertBookingSchema = createInsertSchema(bookings).omit({
   id: true,
@@ -177,7 +186,10 @@ export const clients = pgTable("clients", {
   visitCount: integer("visit_count").default(0),
   createdAt: timestamp("created_at").notNull().defaultNow(),
   updatedAt: timestamp("updated_at").defaultNow(),
-});
+}, (table) => [
+  index("idx_clients_restaurant_id").on(table.restaurantId),
+  index("idx_clients_email").on(table.email),
+]);
 
 export const insertClientSchema = createInsertSchema(clients).omit({
   id: true,

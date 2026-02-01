@@ -1,4 +1,4 @@
-import { eq, and, or, ilike, desc, sql, inArray } from "drizzle-orm";
+import { eq, and, or, ilike, desc, sql, inArray, ne, gte, like, getTableColumns } from "drizzle-orm";
 import { db } from "./db";
 import { 
   type User, 
@@ -78,6 +78,8 @@ export interface IStorage {
   isDateClosed(restaurantId: number, date: string): Promise<boolean>;
   
   getClientsByRestaurant(restaurantId: number, search?: string): Promise<Client[]>;
+  getClientsWithStatsByRestaurant(restaurantId: number, search?: string): Promise<any[]>;
+  getAllClientsWithStats(): Promise<any[]>;
   getClient(id: number): Promise<Client | undefined>;
   getClientBookings(clientId: number, restaurantId: number): Promise<Booking[]>;
   upsertClientFromBooking(restaurantId: number, firstName: string, lastName: string, email: string, phone: string): Promise<Client>;
@@ -164,27 +166,7 @@ export class DatabaseStorage implements IStorage {
 
   async getAllRestaurantsAdmin(): Promise<(Restaurant & { ownerEmail?: string | null })[]> {
     const results = await db.select({
-      id: restaurants.id,
-      name: restaurants.name,
-      cuisine: restaurants.cuisine,
-      location: restaurants.location,
-      rating: restaurants.rating,
-      priceRange: restaurants.priceRange,
-      image: restaurants.image,
-      description: restaurants.description,
-      features: restaurants.features,
-      photos: restaurants.photos,
-      closedDates: restaurants.closedDates,
-      ownerId: restaurants.ownerId,
-      phone: restaurants.phone,
-      address: restaurants.address,
-      openingHours: restaurants.openingHours,
-      menuPdfUrl: restaurants.menuPdfUrl,
-      googlePlaceId: restaurants.googlePlaceId,
-      capacity: restaurants.capacity,
-      approvalStatus: restaurants.approvalStatus,
-      isBlocked: restaurants.isBlocked,
-      createdAt: restaurants.createdAt,
+      ...getTableColumns(restaurants),
       ownerEmail: users.email,
     })
     .from(restaurants)
@@ -340,7 +322,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async checkIpEmailMismatch(clientIp: string, email: string): Promise<Booking | undefined> {
-    const { ne, gte } = await import("drizzle-orm");
+
     const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
     const [existing] = await db.select().from(bookings).where(
       and(
@@ -353,7 +335,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async checkClientIdEmailMismatch(clientId: string, email: string): Promise<Booking | undefined> {
-    const { ne, gte } = await import("drizzle-orm");
+
     const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000);
     const [existing] = await db.select().from(bookings).where(
       and(
@@ -401,7 +383,7 @@ export class DatabaseStorage implements IStorage {
   }
 
   async getClosedDaysByMonth(restaurantId: number, year: number, month: number): Promise<ClosedDay[]> {
-    const { like } = await import("drizzle-orm");
+
     const monthStr = month.toString().padStart(2, '0');
     const pattern = `${year}-${monthStr}%`;
     return await db.select().from(closedDays).where(
@@ -452,6 +434,67 @@ export class DatabaseStorage implements IStorage {
       ).orderBy(desc(clients.updatedAt));
     }
     return await db.select().from(clients).where(eq(clients.restaurantId, restaurantId)).orderBy(desc(clients.updatedAt));
+  }
+
+  async getClientsWithStatsByRestaurant(restaurantId: number, search?: string): Promise<any[]> {
+    const baseClients = await this.getClientsByRestaurant(restaurantId, search);
+    if (baseClients.length === 0) return [];
+
+    const clientEmails = baseClients.map(c => c.email.toLowerCase());
+    const restaurantBookings = await db.select().from(bookings).where(
+      and(
+        eq(bookings.restaurantId, restaurantId),
+        inArray(sql`LOWER(${bookings.email})`, clientEmails)
+      )
+    ).orderBy(desc(bookings.date));
+
+    const bookingsByEmail = new Map<string, typeof restaurantBookings>();
+    for (const b of restaurantBookings) {
+      const key = b.email.toLowerCase();
+      if (!bookingsByEmail.has(key)) bookingsByEmail.set(key, []);
+      bookingsByEmail.get(key)!.push(b);
+    }
+
+    return baseClients.map(client => {
+      const clientBookings = bookingsByEmail.get(client.email.toLowerCase()) || [];
+      const visitCount = clientBookings.length;
+      const lastVisit = visitCount > 0 ? clientBookings[0].date : null;
+      const avgGuests = visitCount > 0
+        ? Math.round(clientBookings.reduce((sum, b) => sum + b.guests, 0) / visitCount)
+        : 0;
+      return { ...client, visitCount, lastVisit, avgGuests };
+    });
+  }
+
+  async getAllClientsWithStats(): Promise<any[]> {
+    const allClients = await db.select().from(clients).orderBy(desc(clients.createdAt));
+    if (allClients.length === 0) return [];
+
+    const clientEmails = allClients.map(c => c.email.toLowerCase());
+    const matchingBookings = await db.select().from(bookings).where(
+      inArray(sql`LOWER(${bookings.email})`, clientEmails)
+    );
+
+    const bookingsByEmail = new Map<string, typeof matchingBookings>();
+    for (const b of matchingBookings) {
+      const key = b.email.toLowerCase();
+      if (!bookingsByEmail.has(key)) bookingsByEmail.set(key, []);
+      bookingsByEmail.get(key)!.push(b);
+    }
+
+    return allClients.map(client => {
+      const clientBookings = bookingsByEmail.get(client.email.toLowerCase()) || [];
+      const uniqueRestaurants = new Set(clientBookings.map(b => b.restaurantId));
+      const lastBooking = clientBookings.sort((a, b) =>
+        new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
+      )[0];
+      return {
+        ...client,
+        totalBookings: clientBookings.length,
+        restaurantCount: uniqueRestaurants.size,
+        lastBookingDate: lastBooking?.createdAt || null,
+      };
+    });
   }
 
   async getClient(id: number): Promise<Client | undefined> {
