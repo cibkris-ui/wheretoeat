@@ -31,6 +31,8 @@ export async function registerRoutes(
   app: Express
 ): Promise<Server> {
   
+  app.set("trust proxy", 1);
+
   if (process.env.REPL_ID) {
     await setupAuth(app);
   } else {
@@ -149,6 +151,16 @@ export async function registerRoutes(
       console.error("Error fetching user:", error);
       res.status(500).json({ message: "Failed to fetch user" });
     }
+  });
+
+  app.post('/api/auth/logout', (req: any, res) => {
+    req.session.destroy((err: any) => {
+      if (err) {
+        return res.status(500).json({ message: "Logout failed" });
+      }
+      res.clearCookie("connect.sid");
+      res.json({ message: "Logged out" });
+    });
   });
 
   app.get("/api/restaurants", async (_req, res) => {

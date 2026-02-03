@@ -4,6 +4,7 @@ import cors from "cors";
 import { registerRoutes } from "./routes";
 import { serveStatic } from "./static";
 import { createServer } from "http";
+import { seedCuisineCategoriesIfEmpty } from "./seed";
 
 const app = express();
 const httpServer = createServer(app);
@@ -76,6 +77,13 @@ app.use((req, res, next) => {
 });
 
 (async () => {
+  // Ensure cuisine categories are seeded on startup
+  try {
+    await seedCuisineCategoriesIfEmpty();
+  } catch (e) {
+    console.error("Failed to seed cuisine categories:", e);
+  }
+
   await registerRoutes(httpServer, app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {

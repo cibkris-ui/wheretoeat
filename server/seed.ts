@@ -1,5 +1,23 @@
 import { db } from "./db";
-import { restaurants } from "@shared/schema";
+import { restaurants, cuisineCategories } from "@shared/schema";
+
+const seedCuisineCategories = [
+  { name: "Italien", icon: "\u{1F35D}" },
+  { name: "Fran\u00e7ais", icon: "\u{1F950}" },
+  { name: "Suisse", icon: "\u{1F9C0}" },
+  { name: "Japonais", icon: "\u{1F371}" },
+  { name: "Chinois", icon: "\u{1F961}" },
+  { name: "Indien", icon: "\u{1F35B}" },
+  { name: "Burgers", icon: "\u{1F354}" },
+  { name: "Pizza", icon: "\u{1F355}" },
+  { name: "Sushi", icon: "\u{1F363}" },
+  { name: "V\u00e9g\u00e9talien", icon: "\u{1F957}" },
+  { name: "Brunch", icon: "\u{1F95E}" },
+  { name: "Romantique", icon: "\u{1F495}" },
+  { name: "Oriental", icon: "\u{1F959}" },
+  { name: "Festif", icon: "\u{1F389}" },
+  { name: "Du monde", icon: "\u{1F30D}" },
+];
 
 const seedRestaurants = [
   {
@@ -44,23 +62,37 @@ const seedRestaurants = [
   }
 ];
 
+export async function seedCuisineCategoriesIfEmpty() {
+  const existing = await db.select().from(cuisineCategories);
+  if (existing.length === 0) {
+    for (const cat of seedCuisineCategories) {
+      await db.insert(cuisineCategories).values(cat);
+    }
+    console.log("Cuisine categories seeded.");
+  }
+}
+
 async function seed() {
-  console.log("🌱 Seeding database...");
-  
+  console.log("Seeding database...");
+
   try {
+    // Seed cuisine categories
+    await seedCuisineCategoriesIfEmpty();
+
+    // Seed restaurants
     const existing = await db.select().from(restaurants);
-    
+
     if (existing.length === 0) {
       for (const restaurant of seedRestaurants) {
         await db.insert(restaurants).values(restaurant);
-        console.log(`✅ Added restaurant: ${restaurant.name}`);
+        console.log(`Added restaurant: ${restaurant.name}`);
       }
-      console.log("✅ Seeding complete!");
+      console.log("Seeding complete!");
     } else {
-      console.log("ℹ️  Database already seeded, skipping...");
+      console.log("Database already seeded, skipping restaurants...");
     }
   } catch (error) {
-    console.error("❌ Error seeding database:", error);
+    console.error("Error seeding database:", error);
     throw error;
   }
 }

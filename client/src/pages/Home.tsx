@@ -102,7 +102,7 @@ export default function Home() {
         
         <div className="relative z-10 container text-center text-white space-y-6 px-4">
           <h1 className="text-4xl md:text-6xl font-bold tracking-tight animate-in fade-in slide-in-from-bottom-4 duration-700">
-            Réservez les meilleurs restaurants de Suisse
+            Réservez les meilleurs tables de Suisse
           </h1>
           
           {/* TheFork Style Search Bar */}

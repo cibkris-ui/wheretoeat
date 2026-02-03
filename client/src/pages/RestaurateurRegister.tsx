@@ -295,7 +295,7 @@ export default function RestaurateurRegister() {
     return (
       <div className="min-h-screen bg-background">
         <Navbar />
-        <div className="container max-w-md py-16">
+        <div className="container max-w-md mx-auto py-16 px-4">
           <Card>
             <CardHeader className="text-center">
               <div className="mx-auto w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mb-4">
@@ -329,7 +329,7 @@ export default function RestaurateurRegister() {
     <div className="min-h-screen bg-background">
       <Navbar />
       
-      <div className="container max-w-2xl py-8">
+      <div className="container max-w-2xl mx-auto py-8 px-4">
         <div className="mb-8 text-center">
           <h1 className="text-3xl font-bold mb-2">Inscrivez votre restaurant</h1>
           <p className="text-muted-foreground">
