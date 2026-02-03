@@ -4,8 +4,7 @@ import { storage } from "./storage";
 import { insertRestaurantSchema, insertBookingSchema, insertRegistrationSchema } from "@shared/schema";
 import { fromZodError } from "zod-validation-error";
 import { setupAuth, isAuthenticated } from "./replitAuth";
-import { ObjectStorageService, ObjectNotFoundError } from "./objectStorage";
-import { ObjectPermission } from "./objectAcl";
+import { upload } from "./objectStorage";
 import { googlePlacesService } from "./googlePlaces";
 import bcrypt from "bcryptjs";
 import rateLimit from "express-rate-limit";
@@ -1061,49 +1060,12 @@ export async function registerRoutes(
     }
   });
 
-  app.post("/api/objects/upload", async (req: any, res) => {
-    try {
-      const objectStorageService = new ObjectStorageService();
-      const uploadURL = await objectStorageService.getObjectEntityUploadURL();
-      res.json({ uploadURL });
-    } catch (error: any) {
-      console.error("Error getting upload URL:", error);
-      res.status(500).json({ message: "Failed to get upload URL" });
+  app.post("/api/upload", upload.single("file"), (req: any, res) => {
+    if (!req.file) {
+      return res.status(400).json({ error: "No file provided" });
     }
-  });
-
-  app.put("/api/objects/finalize", async (req: any, res) => {
-    try {
-      if (!req.body.uploadURL) {
-        return res.status(400).json({ error: "uploadURL is required" });
-      }
-      const objectStorageService = new ObjectStorageService();
-      const objectPath = await objectStorageService.trySetObjectEntityAclPolicy(
-        req.body.uploadURL,
-        {
-          owner: "registration",
-          visibility: "public",
-        },
-      );
-      res.status(200).json({ objectPath });
-    } catch (error) {
-      console.error("Error finalizing upload:", error);
-      res.status(500).json({ error: "Internal server error" });
-    }
-  });
-
-  app.get("/objects/:objectPath(*)", async (req: any, res) => {
-    const objectStorageService = new ObjectStorageService();
-    try {
-      const objectFile = await objectStorageService.getObjectEntityFile(req.path);
-      objectStorageService.downloadObject(objectFile, res);
-    } catch (error) {
-      console.error("Error serving object:", error);
-      if (error instanceof ObjectNotFoundError) {
-        return res.sendStatus(404);
-      }
-      return res.sendStatus(500);
-    }
+    const url = `/uploads/${req.file.filename}`;
+    res.json({ url });
   });
 
   app.get("/api/google-places/configured", async (_req, res) => {

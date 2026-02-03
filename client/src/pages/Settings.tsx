@@ -623,23 +623,21 @@ export default function Settings() {
   ];
 
   const uploadFile = async (file: File): Promise<string> => {
-    // Get upload URL from server
-    const uploadRes = await apiRequest("POST", "/api/objects/upload");
-    const { uploadURL } = await uploadRes.json();
-    
-    // Upload file to storage
-    await fetch(uploadURL, {
-      method: "PUT",
-      body: file,
-      headers: {
-        "Content-Type": file.type,
-      },
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const res = await fetch(apiUrl("/api/upload"), {
+      method: "POST",
+      credentials: "include",
+      body: formData,
     });
-    
-    // Finalize upload and get object path
-    const finalizeRes = await apiRequest("PUT", "/api/objects/finalize", { uploadURL });
-    const { objectPath } = await finalizeRes.json();
-    return objectPath;
+
+    if (!res.ok) {
+      throw new Error("Upload failed");
+    }
+
+    const { url } = await res.json();
+    return url;
   };
 
   const handleProfileImageUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {

@@ -16,7 +16,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { apiUrl } from "@/lib/queryClient";
 
 interface UploadResult {
-  successful: Array<{ uploadURL: string }>;
+  url: string;
 }
 
 interface CuisineCategory {
@@ -179,63 +179,16 @@ export default function RestaurateurRegister() {
     },
   });
 
-  const handleGetUploadParameters = async () => {
-    const res = await fetch(apiUrl("/api/objects/upload"), {
-      method: "POST",
-      credentials: "include",
-    });
-    if (!res.ok) throw new Error("Failed to get upload URL");
-    const { uploadURL } = await res.json();
-    return { method: "PUT" as const, url: uploadURL };
+  const handleLogoComplete = (result: UploadResult) => {
+    setFormData(prev => ({ ...prev, logoUrl: result.url }));
   };
 
-  const handleLogoComplete = async (result: UploadResult) => {
-    if (result.successful?.[0]?.uploadURL) {
-      const res = await fetch(apiUrl("/api/objects/finalize"), {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ uploadURL: result.successful[0].uploadURL }),
-      });
-      if (res.ok) {
-        const { objectPath } = await res.json();
-        setFormData(prev => ({ ...prev, logoUrl: objectPath }));
-      }
-    }
+  const handlePhotosComplete = (result: UploadResult) => {
+    setFormData(prev => ({ ...prev, photos: [...prev.photos, result.url] }));
   };
 
-  const handlePhotosComplete = async (result: UploadResult) => {
-    const newPhotos: string[] = [];
-    for (const file of result.successful || []) {
-      if (file.uploadURL) {
-        const res = await fetch(apiUrl("/api/objects/finalize"), {
-          method: "PUT",
-          headers: { "Content-Type": "application/json" },
-          credentials: "include",
-          body: JSON.stringify({ uploadURL: file.uploadURL }),
-        });
-        if (res.ok) {
-          const { objectPath } = await res.json();
-          newPhotos.push(objectPath);
-        }
-      }
-    }
-    setFormData(prev => ({ ...prev, photos: [...prev.photos, ...newPhotos] }));
-  };
-
-  const handleMenuComplete = async (result: UploadResult) => {
-    if (result.successful?.[0]?.uploadURL) {
-      const res = await fetch(apiUrl("/api/objects/finalize"), {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ uploadURL: result.successful[0].uploadURL }),
-      });
-      if (res.ok) {
-        const { objectPath } = await res.json();
-        setFormData(prev => ({ ...prev, menuPdfUrl: objectPath }));
-      }
-    }
+  const handleMenuComplete = (result: UploadResult) => {
+    setFormData(prev => ({ ...prev, menuPdfUrl: result.url }));
   };
 
   const handleSubmit = () => {
@@ -707,7 +660,6 @@ export default function RestaurateurRegister() {
                     maxNumberOfFiles={1}
                     maxFileSize={5242880}
                     allowedFileTypes={["image/*"]}
-                    onGetUploadParameters={handleGetUploadParameters}
                     onComplete={handleLogoComplete}
                   >
                     <Upload className="w-4 h-4 mr-2" />
@@ -728,7 +680,6 @@ export default function RestaurateurRegister() {
                     maxNumberOfFiles={5}
                     maxFileSize={10485760}
                     allowedFileTypes={["image/*"]}
-                    onGetUploadParameters={handleGetUploadParameters}
                     onComplete={handlePhotosComplete}
                   >
                     <Upload className="w-4 h-4 mr-2" />
@@ -749,7 +700,6 @@ export default function RestaurateurRegister() {
                     maxNumberOfFiles={1}
                     maxFileSize={10485760}
                     allowedFileTypes={[".pdf", "application/pdf"]}
-                    onGetUploadParameters={handleGetUploadParameters}
                     onComplete={handleMenuComplete}
                   >
                     <Upload className="w-4 h-4 mr-2" />

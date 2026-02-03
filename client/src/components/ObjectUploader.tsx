@@ -2,16 +2,13 @@ import { useRef, useState } from "react";
 import type { ReactNode } from "react";
 import { Button } from "@/components/ui/button";
 import { Loader2 } from "lucide-react";
+import { apiUrl } from "@/lib/queryClient";
 
 interface ObjectUploaderProps {
   maxNumberOfFiles?: number;
   maxFileSize?: number;
   allowedFileTypes?: string[];
-  onGetUploadParameters: () => Promise<{
-    method: "PUT";
-    url: string;
-  }>;
-  onComplete?: (result: { successful: Array<{ uploadURL: string }> }) => void;
+  onComplete?: (result: { url: string }) => void;
   buttonClassName?: string;
   children: ReactNode;
 }
@@ -19,7 +16,6 @@ interface ObjectUploaderProps {
 export function ObjectUploader({
   maxFileSize = 10485760,
   allowedFileTypes,
-  onGetUploadParameters,
   onComplete,
   buttonClassName,
   children,
@@ -42,21 +38,21 @@ export function ObjectUploader({
 
     setUploading(true);
     try {
-      const { url } = await onGetUploadParameters();
-      
-      const response = await fetch(url, {
-        method: "PUT",
-        body: file,
-        headers: {
-          "Content-Type": file.type,
-        },
+      const formData = new FormData();
+      formData.append("file", file);
+
+      const response = await fetch(apiUrl("/api/upload"), {
+        method: "POST",
+        credentials: "include",
+        body: formData,
       });
 
-      if (response.ok) {
-        onComplete?.({ successful: [{ uploadURL: url.split("?")[0] }] });
-      } else {
+      if (!response.ok) {
         throw new Error("Upload failed");
       }
+
+      const { url } = await response.json();
+      onComplete?.({ url });
     } catch (error) {
       console.error("Upload error:", error);
       alert("Erreur lors du téléchargement");
@@ -79,8 +75,8 @@ export function ObjectUploader({
         onChange={handleFileChange}
         className="hidden"
       />
-      <Button 
-        type="button" 
+      <Button
+        type="button"
         onClick={handleClick}
         className={buttonClassName}
         variant="outline"
