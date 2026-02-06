@@ -93,6 +93,14 @@ app.use("/api/google-places", googlePlacesRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/registrations", registrationRoutes);
 
+// Logout route (GET for <a> links compatibility)
+app.get("/api/logout", (req: any, res) => {
+  req.session.destroy((err: any) => {
+    res.clearCookie("connect.sid");
+    res.redirect("/");
+  });
+});
+
 // Also mount public routes at /api/ level for backwards compatibility
 app.get("/api/restaurants", async (_req, res) => {
   try {
@@ -158,7 +166,11 @@ app.get("/api/cuisine-categories", async (_req, res) => {
     const distPath = path.resolve(__dirname, "public");
     if (fs.existsSync(distPath)) {
       app.use(express.static(distPath));
-      app.use("*", (_req, res) => {
+      // SPA catch-all - but NOT for /api routes
+      app.use("*", (req, res, next) => {
+        if (req.originalUrl.startsWith("/api")) {
+          return res.status(404).json({ message: "API endpoint not found" });
+        }
         res.sendFile(path.resolve(distPath, "index.html"));
       });
     }

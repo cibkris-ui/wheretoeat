@@ -38963,11 +38963,32 @@ var import_http = require("http");
 // server/middleware/session.ts
 var import_express_session = __toESM(require_express_session(), 1);
 var import_connect_pg_simple = __toESM(require_connect_pg_simple(), 1);
+
+// node_modules/pg/esm/index.mjs
+var import_lib = __toESM(require_lib4(), 1);
+var Client = import_lib.default.Client;
+var Pool = import_lib.default.Pool;
+var Connection = import_lib.default.Connection;
+var types = import_lib.default.types;
+var Query = import_lib.default.Query;
+var DatabaseError = import_lib.default.DatabaseError;
+var escapeIdentifier = import_lib.default.escapeIdentifier;
+var escapeLiteral = import_lib.default.escapeLiteral;
+var Result = import_lib.default.Result;
+var TypeOverrides = import_lib.default.TypeOverrides;
+var defaults = import_lib.default.defaults;
+var esm_default = import_lib.default;
+
+// server/middleware/session.ts
 var sessionTtl = 7 * 24 * 60 * 60 * 1e3;
+var sessionPool = new esm_default.Pool({
+  connectionString: process.env.DATABASE_URL,
+  ssl: process.env.DATABASE_URL?.includes("rds.amazonaws.com") ? { rejectUnauthorized: false } : void 0
+});
 function getSession() {
   const PgStore = (0, import_connect_pg_simple.default)(import_express_session.default);
   const store = new PgStore({
-    conString: process.env.DATABASE_URL,
+    pool: sessionPool,
     createTableIfMissing: false,
     ttl: sessionTtl,
     tableName: "sessions"
@@ -39771,21 +39792,6 @@ var generalLimiter = lib_default({
   standardHeaders: true,
   legacyHeaders: false
 });
-
-// node_modules/pg/esm/index.mjs
-var import_lib = __toESM(require_lib4(), 1);
-var Client = import_lib.default.Client;
-var Pool = import_lib.default.Pool;
-var Connection = import_lib.default.Connection;
-var types = import_lib.default.types;
-var Query = import_lib.default.Query;
-var DatabaseError = import_lib.default.DatabaseError;
-var escapeIdentifier = import_lib.default.escapeIdentifier;
-var escapeLiteral = import_lib.default.escapeLiteral;
-var Result = import_lib.default.Result;
-var TypeOverrides = import_lib.default.TypeOverrides;
-var defaults = import_lib.default.defaults;
-var esm_default = import_lib.default;
 
 // node_modules/drizzle-orm/entity.js
 var entityKind = Symbol.for("drizzle:entityKind");
@@ -54395,6 +54401,12 @@ app.use("/api/upload", upload_default);
 app.use("/api/google-places", googlePlaces_default);
 app.use("/api/admin", admin_default);
 app.use("/api/registrations", registrations_default);
+app.get("/api/logout", (req, res) => {
+  req.session.destroy((err) => {
+    res.clearCookie("connect.sid");
+    res.redirect("/");
+  });
+});
 app.get("/api/restaurants", async (_req, res) => {
   try {
     const restaurants2 = await storage.getAllRestaurants();
@@ -54449,7 +54461,10 @@ app.get("/api/cuisine-categories", async (_req, res) => {
     const distPath = import_path2.default.resolve(__dirname, "public");
     if (import_fs2.default.existsSync(distPath)) {
       app.use(import_express13.default.static(distPath));
-      app.use("*", (_req, res) => {
+      app.use("*", (req, res, next) => {
+        if (req.originalUrl.startsWith("/api")) {
+          return res.status(404).json({ message: "API endpoint not found" });
+        }
         res.sendFile(import_path2.default.resolve(distPath, "index.html"));
       });
     }
