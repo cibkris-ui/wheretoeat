@@ -151,6 +151,15 @@ Toutes les URLs frontend pour les sous-ressources etaient incorrectes :
 
 ---
 
+## 8. Push GitHub
+
+- Remote ajoute : `https://github.com/cibkris-ui/wheretoeat.git`
+- Commit `07c8939` : "Fix API URL mismatches, registration flow, floor plan, and favicon"
+- Push sur branche `master`
+- 22 fichiers modifies, 298 insertions, 55 suppressions
+
+---
+
 ## Notes techniques importantes
 
 - `db:push` ne fonctionne pas depuis le local (restriction IP PostgreSQL AWS)
@@ -158,3 +167,33 @@ Toutes les URLs frontend pour les sous-ressources etaient incorrectes :
 - Le `NODE_ENV` est hardcode a `"production"` par esbuild dans le bundle
 - Le queryClient par defaut utilise `queryKey.join("/")` comme URL de fetch
 - Tous les queryKeys qui servent d'URL doivent correspondre exactement aux routes backend
+
+---
+
+## Mapping complet des routes API
+
+### Routes backend (server montage)
+
+| Prefix | Fichier route | Exemples endpoints |
+|---|---|---|
+| `/api/auth` | `routes/auth.ts` | POST `/login`, `/register`, GET `/user`, `/check-email` |
+| `/api/bookings` | `routes/bookings.ts` | POST `/`, `/owner`, GET `/restaurant/:id`, PATCH `/:id/status`, `/:id/arrival`, `/:id/departure`, `/:id/bill-requested`, `/:id/table` |
+| `/api/clients` | `routes/clients.ts` | GET `/restaurant/:id`, `/:id` |
+| `/api/closed-days` | `routes/closedDays.ts` | GET `/restaurant/:id`, POST `/restaurant/:id`, DELETE `/:id` |
+| `/api/floor-plans` | `routes/floorPlans.ts` | GET `/restaurant/:id`, PUT `/restaurant/:id` |
+| `/api/restaurants` | `routes/restaurants.ts` | POST `/`, GET `/my-restaurants`, PUT `/:id`, POST `/:id/claim` |
+| `/api/team` | `routes/team.ts` | GET `/restaurant/:id`, POST `/restaurant/:id`, DELETE `/restaurant/:restaurantId/user/:userId` |
+| `/api/upload` | `routes/upload.ts` | POST `/` |
+| `/api/admin` | `routes/admin.ts` | (admin endpoints) |
+| `/api/registrations` | `routes/registrations.ts` | POST `/`, `/with-account` |
+| `/api/public` | `routes/public.ts` | (public endpoints) |
+| `/api/google-places` | `routes/googlePlaces.ts` | (Google Places API) |
+
+### Routes standalone (server/index.ts)
+| Endpoint | Description |
+|---|---|
+| GET `/api/my-restaurants` | Shortcut - restaurants du proprietaire |
+| GET `/api/restaurants` | Liste publique restaurants |
+| GET `/api/restaurants/:id` | Detail restaurant public |
+| GET `/api/cuisine-categories` | Categories de cuisine |
+| GET `/api/logout` | Logout (lien HTML) |
