@@ -19,7 +19,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { toast } from "sonner";
+import { useToast } from "@/hooks/use-toast";
 import { 
   Plus, 
   Save, 
@@ -212,6 +212,7 @@ function TrashDropZone({ isActive }: { isActive: boolean }) {
 
 export function FloorPlanBuilder({ restaurantId }: FloorPlanBuilderProps) {
   const queryClient = useQueryClient();
+  const { toast } = useToast();
   const [floorPlan, setFloorPlan] = useState<FloorPlanData>({ zones: [] });
   const [activeZoneId, setActiveZoneId] = useState<string | null>(null);
   const [selectedItemId, setSelectedItemId] = useState<string | null>(null);
@@ -228,9 +229,9 @@ export function FloorPlanBuilder({ restaurantId }: FloorPlanBuilderProps) {
   );
 
   const { data: savedPlan, isLoading } = useQuery({
-    queryKey: [`/api/restaurants/${restaurantId}/floor-plan`],
+    queryKey: [`/api/floor-plans/restaurant/${restaurantId}`],
     queryFn: async () => {
-      const res = await fetch(apiUrl(`/api/restaurants/${restaurantId}/floor-plan`), { credentials: "include" });
+      const res = await fetch(apiUrl(`/api/floor-plans/restaurant/${restaurantId}`), { credentials: "include" });
       if (!res.ok) throw new Error("Failed to load floor plan");
       return res.json() as Promise<FloorPlanData>;
     },
@@ -247,7 +248,7 @@ export function FloorPlanBuilder({ restaurantId }: FloorPlanBuilderProps) {
 
   const saveMutation = useMutation({
     mutationFn: async (plan: FloorPlanData) => {
-      const res = await fetch(apiUrl(`/api/restaurants/${restaurantId}/floor-plan`), {
+      const res = await fetch(apiUrl(`/api/floor-plans/restaurant/${restaurantId}`), {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
@@ -257,11 +258,11 @@ export function FloorPlanBuilder({ restaurantId }: FloorPlanBuilderProps) {
       return res.json();
     },
     onSuccess: () => {
-      toast.success("Plan de salle sauvegardé");
-      queryClient.invalidateQueries({ queryKey: [`/api/restaurants/${restaurantId}/floor-plan`] });
+      toast({ title: "Plan de salle sauvegardé" });
+      queryClient.invalidateQueries({ queryKey: [`/api/floor-plans/restaurant/${restaurantId}`] });
     },
     onError: () => {
-      toast.error("Erreur lors de la sauvegarde");
+      toast({ title: "Erreur", description: "Erreur lors de la sauvegarde", variant: "destructive" });
     },
   });
 

@@ -17,6 +17,8 @@ const restaurantRegistrationWithAccountSchema = z.object({
   phone: z.string().min(1),
   companyName: z.string().min(1),
   registrationNumber: z.string().optional(),
+  postalCode: z.string().optional(),
+  city: z.string().optional(),
   cuisineType: z.union([z.string(), z.array(z.string())]),
   priceRange: z.string().min(1),
   description: z.string().optional(),
@@ -33,7 +35,7 @@ router.post("/with-account", async (req, res) => {
       return res.status(400).json({ message: fromZodError(result.error).message });
     }
 
-    const { email, password, firstName, lastName, cuisineType, ...registrationData } = result.data;
+    const { email, password, firstName, lastName, cuisineType, postalCode, city, ...registrationData } = result.data;
 
     const existingUser = await storage.getUserByEmail(email);
     if (existingUser) {
@@ -46,10 +48,12 @@ router.post("/with-account", async (req, res) => {
     const cuisineTypeArray = Array.isArray(cuisineType) ? cuisineType : [cuisineType];
     const cuisineString = cuisineTypeArray.join(", ");
 
+    const location = postalCode && city ? `${postalCode} ${city}` : registrationData.address;
+
     const restaurant = await storage.createRestaurant({
       name: registrationData.restaurantName,
       cuisine: cuisineString,
-      location: registrationData.address,
+      location,
       rating: 0,
       priceRange: registrationData.priceRange,
       image: registrationData.logoUrl || "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4",
@@ -60,6 +64,8 @@ router.post("/with-account", async (req, res) => {
       phone: registrationData.phone,
       address: registrationData.address,
       menuPdfUrl: registrationData.menuPdfUrl,
+      companyName: registrationData.companyName,
+      registrationNumber: registrationData.registrationNumber,
       approvalStatus: "pending",
     });
 
@@ -79,7 +85,7 @@ router.post("/", async (req: any, res) => {
       return res.status(401).json({ message: "Vous devez être connecté pour effectuer cette action" });
     }
 
-    const { restaurantName, address, phone, cuisineType, priceRange, description, logoUrl, photos, menuPdfUrl } = req.body;
+    const { restaurantName, address, phone, cuisineType, priceRange, description, logoUrl, photos, menuPdfUrl, companyName, registrationNumber, postalCode, city } = req.body;
 
     if (!restaurantName || !address || !phone || !cuisineType || !priceRange) {
       return res.status(400).json({ message: "Informations requises manquantes" });
@@ -88,10 +94,12 @@ router.post("/", async (req: any, res) => {
     const cuisineTypeArray = Array.isArray(cuisineType) ? cuisineType : [cuisineType];
     const cuisineString = cuisineTypeArray.join(", ");
 
+    const location = postalCode && city ? `${postalCode} ${city}` : address;
+
     const restaurant = await storage.createRestaurant({
       name: restaurantName,
       cuisine: cuisineString,
-      location: address,
+      location,
       rating: 0,
       priceRange: priceRange,
       image: logoUrl || "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4",
@@ -102,6 +110,8 @@ router.post("/", async (req: any, res) => {
       phone: phone,
       address: address,
       menuPdfUrl: menuPdfUrl,
+      companyName: companyName,
+      registrationNumber: registrationNumber,
       approvalStatus: "pending",
     });
 

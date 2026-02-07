@@ -264,7 +264,7 @@ export default function Assignments() {
   const restaurant = restaurants.find(r => r.id === selectedRestaurantId) || restaurants[0];
 
   const { data: bookings = [] } = useQuery<Booking[]>({
-    queryKey: [`/api/restaurants/${restaurant?.id}/bookings`],
+    queryKey: [`/api/bookings/restaurant/${restaurant?.id}`],
     enabled: !!restaurant?.id,
   });
 
@@ -283,7 +283,7 @@ export default function Assignments() {
   }, [bookings]);
 
   const { data: floorPlanResponse } = useQuery<FloorPlanData>({
-    queryKey: [`/api/restaurants/${restaurant?.id}/floor-plan`],
+    queryKey: [`/api/floor-plans/restaurant/${restaurant?.id}`],
     enabled: !!restaurant?.id,
   });
   
@@ -301,7 +301,7 @@ export default function Assignments() {
       return res.json();
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: [`/api/restaurants/${restaurant?.id}/bookings`] });
+      queryClient.invalidateQueries({ queryKey: [`/api/bookings/restaurant/${restaurant?.id}`] });
       toast.success("Table assignée avec succès");
       setSelectedBookingId(null);
     },

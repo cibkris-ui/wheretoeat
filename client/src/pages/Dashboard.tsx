@@ -86,7 +86,7 @@ export default function Dashboard() {
         variant: "destructive",
       });
       setTimeout(() => {
-        window.location.href = apiUrl("/api/login");
+        window.location.href = "/login";
       }, 500);
     }
   }, [isAuthenticated, authLoading, toast]);
@@ -110,7 +110,7 @@ export default function Dashboard() {
     queryKey: ["/api/all-bookings", restaurantIds],
     queryFn: async () => {
       const bookingsPromises = restaurantIds.map(id =>
-        fetch(apiUrl(`/api/restaurants/${id}/bookings`), { credentials: "include" })
+        fetch(apiUrl(`/api/bookings/restaurant/${id}`), { credentials: "include" })
           .then(res => res.ok ? res.json() : [])
       );
       const results = await Promise.all(bookingsPromises);
@@ -131,7 +131,7 @@ export default function Dashboard() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/all-bookings"] });
       restaurantIds.forEach(id => {
-        queryClient.invalidateQueries({ queryKey: [`/api/restaurants/${id}/bookings`] });
+        queryClient.invalidateQueries({ queryKey: [`/api/bookings/restaurant/${id}`] });
       });
       toast({ title: "Arrivée enregistrée", description: "L'heure d'arrivée a été enregistrée." });
     },
@@ -152,7 +152,7 @@ export default function Dashboard() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/all-bookings"] });
       restaurantIds.forEach(id => {
-        queryClient.invalidateQueries({ queryKey: [`/api/restaurants/${id}/bookings`] });
+        queryClient.invalidateQueries({ queryKey: [`/api/bookings/restaurant/${id}`] });
       });
       toast({ title: "Note demandée", description: "La demande de note a été enregistrée." });
     },
@@ -178,7 +178,7 @@ export default function Dashboard() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/all-bookings"] });
       restaurantIds.forEach(id => {
-        queryClient.invalidateQueries({ queryKey: [`/api/restaurants/${id}/bookings`] });
+        queryClient.invalidateQueries({ queryKey: [`/api/bookings/restaurant/${id}`] });
       });
       setBillAmountDialog(null);
       setBillAmountInput("");
@@ -203,7 +203,7 @@ export default function Dashboard() {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ["/api/all-bookings"] });
       restaurantIds.forEach(id => {
-        queryClient.invalidateQueries({ queryKey: [`/api/restaurants/${id}/bookings`] });
+        queryClient.invalidateQueries({ queryKey: [`/api/bookings/restaurant/${id}`] });
       });
       const statusLabels: Record<string, string> = {
         pending: "En attente de validation",

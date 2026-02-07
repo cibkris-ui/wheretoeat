@@ -63,6 +63,7 @@ router.put("/:id", requireAuth, async (req: any, res) => {
       "phone", "address", "menuPdfUrl", "publicEmail", "preferredLanguage", "website",
       "executiveChef", "publicTransport", "nearbyParking", "additionalInfo",
       "paymentMethods", "hasVegetarianOptions", "spokenLanguages", "askBillAmount",
+      "companyName", "registrationNumber",
     ];
     const updateData: Record<string, any> = {};
     for (const field of allowedFields) {

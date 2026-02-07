@@ -8,7 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ObjectUploader } from "@/components/ObjectUploader";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLocation } from "wouter";
 import { Upload, Store, FileText, Image, CheckCircle, User, LogIn, Check } from "lucide-react";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -34,17 +34,35 @@ const PRICE_RANGES = [
 
 export default function RestaurateurRegister() {
   const [, setLocation] = useLocation();
+  const queryClient = useQueryClient();
   const { user, isAuthenticated, isLoading: authLoading } = useAuth();
   const [step, setStep] = useState(1);
   const [authMode, setAuthMode] = useState<"register" | "login">("login");
   const [isLoggedIn, setIsLoggedIn] = useState(false);
   const [loggedInUserId, setLoggedInUserId] = useState<string | null>(null);
+  const [initialCheckDone, setInitialCheckDone] = useState(false);
 
   useEffect(() => {
-    if (!authLoading && isAuthenticated && user) {
-      setIsLoggedIn(true);
-      setLoggedInUserId(user.id);
-      setStep(2);
+    if (!authLoading && !initialCheckDone) {
+      setInitialCheckDone(true);
+      if (isAuthenticated && user) {
+        fetch(apiUrl("/api/my-restaurants"), { credentials: "include" })
+          .then(res => res.ok ? res.json() : [])
+          .then(restaurants => {
+            if (restaurants.length > 0) {
+              setLocation("/dashboard");
+            } else {
+              setIsLoggedIn(true);
+              setLoggedInUserId(user.id);
+              setStep(2);
+            }
+          })
+          .catch(() => {
+            setIsLoggedIn(true);
+            setLoggedInUserId(user.id);
+            setStep(2);
+          });
+      }
     }
   }, [authLoading, isAuthenticated, user]);
   const [formData, setFormData] = useState({
@@ -55,6 +73,8 @@ export default function RestaurateurRegister() {
     lastName: "",
     restaurantName: "",
     address: "",
+    postalCode: "",
+    city: "",
     phone: "",
     companyName: "",
     registrationNumber: "",
@@ -95,6 +115,7 @@ export default function RestaurateurRegister() {
       return res.json();
     },
     onSuccess: async (data) => {
+      await queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
       const restaurantsRes = await fetch(apiUrl("/api/my-restaurants"), { credentials: "include" });
       if (restaurantsRes.ok) {
         const restaurants = await restaurantsRes.json();
@@ -126,6 +147,8 @@ export default function RestaurateurRegister() {
           lastName: data.lastName || undefined,
           restaurantName: data.restaurantName,
           address: data.address,
+          postalCode: data.postalCode || undefined,
+          city: data.city || undefined,
           phone: data.phone,
           companyName: data.companyName,
           registrationNumber: data.registrationNumber || undefined,
@@ -157,6 +180,8 @@ export default function RestaurateurRegister() {
         body: JSON.stringify({
           restaurantName: data.restaurantName,
           address: data.address,
+          postalCode: data.postalCode || undefined,
+          city: data.city || undefined,
           phone: data.phone,
           companyName: data.companyName,
           registrationNumber: data.registrationNumber || undefined,
@@ -284,9 +309,9 @@ export default function RestaurateurRegister() {
       
       <div className="container max-w-2xl mx-auto py-8 px-4">
         <div className="mb-8 text-center">
-          <h1 className="text-3xl font-bold mb-2">Inscrivez votre restaurant</h1>
+          <h1 className="text-3xl font-bold mb-2">BIENVENUE</h1>
           <p className="text-muted-foreground">
-            Rejoignez les milliers de restaurants présents sur WHERETOEAT.CH
+            DANS L'ESPACE DÉDIÉ AUX RESTAURATEURS
           </p>
         </div>
 
@@ -498,6 +523,28 @@ export default function RestaurateurRegister() {
                   data-testid="input-address"
                 />
               </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-2">
+                  <Label htmlFor="postalCode">Code postal (NPA) *</Label>
+                  <Input
+                    id="postalCode"
+                    value={formData.postalCode}
+                    onChange={(e) => updateField("postalCode", e.target.value)}
+                    placeholder="1201"
+                    data-testid="input-postal-code"
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="city">Ville *</Label>
+                  <Input
+                    id="city"
+                    value={formData.city}
+                    onChange={(e) => updateField("city", e.target.value)}
+                    placeholder="Genève"
+                    data-testid="input-city"
+                  />
+                </div>
+              </div>
               <div className="space-y-2">
                 <Label htmlFor="phone">Téléphone *</Label>
                 <Input
@@ -539,7 +586,7 @@ export default function RestaurateurRegister() {
                 {isLoggedIn && <div />}
                 <Button
                   onClick={() => setStep(3)}
-                  disabled={!formData.restaurantName || !formData.address || !formData.phone || !formData.companyName}
+                  disabled={!formData.restaurantName || !formData.address || !formData.postalCode || !formData.city || !formData.phone || !formData.companyName}
                   data-testid="button-next-step-2"
                 >
                   Continuer

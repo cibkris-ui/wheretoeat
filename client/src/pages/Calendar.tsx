@@ -77,7 +77,7 @@ export default function Calendar() {
     queryKey: ["/api/calendar-bookings", activeRestaurantId, format(currentMonth, "yyyy-MM")],
     queryFn: async () => {
       if (!activeRestaurantId) return [];
-      const res = await fetch(apiUrl(`/api/restaurants/${activeRestaurantId}/bookings`), { credentials: "include" });
+      const res = await fetch(apiUrl(`/api/bookings/restaurant/${activeRestaurantId}`), { credentials: "include" });
       if (!res.ok) throw new Error("Failed to fetch bookings");
       return res.json();
     },
@@ -105,7 +105,7 @@ export default function Calendar() {
       if (!activeRestaurantId) return [];
       const year = currentMonth.getFullYear();
       const month = currentMonth.getMonth() + 1;
-      const res = await fetch(apiUrl(`/api/restaurants/${activeRestaurantId}/closed-days?year=${year}&month=${month}`), { credentials: "include" });
+      const res = await fetch(apiUrl(`/api/closed-days/restaurant/${activeRestaurantId}?year=${year}&month=${month}`), { credentials: "include" });
       if (!res.ok) throw new Error("Failed to fetch closed days");
       return res.json();
     },
@@ -114,7 +114,7 @@ export default function Calendar() {
 
   const createClosedDayMutation = useMutation({
     mutationFn: async ({ date, service }: { date: string; service: string }) => {
-      const res = await fetch(apiUrl(`/api/restaurants/${activeRestaurantId}/closed-days`), {
+      const res = await fetch(apiUrl(`/api/closed-days/restaurant/${activeRestaurantId}`), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",

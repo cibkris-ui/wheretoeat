@@ -145,14 +145,14 @@ export default function NewBooking() {
     queryKey: ["/api/restaurants", activeRestaurantId, "bookings"],
     queryFn: async () => {
       if (!activeRestaurantId) return [];
-      const res = await fetch(apiUrl(`/api/restaurants/${activeRestaurantId}/bookings`), { credentials: "include" });
+      const res = await fetch(apiUrl(`/api/bookings/restaurant/${activeRestaurantId}`), { credentials: "include" });
       return res.ok ? res.json() : [];
     },
     enabled: !!activeRestaurantId,
   });
 
   const { data: floorPlanData } = useQuery<FloorPlanData>({
-    queryKey: [`/api/restaurants/${activeRestaurantId}/floor-plan`],
+    queryKey: [`/api/floor-plans/restaurant/${activeRestaurantId}`],
     enabled: !!activeRestaurantId,
   });
 
@@ -197,7 +197,7 @@ export default function NewBooking() {
   const createBookingMutation = useMutation({
     mutationFn: async () => {
       if (!activeRestaurantId || !selectedTime) throw new Error("Données manquantes");
-      return apiRequest("POST", "/api/owner/bookings", {
+      return apiRequest("POST", "/api/bookings/owner", {
         restaurantId: activeRestaurantId,
         date: selectedDate,
         time: selectedTime,

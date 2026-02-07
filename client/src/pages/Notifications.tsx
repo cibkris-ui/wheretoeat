@@ -102,7 +102,7 @@ export default function Notifications() {
     queryKey: ["/api/all-bookings-notifications", restaurantIds],
     queryFn: async () => {
       const bookingsPromises = restaurantIds.map(id =>
-        fetch(apiUrl(`/api/restaurants/${id}/bookings`), { credentials: "include" })
+        fetch(apiUrl(`/api/bookings/restaurant/${id}`), { credentials: "include" })
           .then(res => res.ok ? res.json() : [])
       );
       const results = await Promise.all(bookingsPromises);

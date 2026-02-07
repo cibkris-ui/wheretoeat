@@ -319,7 +319,9 @@ export default function Settings() {
   const [nameValue, setNameValue] = useState<string>("");
   const [locationValue, setLocationValue] = useState<string>("");
   const [askBillAmount, setAskBillAmount] = useState(false);
-  
+  const [companyNameValue, setCompanyNameValue] = useState<string>("");
+  const [registrationNumberValue, setRegistrationNumberValue] = useState<string>("");
+
   const profileImageInputRef = useRef<HTMLInputElement>(null);
   const photosInputRef = useRef<HTMLInputElement>(null);
   const menuPdfInputRef = useRef<HTMLInputElement>(null);
@@ -358,7 +360,7 @@ export default function Settings() {
     queryKey: ["/api/settings-bookings", activeRestaurantId],
     queryFn: async () => {
       if (!activeRestaurantId) return [];
-      const res = await fetch(apiUrl(`/api/restaurants/${activeRestaurantId}/bookings`), { credentials: "include" });
+      const res = await fetch(apiUrl(`/api/bookings/restaurant/${activeRestaurantId}`), { credentials: "include" });
       if (!res.ok) return [];
       return res.json();
     },
@@ -382,7 +384,7 @@ export default function Settings() {
     queryKey: ["/api/restaurant-users", activeRestaurantId],
     queryFn: async () => {
       if (!activeRestaurantId) return [];
-      const res = await fetch(apiUrl(`/api/restaurants/${activeRestaurantId}/users`), { credentials: "include" });
+      const res = await fetch(apiUrl(`/api/team/restaurant/${activeRestaurantId}`), { credentials: "include" });
       if (!res.ok) return [];
       return res.json();
     },
@@ -391,7 +393,7 @@ export default function Settings() {
 
   const addUserMutation = useMutation({
     mutationFn: async ({ email, password, firstName, lastName, role }: { email: string; password: string; firstName: string; lastName: string; role: string }) => {
-      const res = await apiRequest("POST", `/api/restaurants/${activeRestaurantId}/users`, { email, password, firstName, lastName, role });
+      const res = await apiRequest("POST", `/api/team/restaurant/${activeRestaurantId}`, { email, password, firstName, lastName, role });
       return res.json();
     },
     onSuccess: () => {
@@ -411,7 +413,7 @@ export default function Settings() {
 
   const removeUserMutation = useMutation({
     mutationFn: async (userId: number) => {
-      await apiRequest("DELETE", `/api/restaurants/${activeRestaurantId}/users/${userId}`);
+      await apiRequest("DELETE", `/api/team/restaurant/${activeRestaurantId}/user/${userId}`);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["/api/restaurant-users", activeRestaurantId] });
@@ -437,7 +439,7 @@ export default function Settings() {
   });
 
   const saveContactsMutation = useMutation({
-    mutationFn: async (data: { publicEmail: string; preferredLanguage: string; phone: string; website: string; address: string; location: string }) => {
+    mutationFn: async (data: { publicEmail: string; preferredLanguage: string; phone: string; website: string; address: string; location: string; companyName: string; registrationNumber: string }) => {
       const res = await apiRequest("PUT", `/api/restaurants/${activeRestaurantId}`, data);
       return res.json();
     },
@@ -464,6 +466,8 @@ export default function Settings() {
       website: websiteValue || selectedRestaurantData?.website || "",
       address: finalAddress,
       location: fullLocation,
+      companyName: companyNameValue || selectedRestaurantData?.companyName || "",
+      registrationNumber: registrationNumberValue || selectedRestaurantData?.registrationNumber || "",
     });
   };
 
@@ -1086,11 +1090,13 @@ export default function Settings() {
                           <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-6">
                             <div className="space-y-1">
                               <Label className="text-sm text-gray-500 flex items-center gap-1">
-                                Registre du Commerce (RC)
+                                Nom de la société
                                 <HelpCircle className="h-3 w-3 text-gray-400" />
                               </Label>
-                              <Input 
-                                defaultValue="Registre du commerce du Canton de Genève"
+                              <Input
+                                value={companyNameValue || selectedRestaurantData?.companyName || ""}
+                                onChange={(e) => setCompanyNameValue(e.target.value)}
+                                placeholder="Restaurant SA"
                                 className="border-gray-200"
                                 data-testid="input-registre-commerce"
                               />
@@ -1100,8 +1106,9 @@ export default function Settings() {
                                 N° registre commerce
                                 <HelpCircle className="h-3 w-3 text-gray-400" />
                               </Label>
-                              <Input 
-                                defaultValue="CHE-177.597.349"
+                              <Input
+                                value={registrationNumberValue || selectedRestaurantData?.registrationNumber || ""}
+                                onChange={(e) => setRegistrationNumberValue(e.target.value)}
                                 placeholder="CHE-XXX.XXX.XXX"
                                 className="border-gray-200"
                                 data-testid="input-numero-registre"

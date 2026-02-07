@@ -91,7 +91,7 @@ export default function Clients() {
     queryFn: async () => {
       const params = new URLSearchParams();
       if (searchQuery) params.set("search", searchQuery);
-      const res = await fetch(apiUrl(`/api/restaurants/${activeRestaurantId}/clients?${params}`), {
+      const res = await fetch(apiUrl(`/api/clients/restaurant/${activeRestaurantId}?${params}`), {
         credentials: "include"
       });
       if (!res.ok) return [];
@@ -105,7 +105,7 @@ export default function Clients() {
     queryKey: ["/api/clients-bookings", activeRestaurantId],
     queryFn: async () => {
       if (!activeRestaurantId) return [];
-      const res = await fetch(apiUrl(`/api/restaurants/${activeRestaurantId}/bookings`), { credentials: "include" });
+      const res = await fetch(apiUrl(`/api/bookings/restaurant/${activeRestaurantId}`), { credentials: "include" });
       if (!res.ok) return [];
       return res.json();
     },

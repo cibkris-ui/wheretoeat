@@ -33,7 +33,7 @@ export function ReservationsManager({ restaurants, defaultRestaurantId }: Reserv
     queryKey: ["/api/all-bookings", restaurantIds],
     queryFn: async () => {
       const bookingsPromises = restaurantIds.map(id =>
-        fetch(apiUrl(`/api/restaurants/${id}/bookings`), { credentials: "include" })
+        fetch(apiUrl(`/api/bookings/restaurant/${id}`), { credentials: "include" })
           .then(res => res.ok ? res.json() : [])
       );
       const results = await Promise.all(bookingsPromises);

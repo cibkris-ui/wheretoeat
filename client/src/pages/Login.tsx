@@ -46,8 +46,13 @@ export default function Login() {
         const data = await res.json();
         throw new Error(data.message || "Erreur de connexion");
       }
+      const loginData = await res.json();
       await queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
-      navigate("/dashboard");
+      if (loginData.user?.isAdmin) {
+        navigate("/admin");
+      } else {
+        navigate("/dashboard");
+      }
     } catch (err: any) {
       setError(err.message);
     } finally {

@@ -112,6 +112,8 @@ export const restaurants = pgTable("restaurants", {
   hasVegetarianOptions: boolean("has_vegetarian_options").default(false),
   spokenLanguages: text("spoken_languages").array(),
   askBillAmount: boolean("ask_bill_amount").default(false),
+  companyName: text("company_name"),
+  registrationNumber: text("registration_number"),
 }, (table) => [
   index("idx_restaurants_owner_id").on(table.ownerId),
   index("idx_restaurants_approval_status").on(table.approvalStatus),

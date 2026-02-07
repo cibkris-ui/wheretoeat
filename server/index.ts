@@ -8,6 +8,7 @@ import { getSession } from "./middleware/session";
 import { generalLimiter } from "./middleware/rateLimiter";
 import { seedCuisineCategoriesIfEmpty } from "./services/seed";
 import { storage } from "./services/storage";
+import { requireAuth } from "./middleware/auth";
 import bcrypt from "bcryptjs";
 
 // Route imports
@@ -99,6 +100,16 @@ app.get("/api/logout", (req: any, res) => {
     res.clearCookie("connect.sid");
     res.redirect("/");
   });
+});
+
+// Shortcut: /api/my-restaurants -> /api/restaurants/my-restaurants
+app.get("/api/my-restaurants", requireAuth, async (req: any, res) => {
+  try {
+    const restaurants = await storage.getRestaurantsByOwner(req.userId);
+    res.json(restaurants);
+  } catch (error: any) {
+    res.status(500).json({ message: error.message });
+  }
 });
 
 // Also mount public routes at /api/ level for backwards compatibility
