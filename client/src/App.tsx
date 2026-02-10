@@ -18,6 +18,7 @@ import Clients from "@/pages/Clients";
 import Statistics from "@/pages/Statistics";
 import Settings from "@/pages/Settings";
 import Assignments from "@/pages/Assignments";
+import About from "@/pages/About";
 
 function Router() {
   return (
@@ -35,6 +36,7 @@ function Router() {
       <Route path="/dashboard/statistiques" component={Statistics} />
       <Route path="/dashboard/parametres" component={Settings} />
       <Route path="/inscrire-restaurant" component={RestaurateurRegister} />
+      <Route path="/a-propos" component={About} />
       <Route path="/admin" component={Admin} />
       <Route component={NotFound} />
     </Switch>

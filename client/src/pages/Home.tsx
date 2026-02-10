@@ -340,8 +340,8 @@ export default function Home() {
           <div>
             <h5 className="font-bold mb-4 text-gray-900">Plus</h5>
             <ul className="space-y-2 text-sm">
-              <li className="hover:text-primary cursor-pointer">À propos</li>
-              <li className="hover:text-primary cursor-pointer">Restaurateurs</li>
+              <li className="hover:text-primary cursor-pointer" onClick={() => setLocation("/a-propos")}>À propos</li>
+              <li className="hover:text-primary cursor-pointer" onClick={() => setLocation("/inscrire-restaurant")}>Restaurateurs</li>
               <li className="hover:text-primary cursor-pointer">Blog</li>
               <li className="hover:text-primary cursor-pointer">Contact</li>
             </ul>

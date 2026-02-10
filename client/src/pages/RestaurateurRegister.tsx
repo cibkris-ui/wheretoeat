@@ -48,7 +48,11 @@ export default function RestaurateurRegister() {
       if (isAuthenticated && user) {
         fetch(apiUrl("/api/my-restaurants"), { credentials: "include" })
           .then(res => res.ok ? res.json() : [])
-          .then(() => {
+          .then((restaurants) => {
+            if (Array.isArray(restaurants) && restaurants.length > 0) {
+              setLocation("/dashboard");
+              return;
+            }
             setIsLoggedIn(true);
             setLoggedInUserId(user.id);
             setStep(2);
@@ -112,9 +116,17 @@ export default function RestaurateurRegister() {
     },
     onSuccess: async (data) => {
       await queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
+      setLoginError("");
+      try {
+        const res = await fetch(apiUrl("/api/my-restaurants"), { credentials: "include" });
+        const restaurants = res.ok ? await res.json() : [];
+        if (Array.isArray(restaurants) && restaurants.length > 0) {
+          setLocation("/dashboard");
+          return;
+        }
+      } catch {}
       setIsLoggedIn(true);
       setLoggedInUserId(data.user.id);
-      setLoginError("");
       setStep(2);
     },
     onError: (error: Error) => {

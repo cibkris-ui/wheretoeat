@@ -2,6 +2,7 @@
 import Client from "ssh2-sftp-client";
 import path from "path";
 import fs from "fs";
+import crypto from "crypto";
 import { execSync } from "child_process";
 import { fileURLToPath } from "url";
 import { loadEnvConfig } from "./env-loader.mjs";
@@ -89,6 +90,40 @@ async function uploadDirectorySilent(sftp, localDir, remoteDir) {
   }
 }
 
+function hashFile(filePath) {
+  const content = fs.readFileSync(filePath);
+  return crypto.createHash("md5").update(content).digest("hex");
+}
+
+async function needsNodeModulesUpload(sftp) {
+  const localLockFile = path.join(localDeployPath, "package-lock.json");
+  if (!fs.existsSync(localLockFile)) return true;
+
+  const localHash = hashFile(localLockFile);
+  const remoteHashFile = `${remotePath}/.lockfile-hash`;
+
+  try {
+    const remoteHash = (await sftp.get(remoteHashFile)).toString().trim();
+    if (remoteHash === localHash) {
+      console.log("  package-lock.json unchanged, skipping node_modules upload.");
+      return false;
+    }
+  } catch (e) {
+    // Hash file doesn't exist on remote, need full upload
+  }
+  return true;
+}
+
+async function saveLockfileHash(sftp) {
+  const localLockFile = path.join(localDeployPath, "package-lock.json");
+  if (!fs.existsSync(localLockFile)) return;
+  const hash = hashFile(localLockFile);
+  const tmpFile = path.join(localDeployPath, ".lockfile-hash");
+  fs.writeFileSync(tmpFile, hash);
+  await sftp.put(tmpFile, `${remotePath}/.lockfile-hash`);
+  fs.unlinkSync(tmpFile);
+}
+
 async function deploy() {
   const sftp = new Client();
 
@@ -100,26 +135,28 @@ async function deploy() {
     await sftp.connect(config);
     console.log("Connected!\n");
 
-    // Clean remote directory (except uploads and .env)
+    // Check if node_modules needs re-uploading
+    const shouldUploadNodeModules = await needsNodeModulesUpload(sftp);
+
+    // Clean remote directory (except uploads, .env, and optionally node_modules)
     console.log("Cleaning remote directory...");
     const remoteFiles = await sftp.list(remotePath);
     for (const file of remoteFiles) {
-      if (file.name !== "uploads" && file.name !== ".env") {
-        const fullPath = `${remotePath}/${file.name}`;
-        console.log(`  Removing: ${file.name}`);
-        if (file.type === "d") {
-          await sftp.rmdir(fullPath, true);
-        } else {
-          await sftp.delete(fullPath);
-        }
+      if (file.name === "uploads" || file.name === ".env" || file.name === ".lockfile-hash") continue;
+      if (file.name === "node_modules" && !shouldUploadNodeModules) continue;
+      const fullPath = `${remotePath}/${file.name}`;
+      console.log(`  Removing: ${file.name}`);
+      if (file.type === "d") {
+        await sftp.rmdir(fullPath, true);
+      } else {
+        await sftp.delete(fullPath);
       }
     }
 
-    // Upload new files (including node_modules)
+    // Upload new files
     console.log("\nUploading files...");
     uploadCount = 0;
 
-    // Upload non-node_modules files with detailed logging
     const deployFiles = fs.readdirSync(localDeployPath);
     for (const file of deployFiles) {
       if (file === "node_modules") continue;
@@ -135,13 +172,18 @@ async function deploy() {
       }
     }
 
-    // Upload node_modules
-    const nodeModulesLocal = path.join(localDeployPath, "node_modules");
-    if (fs.existsSync(nodeModulesLocal)) {
-      console.log("\nUploading node_modules (this may take a few minutes)...");
-      try { await sftp.mkdir(`${remotePath}/node_modules`, true); } catch (e) {}
-      await uploadDirectorySilent(sftp, nodeModulesLocal, `${remotePath}/node_modules`);
-      console.log(`  ${uploadCount} files uploaded.`);
+    // Upload node_modules only if needed
+    if (shouldUploadNodeModules) {
+      const nodeModulesLocal = path.join(localDeployPath, "node_modules");
+      if (fs.existsSync(nodeModulesLocal)) {
+        console.log("\nUploading node_modules (dependencies changed)...");
+        try { await sftp.mkdir(`${remotePath}/node_modules`, true); } catch (e) {}
+        await uploadDirectorySilent(sftp, nodeModulesLocal, `${remotePath}/node_modules`);
+        console.log(`  ${uploadCount} files uploaded.`);
+        await saveLockfileHash(sftp);
+      }
+    } else {
+      console.log("\nnode_modules skipped (no dependency changes).");
     }
 
     // Create uploads directory if not exists
