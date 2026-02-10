@@ -199,14 +199,47 @@ Le widget iframe (`?embed=true`) dans Settings affichait la page complete du res
 
 ---
 
-## 11. Push GitHub
+## 11. Image d'accueil
+
+- Remplacement de l'image Unsplash par `RESTO 3.jpg` (photo locale)
+- `Home.tsx` : `heroImage` pointe vers `/resto3.jpg`
+- Fichier copie dans `client/public/resto3.jpg`
+
+---
+
+## 12. Securite - Suppression secrets du repo GitHub
+
+### Probleme
+GitGuardian a detecte des secrets exposes dans le repo public :
+- Mot de passe SFTP Infomaniak dans 4 scripts
+- DATABASE_URL PostgreSQL complete dans `remote-setup.mjs`
+- SESSION_SECRET et ADMIN_PASSWORD dans `remote-setup.mjs`
+- Mots de passe utilisateurs dans le changelog
+
+### Correction
+- Creation de `scripts/env-loader.mjs` : charge les credentials depuis `.env`
+- 4 scripts modifies pour utiliser les variables d'env au lieu de hardcoder
+- Variables SFTP ajoutees au `.env` : `SFTP_HOST`, `SFTP_USERNAME`, `SFTP_PASSWORD`, `SFTP_REMOTE_PATH`
+- `deploy/` ajoute au `.gitignore`
+- Changelog nettoye (plus de mots de passe)
+- Historique git purge : branche `master` recree en orphan (1 seul commit)
+- Branche `main` (ancien historique) supprimee sur GitHub
+- Force push effectue
+
+### IMPORTANT - Actions requises
+Les secrets ayant ete exposes publiquement, il faut **changer** :
+1. Mot de passe SFTP Infomaniak
+2. Mot de passe base de donnees PostgreSQL (AWS RDS)
+3. Mots de passe utilisateurs (admin et owner)
+
+---
+
+## 13. Push GitHub final
 
 - Remote : `https://github.com/cibkris-ui/wheretoeat.git`
-- Branche `master`
-
-### Commits
-- `07c8939` : "Fix API URL mismatches, registration flow, floor plan, and favicon"
-- `67c7c54` : "Update changelog with GitHub push info and full API route mapping"
+- Branche par defaut : `master`
+- Commit unique : `27a5d0e` "WhereToEat v2 - Clean repository (secrets removed)"
+- Historique propre, aucun secret
 
 ---
 

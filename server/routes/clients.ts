@@ -37,11 +37,13 @@ router.get("/:id", requireAuth, async (req: any, res) => {
     if (restaurant.ownerId !== req.userId) return res.status(403).json({ message: "Non autorisé pour ce restaurant" });
 
     const clientBookings = await storage.getClientBookings(clientId, client.restaurantId);
-    const visitCount = clientBookings.length;
+    const validBookings = clientBookings.filter(b => b.status !== "cancelled" && b.status !== "noshow");
+    const visitCount = validBookings.length;
     const avgGuests =
-      visitCount > 0 ? Math.round(clientBookings.reduce((sum, b) => sum + b.guests, 0) / visitCount) : 0;
+      visitCount > 0 ? Math.round(validBookings.reduce((sum, b) => sum + b.guests, 0) / visitCount) : 0;
+    const totalSpent = validBookings.reduce((sum, b) => sum + (b.billAmount || 0), 0);
 
-    res.json({ ...client, visitCount, avgGuests, bookings: clientBookings });
+    res.json({ ...client, visitCount, avgGuests, totalSpent, bookings: clientBookings });
   } catch (error: any) {
     res.status(500).json({ message: error.message });
   }

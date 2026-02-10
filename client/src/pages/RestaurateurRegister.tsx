@@ -48,14 +48,10 @@ export default function RestaurateurRegister() {
       if (isAuthenticated && user) {
         fetch(apiUrl("/api/my-restaurants"), { credentials: "include" })
           .then(res => res.ok ? res.json() : [])
-          .then(restaurants => {
-            if (restaurants.length > 0) {
-              setLocation("/dashboard");
-            } else {
-              setIsLoggedIn(true);
-              setLoggedInUserId(user.id);
-              setStep(2);
-            }
+          .then(() => {
+            setIsLoggedIn(true);
+            setLoggedInUserId(user.id);
+            setStep(2);
           })
           .catch(() => {
             setIsLoggedIn(true);
@@ -116,14 +112,6 @@ export default function RestaurateurRegister() {
     },
     onSuccess: async (data) => {
       await queryClient.invalidateQueries({ queryKey: ["/api/auth/user"] });
-      const restaurantsRes = await fetch(apiUrl("/api/my-restaurants"), { credentials: "include" });
-      if (restaurantsRes.ok) {
-        const restaurants = await restaurantsRes.json();
-        if (restaurants.length > 0) {
-          setLocation("/dashboard");
-          return;
-        }
-      }
       setIsLoggedIn(true);
       setLoggedInUserId(data.user.id);
       setLoginError("");

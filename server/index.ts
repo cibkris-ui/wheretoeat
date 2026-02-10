@@ -4,9 +4,11 @@ import cookieParser from "cookie-parser";
 import path from "path";
 import fs from "fs";
 import { createServer } from "http";
+import cron from "node-cron";
 import { getSession } from "./middleware/session";
 import { generalLimiter } from "./middleware/rateLimiter";
 import { seedCuisineCategoriesIfEmpty } from "./services/seed";
+import { processBookingReminders } from "./services/email";
 import { storage } from "./services/storage";
 import { requireAuth } from "./middleware/auth";
 import bcrypt from "bcryptjs";
@@ -163,6 +165,12 @@ app.get("/api/cuisine-categories", async (_req, res) => {
       console.log(`Default admin created: ${adminEmail}`);
     }
   }
+
+  // Booking reminders: every day at 10:00
+  cron.schedule("0 10 * * *", () => {
+    console.log("Running booking reminders...");
+    processBookingReminders().catch(err => console.error("Reminder cron error:", err));
+  });
 
   // Error handler
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {

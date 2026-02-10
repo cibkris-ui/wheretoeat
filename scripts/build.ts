@@ -37,4 +37,22 @@ await esbuild.build({
   },
 });
 
+// Generate production package.json in dist/
+const prodPkg = {
+  name: pkg.name,
+  version: pkg.version,
+  license: pkg.license,
+  scripts: {
+    start: "NODE_ENV=production NODE_TLS_REJECT_UNAUTHORIZED=0 node index.cjs",
+  },
+  dependencies: Object.fromEntries(
+    ["bcryptjs", "connect-pg-simple", "cookie-parser", "dotenv", "drizzle-orm",
+     "express", "express-rate-limit", "express-session", "multer", "nanoid",
+     "node-cron", "pg", "resend", "zod", "zod-validation-error"]
+      .filter(dep => pkg.dependencies[dep])
+      .map(dep => [dep, pkg.dependencies[dep]])
+  ),
+};
+fs.writeFileSync("dist/package.json", JSON.stringify(prodPkg, null, 2));
+
 console.log("Build complete!");

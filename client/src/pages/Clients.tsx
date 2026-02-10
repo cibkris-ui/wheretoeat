@@ -41,7 +41,8 @@ import {
   User,
   Calendar,
   Hash,
-  Grid3X3
+  Grid3X3,
+  Banknote
 } from "lucide-react";
 import { format, parseISO } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -74,7 +75,7 @@ export default function Clients() {
         variant: "destructive",
       });
       setTimeout(() => {
-        window.location.href = apiUrl("/api/login");
+        window.location.href = "/login";
       }, 500);
     }
   }, [isAuthenticated, authLoading, toast]);
@@ -504,7 +505,7 @@ export default function Clients() {
                   </div>
 
                   {/* Stats */}
-                  <div className="grid grid-cols-3 gap-4">
+                  <div className="grid grid-cols-4 gap-4">
                     <div className="bg-gray-50 rounded-lg p-4 text-center">
                       <Hash className="h-5 w-5 mx-auto mb-2 text-gray-500" />
                       <p className="text-2xl font-bold text-primary">{selectedClient.visitCount}</p>
@@ -519,6 +520,11 @@ export default function Clients() {
                       <Calendar className="h-5 w-5 mx-auto mb-2 text-gray-500" />
                       <p className="text-lg font-bold text-primary">{formatDate(selectedClient.bookings?.[0]?.date || null)}</p>
                       <p className="text-sm text-gray-500">dernière visite</p>
+                    </div>
+                    <div className="bg-gray-50 rounded-lg p-4 text-center">
+                      <Banknote className="h-5 w-5 mx-auto mb-2 text-gray-500" />
+                      <p className="text-2xl font-bold text-primary">{selectedClient.totalSpent ? `${selectedClient.totalSpent} CHF` : "-"}</p>
+                      <p className="text-sm text-gray-500">CA total</p>
                     </div>
                   </div>
 
