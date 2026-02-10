@@ -150,6 +150,7 @@ export const bookings = pgTable("bookings", {
   status: text("status").notNull().default("confirmed"),
   tableId: text("table_id"),
   zoneId: text("zone_id"),
+  cancelToken: text("cancel_token"),
 }, (table) => [
   index("idx_bookings_restaurant_date_time").on(table.restaurantId, table.date, table.time),
   index("idx_bookings_client_ip").on(table.clientIp),

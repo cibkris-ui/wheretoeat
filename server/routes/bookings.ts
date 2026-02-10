@@ -3,8 +3,25 @@ import { insertBookingSchema } from "@shared/schema";
 import { fromZodError } from "zod-validation-error";
 import { storage } from "../services/storage";
 import { requireAuth } from "../middleware/auth";
+import { sendBookingConfirmation, sendBookingNotificationToRestaurant, sendBookingConfirmedEmail, sendBookingWaitingEmail, sendBookingCancelledEmail } from "../services/email";
 
 const router = Router();
+
+function baseHtmlPage(title: string, message: string, success: boolean): string {
+  const color = success ? "#16a34a" : "#dc2626";
+  return `<!DOCTYPE html>
+<html lang="fr">
+<head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0"><title>${title} - WhereToEat</title></head>
+<body style="margin:0;padding:0;background-color:#f4f4f5;font-family:Arial,Helvetica,sans-serif;display:flex;justify-content:center;align-items:center;min-height:100vh;">
+  <div style="background:#fff;border-radius:8px;padding:48px 32px;max-width:480px;text-align:center;box-shadow:0 2px 8px rgba(0,0,0,0.08);">
+    <div style="font-size:48px;margin-bottom:16px;">${success ? "✓" : "✗"}</div>
+    <h1 style="margin:0 0 16px;font-size:22px;color:${color};">${title}</h1>
+    <p style="color:#71717a;font-size:15px;margin:0 0 24px;">${message}</p>
+    <a href="https://wheretoeat.ch" style="display:inline-block;padding:12px 32px;background-color:#18181b;color:#fff;text-decoration:none;border-radius:6px;font-weight:600;">Retour à WhereToEat</a>
+  </div>
+</body>
+</html>`;
+}
 
 // Public booking creation
 router.post("/", async (req, res) => {
@@ -55,7 +72,7 @@ router.post("/", async (req, res) => {
       }
     }
 
-    // Anti-fraud: IP + cookie checks
+    // Track client IP
     const clientIp = ((req.headers["x-forwarded-for"] as string) || req.socket.remoteAddress || "unknown")
       .split(",")[0]
       .trim();
@@ -68,23 +85,6 @@ router.post("/", async (req, res) => {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
         sameSite: "strict",
-      });
-    }
-
-    const emailMismatchByIp = await storage.checkIpEmailMismatch(clientIp, result.data.email);
-    const emailMismatchByCookie = await storage.checkClientIdEmailMismatch(clientId, result.data.email);
-
-    if (emailMismatchByIp || emailMismatchByCookie) {
-      return res.status(400).json({
-        message:
-          "Cet appareil est déjà associé à un autre compte email. Veuillez utiliser la même adresse email pour toutes vos réservations.",
-      });
-    }
-
-    const existingBooking = await storage.checkExistingBooking(clientIp, result.data.date, result.data.time);
-    if (existingBooking) {
-      return res.status(400).json({
-        message: "Vous avez déjà une réservation sur ce créneau horaire. Veuillez choisir un autre horaire.",
       });
     }
 
@@ -116,6 +116,12 @@ router.post("/", async (req, res) => {
         result.data.email,
         result.data.phone
       );
+    }
+
+    // Send emails (fire-and-forget)
+    sendBookingConfirmation(booking, restaurant).catch(err => console.error("Email confirmation error:", err));
+    if (restaurant.publicEmail) {
+      sendBookingNotificationToRestaurant(booking, restaurant).catch(err => console.error("Email notification error:", err));
     }
 
     res.status(201).json(booking);
@@ -219,9 +225,57 @@ router.patch("/:id/status", requireAuth, async (req: any, res) => {
     if (restaurant.ownerId !== req.userId) return res.status(403).json({ message: "Non autorisé pour ce restaurant" });
 
     const updated = await storage.updateBookingStatus(bookingId, status);
+
+    // Send status change email to client (fire-and-forget)
+    if (status === "confirmed") {
+      sendBookingConfirmedEmail(booking, restaurant).catch(err => console.error("Email confirmed error:", err));
+    } else if (status === "waiting") {
+      sendBookingWaitingEmail(booking, restaurant).catch(err => console.error("Email waiting error:", err));
+    } else if (status === "refused" || status === "cancelled") {
+      sendBookingCancelledEmail(booking, restaurant).catch(err => console.error("Email cancelled error:", err));
+    }
+
     res.json(updated);
   } catch (error: any) {
     res.status(500).json({ message: error.message });
+  }
+});
+
+// Public cancel via token (no auth required)
+router.get("/cancel/:cancelToken", async (req, res) => {
+  try {
+    const { cancelToken } = req.params;
+    const booking = await storage.getBookingByCancelToken(cancelToken);
+
+    if (!booking) {
+      return res.status(404).send(baseHtmlPage(
+        "Lien invalide",
+        "Ce lien d'annulation n'est pas valide ou a déjà été utilisé.",
+        false
+      ));
+    }
+
+    if (booking.status === "cancelled" || booking.status === "refused") {
+      return res.send(baseHtmlPage(
+        "Réservation déjà annulée",
+        "Cette réservation a déjà été annulée.",
+        true
+      ));
+    }
+
+    await storage.updateBookingStatus(booking.id, "cancelled");
+
+    res.send(baseHtmlPage(
+      "Réservation annulée",
+      "Votre réservation a bien été annulée. Nous espérons vous revoir bientôt !",
+      true
+    ));
+  } catch (error: any) {
+    res.status(500).send(baseHtmlPage(
+      "Erreur",
+      "Une erreur est survenue lors de l'annulation. Veuillez réessayer plus tard.",
+      false
+    ));
   }
 });
 

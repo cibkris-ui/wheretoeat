@@ -1,3 +1,4 @@
+import { nanoid } from "nanoid";
 import { eq, and, or, ilike, desc, sql, inArray, ne, gte, like, getTableColumns } from "drizzle-orm";
 import { db } from "../db";
 import {
@@ -138,12 +139,17 @@ class DatabaseStorage {
   // === Bookings ===
 
   async createBooking(booking: InsertBooking): Promise<Booking> {
-    const [newBooking] = await db.insert(bookings).values(booking).returning();
+    const [newBooking] = await db.insert(bookings).values({ ...booking, cancelToken: nanoid(32) }).returning();
     return newBooking;
   }
 
   async getBooking(id: number): Promise<Booking | undefined> {
     const [booking] = await db.select().from(bookings).where(eq(bookings.id, id));
+    return booking;
+  }
+
+  async getBookingByCancelToken(token: string): Promise<Booking | undefined> {
+    const [booking] = await db.select().from(bookings).where(eq(bookings.cancelToken, token));
     return booking;
   }
 
@@ -217,6 +223,18 @@ class DatabaseStorage {
       .where(eq(bookings.id, id))
       .returning();
     return updated;
+  }
+
+  async getBookingsForDate(date: string): Promise<Booking[]> {
+    return await db
+      .select()
+      .from(bookings)
+      .where(
+        and(
+          eq(bookings.date, date),
+          sql`${bookings.status} NOT IN ('cancelled', 'noshow')`
+        )
+      );
   }
 
   async checkExistingBooking(clientIp: string, date: string, time: string): Promise<Booking | undefined> {
@@ -357,7 +375,18 @@ class DatabaseStorage {
     const baseClients = await this.getClientsByRestaurant(restaurantId, search);
     if (baseClients.length === 0) return [];
 
-    const clientEmails = baseClients.map((c) => c.email.toLowerCase());
+    // Deduplicate clients by email (keep the most recently updated one)
+    const uniqueByEmail = new Map<string, typeof baseClients[0]>();
+    for (const client of baseClients) {
+      const key = client.email.toLowerCase();
+      const existing = uniqueByEmail.get(key);
+      if (!existing || (client.updatedAt && existing.updatedAt && client.updatedAt > existing.updatedAt)) {
+        uniqueByEmail.set(key, client);
+      }
+    }
+    const dedupedClients = Array.from(uniqueByEmail.values());
+
+    const clientEmails = dedupedClients.map((c) => c.email.toLowerCase());
     const restaurantBookings = await db
       .select()
       .from(bookings)
@@ -371,12 +400,13 @@ class DatabaseStorage {
       bookingsByEmail.get(key)!.push(b);
     }
 
-    return baseClients.map((client) => {
+    return dedupedClients.map((client) => {
       const clientBookings = bookingsByEmail.get(client.email.toLowerCase()) || [];
-      const visitCount = clientBookings.length;
-      const lastVisit = visitCount > 0 ? clientBookings[0].date : null;
+      const validBookings = clientBookings.filter(b => b.status !== "cancelled" && b.status !== "noshow");
+      const visitCount = validBookings.length;
+      const lastVisit = visitCount > 0 ? validBookings[0].date : null;
       const avgGuests =
-        visitCount > 0 ? Math.round(clientBookings.reduce((sum, b) => sum + b.guests, 0) / visitCount) : 0;
+        visitCount > 0 ? Math.round(validBookings.reduce((sum, b) => sum + b.guests, 0) / visitCount) : 0;
       return { ...client, visitCount, lastVisit, avgGuests };
     });
   }
@@ -424,7 +454,7 @@ class DatabaseStorage {
     return await db
       .select()
       .from(bookings)
-      .where(and(eq(bookings.restaurantId, restaurantId), eq(bookings.email, client.email)))
+      .where(and(eq(bookings.restaurantId, restaurantId), eq(sql`LOWER(${bookings.email})`, client.email.toLowerCase())))
       .orderBy(desc(bookings.date));
   }
 
