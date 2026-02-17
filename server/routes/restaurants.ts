@@ -16,7 +16,8 @@ router.post("/", requireAuth, async (req: any, res) => {
     const restaurant = await storage.createRestaurant(result.data);
     res.status(201).json(restaurant);
   } catch (error: any) {
-    res.status(500).json({ message: error.message });
+    console.error("Restaurant error:", error);
+    res.status(500).json({ message: "Erreur serveur" });
   }
 });
 
@@ -26,7 +27,8 @@ router.get("/my-restaurants", requireAuth, async (req: any, res) => {
     const restaurants = await storage.getRestaurantsByOwner(req.userId);
     res.json(restaurants);
   } catch (error: any) {
-    res.status(500).json({ message: error.message });
+    console.error("Restaurant error:", error);
+    res.status(500).json({ message: "Erreur serveur" });
   }
 });
 
@@ -43,7 +45,8 @@ router.post("/:id/claim", requireAuth, async (req: any, res) => {
     const updated = await storage.updateRestaurant(id, { ownerId: req.userId });
     res.json(updated);
   } catch (error: any) {
-    res.status(500).json({ message: error.message });
+    console.error("Restaurant error:", error);
+    res.status(500).json({ message: "Erreur serveur" });
   }
 });
 
@@ -79,7 +82,8 @@ router.put("/:id", requireAuth, async (req: any, res) => {
     const updated = await storage.updateRestaurant(id, updateData);
     res.json(updated);
   } catch (error: any) {
-    res.status(500).json({ message: error.message });
+    console.error("Restaurant error:", error);
+    res.status(500).json({ message: "Erreur serveur" });
   }
 });
 
@@ -94,10 +98,14 @@ router.put("/:id/google-place", requireAuth, async (req: any, res) => {
     if (restaurant.ownerId !== req.userId) return res.status(403).json({ message: "Non autorisé pour ce restaurant" });
 
     const { googlePlaceId } = req.body;
+    if (!googlePlaceId || typeof googlePlaceId !== "string") {
+      return res.status(400).json({ message: "Identifiant Google Place requis" });
+    }
     const updated = await storage.updateRestaurant(id, { googlePlaceId });
     res.json(updated);
   } catch (error: any) {
-    res.status(500).json({ message: error.message });
+    console.error("Restaurant error:", error);
+    res.status(500).json({ message: "Erreur serveur" });
   }
 });
 

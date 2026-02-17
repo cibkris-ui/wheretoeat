@@ -43,25 +43,16 @@ export default function RestaurateurRegister() {
   const [initialCheckDone, setInitialCheckDone] = useState(false);
 
   useEffect(() => {
+    document.title = "Inscrire mon restaurant - WHERETOEAT.CH";
+  }, []);
+
+  useEffect(() => {
     if (!authLoading && !initialCheckDone) {
       setInitialCheckDone(true);
       if (isAuthenticated && user) {
-        fetch(apiUrl("/api/my-restaurants"), { credentials: "include" })
-          .then(res => res.ok ? res.json() : [])
-          .then((restaurants) => {
-            if (Array.isArray(restaurants) && restaurants.length > 0) {
-              setLocation("/dashboard");
-              return;
-            }
-            setIsLoggedIn(true);
-            setLoggedInUserId(user.id);
-            setStep(2);
-          })
-          .catch(() => {
-            setIsLoggedIn(true);
-            setLoggedInUserId(user.id);
-            setStep(2);
-          });
+        setIsLoggedIn(true);
+        setLoggedInUserId(user.id);
+        setStep(2);
       }
     }
   }, [authLoading, isAuthenticated, user]);

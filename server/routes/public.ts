@@ -9,7 +9,8 @@ router.get("/restaurants", async (_req, res) => {
     const restaurants = await storage.getAllRestaurants();
     res.json(restaurants);
   } catch (error: any) {
-    res.status(500).json({ message: error.message });
+    console.error("Public route error:", error);
+    res.status(500).json({ message: "Erreur serveur" });
   }
 });
 
@@ -24,7 +25,8 @@ router.get("/restaurants/:id", async (req, res) => {
 
     res.json(restaurant);
   } catch (error: any) {
-    res.status(500).json({ message: error.message });
+    console.error("Public route error:", error);
+    res.status(500).json({ message: "Erreur serveur" });
   }
 });
 
@@ -40,7 +42,8 @@ router.get("/restaurants/:id/closed-days", async (req, res) => {
     const closedDays = await storage.getClosedDays(restaurantId);
     res.json(closedDays);
   } catch (error: any) {
-    res.status(500).json({ message: error.message });
+    console.error("Public route error:", error);
+    res.status(500).json({ message: "Erreur serveur" });
   }
 });
 
@@ -55,7 +58,8 @@ router.get("/restaurants/:id/opening-hours", async (req, res) => {
 
     res.json(restaurant.openingHours || null);
   } catch (error: any) {
-    res.status(500).json({ message: error.message });
+    console.error("Public route error:", error);
+    res.status(500).json({ message: "Erreur serveur" });
   }
 });
 
@@ -65,7 +69,8 @@ router.get("/cuisine-categories", async (_req, res) => {
     const categories = await storage.getCuisineCategories();
     res.json(categories);
   } catch (error: any) {
-    res.status(500).json({ message: error.message });
+    console.error("Public route error:", error);
+    res.status(500).json({ message: "Erreur serveur" });
   }
 });
 

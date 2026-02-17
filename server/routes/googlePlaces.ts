@@ -21,7 +21,8 @@ router.get("/search", async (req, res) => {
     const results = await googlePlacesService.searchPlaces(query, location);
     res.json(results);
   } catch (error: any) {
-    res.status(500).json({ message: error.message });
+    console.error("Google Places error:", error);
+    res.status(500).json({ message: "Erreur serveur" });
   }
 });
 
@@ -38,7 +39,8 @@ router.get("/:placeId", async (req, res) => {
 
     res.json(details);
   } catch (error: any) {
-    res.status(500).json({ message: error.message });
+    console.error("Google Places error:", error);
+    res.status(500).json({ message: "Erreur serveur" });
   }
 });
 

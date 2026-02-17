@@ -71,6 +71,35 @@ wheretoeat-v2/
 - Booking stats exclude `cancelled` and `noshow` statuses
 - Client deduplication by email (case-insensitive)
 
+## SEO (implemented 2026-02-10)
+
+### Meta tags (`client/index.html`)
+- `<title>`, `<meta description>`, `<meta robots>`, `<meta theme-color>`
+- Open Graph: `og:title`, `og:description`, `og:type`, `og:url`, `og:image`
+- Twitter Card: `twitter:card`, `twitter:title`, `twitter:description`, `twitter:image`
+- `<link rel="canonical">`
+
+### Dynamic `document.title` per page
+- Home: `WHERETOEAT.CH - Réservez les meilleurs restaurants de Suisse`
+- About: `À propos - WHERETOEAT.CH`
+- Restaurants: `Restaurants - WHERETOEAT.CH`
+- RestaurantDetail: `{name} - Restaurant à {city} | WHERETOEAT.CH`
+- RestaurateurRegister: `Inscrire mon restaurant - WHERETOEAT.CH`
+
+### JSON-LD Structured Data (`RestaurantDetail.tsx`)
+- Schema.org `Restaurant` type injected via `useEffect`
+- Fields: name, image, address, telephone, servesCuisine, priceRange, url
+
+### Server-side routes (`server/index.ts`)
+- `GET /robots.txt` — allows `/`, disallows `/dashboard`, `/admin`, `/login`, `/api`, links sitemap
+- `GET /sitemap.xml` — dynamic, lists static pages + all approved restaurants
+- Both routes are defined BEFORE the rate limiter middleware
+
+### Server-side meta injection (SPA catch-all)
+- `/restaurant/:id` URLs: reads restaurant from DB, replaces OG/Twitter/title/description/canonical in HTML
+- Crawlers (Google, Facebook, WhatsApp) see correct restaurant name + image without JS execution
+- Falls through to default `index.html` if restaurant not found
+
 ## Known Constraints
 - `db:push` fails from local IP (AWS RDS restriction) — use manual ALTER TABLE scripts
 - `NODE_ENV` is hardcoded to `"production"` by esbuild in the bundle

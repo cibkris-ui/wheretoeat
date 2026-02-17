@@ -5,7 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Search, Users, Clock, Phone, Mail, Plus, X, Filter } from "lucide-react";
+import { Calendar as CalendarIcon, ChevronLeft, ChevronRight, Search, Users, Clock, Phone, Mail, Plus, X, Filter, MessageSquare } from "lucide-react";
 import { format, addDays, subDays, isToday, isSameDay, parseISO, startOfDay } from "date-fns";
 import { fr } from "date-fns/locale";
 import type { Restaurant, Booking } from "@shared/schema";
@@ -289,22 +289,25 @@ export function ReservationsManager({ restaurants, defaultRestaurantId }: Reserv
                       )}
                     </div>
                   </div>
-                  <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                    <div className="flex items-center gap-1">
-                      <Phone className="h-4 w-4" />
-                      {booking.phone}
+                  <div className="flex flex-col items-end gap-1 text-sm text-muted-foreground">
+                    <div className="flex items-center gap-4">
+                      <div className="flex items-center gap-1">
+                        <Phone className="h-4 w-4" />
+                        {booking.phone}
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <Mail className="h-4 w-4" />
+                        {booking.email}
+                      </div>
                     </div>
-                    <div className="flex items-center gap-1">
-                      <Mail className="h-4 w-4" />
-                      {booking.email}
-                    </div>
+                    {booking.specialRequest && (
+                      <div className="flex items-center gap-1 text-xs">
+                        <MessageSquare className="h-3.5 w-3.5" />
+                        <span>{booking.specialRequest}</span>
+                      </div>
+                    )}
                   </div>
                 </div>
-                {booking.specialRequest && (
-                  <div className="mt-2 text-sm text-muted-foreground bg-muted/30 rounded px-3 py-2">
-                    💬 {booking.specialRequest}
-                  </div>
-                )}
               </CardContent>
             </Card>
           ))}

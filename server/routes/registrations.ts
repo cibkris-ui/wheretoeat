@@ -117,7 +117,8 @@ router.post("/", async (req: any, res) => {
 
     res.status(201).json(restaurant);
   } catch (error: any) {
-    res.status(500).json({ message: error.message });
+    console.error("Registration error:", error);
+    res.status(500).json({ message: "Erreur lors de l'inscription" });
   }
 });
 
@@ -133,7 +134,8 @@ router.get("/", requireAuth, async (req: any, res) => {
       res.json(registrations);
     }
   } catch (error: any) {
-    res.status(500).json({ message: error.message });
+    console.error("Get registrations error:", error);
+    res.status(500).json({ message: "Erreur serveur" });
   }
 });
 

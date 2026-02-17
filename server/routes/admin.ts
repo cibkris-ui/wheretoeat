@@ -17,7 +17,8 @@ router.get("/restaurants", async (_req, res) => {
     const allRestaurants = await storage.getAllRestaurantsAdmin();
     res.json(allRestaurants);
   } catch (error: any) {
-    res.status(500).json({ message: error.message });
+    console.error("Admin error:", error);
+    res.status(500).json({ message: "Erreur serveur" });
   }
 });
 
@@ -28,7 +29,8 @@ router.put("/restaurants/:id/approve", async (req, res) => {
     const updated = await storage.updateRestaurant(id, { approvalStatus: "approved" });
     res.json(updated);
   } catch (error: any) {
-    res.status(500).json({ message: error.message });
+    console.error("Admin error:", error);
+    res.status(500).json({ message: "Erreur serveur" });
   }
 });
 
@@ -39,7 +41,8 @@ router.put("/restaurants/:id/reject", async (req, res) => {
     const updated = await storage.updateRestaurant(id, { approvalStatus: "rejected" });
     res.json(updated);
   } catch (error: any) {
-    res.status(500).json({ message: error.message });
+    console.error("Admin error:", error);
+    res.status(500).json({ message: "Erreur serveur" });
   }
 });
 
@@ -51,7 +54,8 @@ router.put("/restaurants/:id/block", async (req, res) => {
     const updated = await storage.updateRestaurant(id, { isBlocked: isBlocked ?? true });
     res.json(updated);
   } catch (error: any) {
-    res.status(500).json({ message: error.message });
+    console.error("Admin error:", error);
+    res.status(500).json({ message: "Erreur serveur" });
   }
 });
 
@@ -62,7 +66,8 @@ router.delete("/restaurants/:id", async (req, res) => {
     await storage.deleteRestaurant(id);
     res.json({ success: true });
   } catch (error: any) {
-    res.status(500).json({ message: error.message });
+    console.error("Admin error:", error);
+    res.status(500).json({ message: "Erreur serveur" });
   }
 });
 
@@ -73,14 +78,15 @@ router.get("/registrations", async (_req, res) => {
     const registrations = await storage.getAllRegistrations();
     res.json(registrations);
   } catch (error: any) {
-    res.status(500).json({ message: error.message });
+    console.error("Admin error:", error);
+    res.status(500).json({ message: "Erreur serveur" });
   }
 });
 
 router.put("/registrations/:id/status", async (req, res) => {
   try {
     const id = parseInt(req.params.id);
-    if (isNaN(id)) return res.status(400).json({ message: "Invalid registration ID" });
+    if (isNaN(id)) return res.status(400).json({ message: "Identifiant d'inscription invalide" });
 
     const { status, adminNotes } = req.body;
     if (!["pending", "approved", "rejected"].includes(status)) {
@@ -88,7 +94,7 @@ router.put("/registrations/:id/status", async (req, res) => {
     }
 
     const registration = await storage.updateRegistrationStatus(id, status, adminNotes);
-    if (!registration) return res.status(404).json({ message: "Registration not found" });
+    if (!registration) return res.status(404).json({ message: "Inscription introuvable" });
 
     if (status === "approved") {
       const cuisineString = Array.isArray(registration.cuisineType)
@@ -116,7 +122,8 @@ router.put("/registrations/:id/status", async (req, res) => {
 
     res.json({ registration });
   } catch (error: any) {
-    res.status(500).json({ message: error.message });
+    console.error("Admin error:", error);
+    res.status(500).json({ message: "Erreur serveur" });
   }
 });
 
@@ -127,7 +134,8 @@ router.get("/clients", async (_req, res) => {
     const clientsWithStats = await storage.getAllClientsWithStats();
     res.json(clientsWithStats);
   } catch (error: any) {
-    res.status(500).json({ message: error.message });
+    console.error("Admin error:", error);
+    res.status(500).json({ message: "Erreur serveur" });
   }
 });
 
@@ -138,14 +146,15 @@ router.get("/users", async (_req, res) => {
     const allUsers = await storage.getAllUsers();
     res.json(allUsers.map(({ password, ...rest }) => rest));
   } catch (error: any) {
-    res.status(500).json({ message: error.message });
+    console.error("Admin error:", error);
+    res.status(500).json({ message: "Erreur serveur" });
   }
 });
 
 router.post("/users", async (req, res) => {
   try {
     const { email, password, firstName, lastName, isAdmin: makeAdmin } = req.body;
-    if (!email || !password) return res.status(400).json({ message: "Email and password required" });
+    if (!email || !password) return res.status(400).json({ message: "Email et mot de passe requis" });
 
     const existing = await storage.getUserByEmail(email);
     if (existing) return res.status(400).json({ message: "L'utilisateur existe déjà" });
@@ -158,7 +167,8 @@ router.post("/users", async (req, res) => {
     const { password: _, ...safeUser } = user;
     res.status(201).json(safeUser);
   } catch (error: any) {
-    res.status(500).json({ message: error.message });
+    console.error("Admin error:", error);
+    res.status(500).json({ message: "Erreur serveur" });
   }
 });
 
@@ -173,7 +183,8 @@ router.put("/users/:id", async (req, res) => {
       res.status(404).json({ message: "Utilisateur introuvable" });
     }
   } catch (error: any) {
-    res.status(500).json({ message: error.message });
+    console.error("Admin error:", error);
+    res.status(500).json({ message: "Erreur serveur" });
   }
 });
 
@@ -191,7 +202,8 @@ router.put("/users/:id/password", async (req, res) => {
       res.status(404).json({ message: "Utilisateur introuvable" });
     }
   } catch (error: any) {
-    res.status(500).json({ message: error.message });
+    console.error("Admin error:", error);
+    res.status(500).json({ message: "Erreur serveur" });
   }
 });
 
@@ -200,7 +212,8 @@ router.delete("/users/:id", async (req, res) => {
     await storage.deleteUser(req.params.id);
     res.json({ success: true });
   } catch (error: any) {
-    res.status(500).json({ message: error.message });
+    console.error("Admin error:", error);
+    res.status(500).json({ message: "Erreur serveur" });
   }
 });
 

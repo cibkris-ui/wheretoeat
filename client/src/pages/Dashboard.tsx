@@ -53,7 +53,8 @@ import {
   AlertCircle,
   Bell,
   Grid3X3,
-  Clock
+  Clock,
+  MessageSquare
 } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { format, addDays, subDays, isToday, isSameDay, parseISO, startOfDay, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth } from "date-fns";
@@ -795,6 +796,12 @@ export default function Dashboard() {
                             {booking.email}
                           </span>
                         </div>
+                        {booking.specialRequest && (
+                          <div className="flex items-center gap-1 text-sm text-amber-700 mt-1">
+                            <MessageSquare className="h-4 w-4 flex-shrink-0" />
+                            <span>{booking.specialRequest}</span>
+                          </div>
+                        )}
                       </div>
                     </div>
                     <div className="flex flex-col items-stretch gap-1 mt-2 md:mt-0">

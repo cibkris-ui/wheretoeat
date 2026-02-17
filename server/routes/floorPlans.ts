@@ -17,7 +17,8 @@ router.get("/restaurant/:id", requireAuth, async (req: any, res) => {
     const floorPlan = await storage.getFloorPlan(id);
     res.json(floorPlan?.plan || { zones: [] });
   } catch (error: any) {
-    res.status(500).json({ message: error.message });
+    console.error("Floor plan error:", error);
+    res.status(500).json({ message: "Erreur serveur" });
   }
 });
 
@@ -35,7 +36,8 @@ router.put("/restaurant/:id", requireAuth, async (req: any, res) => {
     const saved = await storage.saveFloorPlan(id, plan);
     res.json(saved);
   } catch (error: any) {
-    res.status(500).json({ message: error.message });
+    console.error("Floor plan error:", error);
+    res.status(500).json({ message: "Erreur serveur" });
   }
 });
 

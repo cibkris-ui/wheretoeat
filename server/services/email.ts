@@ -1,6 +1,16 @@
 import { Resend } from "resend";
+import { createHmac } from "crypto";
 import { storage } from "./storage";
 import type { Booking, Restaurant } from "@shared/schema";
+
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+}
 
 let resend: Resend | null = null;
 function getResend(): Resend {
@@ -13,6 +23,24 @@ function getResend(): Resend {
   return resend;
 }
 const FROM_EMAIL = "WhereToEat <reservations@wheretoeat.ch>";
+
+function generateActionSignature(cancelToken: string, action: string): string {
+  const secret = process.env.SESSION_SECRET;
+  if (!secret) throw new Error("SESSION_SECRET must be set");
+  return createHmac("sha256", secret)
+    .update(`${cancelToken}:${action}`)
+    .digest("hex");
+}
+
+function generateActionUrl(cancelToken: string, action: string): string {
+  const sig = generateActionSignature(cancelToken, action);
+  return `https://wheretoeat.ch/api/bookings/action/${cancelToken}/${action}?sig=${sig}`;
+}
+
+export function verifyActionSignature(cancelToken: string, action: string, sig: string): boolean {
+  const expected = generateActionSignature(cancelToken, action);
+  return sig === expected;
+}
 
 function formatDate(dateStr: string): string {
   const [year, month, day] = dateStr.split("-");
@@ -61,8 +89,8 @@ function baseHtml(content: string): string {
 
 function detailRow(label: string, value: string): string {
   return `<tr>
-    <td style="padding:8px 12px;font-weight:600;color:#3f3f46;white-space:nowrap;">${label}</td>
-    <td style="padding:8px 12px;color:#18181b;">${value}</td>
+    <td style="padding:8px 12px;font-weight:600;color:#3f3f46;white-space:nowrap;">${escapeHtml(label)}</td>
+    <td style="padding:8px 12px;color:#18181b;">${escapeHtml(value)}</td>
   </tr>`;
 }
 
@@ -79,9 +107,10 @@ export async function sendBookingConfirmation(booking: Booking, restaurant: Rest
     ? "Votre réservation est en liste d'attente"
     : "Votre réservation est en attente de validation";
 
+  const safeName = escapeHtml(restaurant.name);
   const intro = isWaiting
-    ? `<p style="color:#71717a;font-size:15px;">Votre demande de réservation chez <strong>${restaurant.name}</strong> a bien été enregistrée. Le restaurant est complet sur ce créneau, votre réservation est placée en <strong>liste d'attente</strong>. Vous serez informé si une place se libère.</p>`
-    : `<p style="color:#71717a;font-size:15px;">Votre demande de réservation chez <strong>${restaurant.name}</strong> a bien été enregistrée. Le restaurant va examiner votre demande et vous recevrez un email de confirmation.</p>`;
+    ? `<p style="color:#71717a;font-size:15px;">Votre demande de réservation chez <strong>${safeName}</strong> a bien été enregistrée. Le restaurant est complet sur ce créneau, votre réservation est placée en <strong>liste d'attente</strong>. Vous serez informé si une place se libère.</p>`
+    : `<p style="color:#71717a;font-size:15px;">Votre demande de réservation chez <strong>${safeName}</strong> a bien été enregistrée. Le restaurant va examiner votre demande et vous recevrez un email de confirmation.</p>`;
 
   const rows = [
     detailRow("Restaurant", restaurant.name),
@@ -95,7 +124,7 @@ export async function sendBookingConfirmation(booking: Booking, restaurant: Rest
     <h1 style="margin:0 0 16px;font-size:20px;color:#18181b;">${title}</h1>
     ${intro}
     ${detailsTable(rows)}
-    ${booking.specialRequest ? `<p style="color:#71717a;font-size:14px;"><strong>Demande spéciale :</strong> ${booking.specialRequest}</p>` : ""}
+    ${booking.specialRequest ? `<p style="color:#71717a;font-size:14px;"><strong>Demande spéciale :</strong> ${escapeHtml(booking.specialRequest)}</p>` : ""}
     <p style="color:#71717a;font-size:14px;margin-top:24px;">À bientôt !</p>
   `);
 
@@ -120,13 +149,31 @@ export async function sendBookingNotificationToRestaurant(booking: Booking, rest
     detailRow("Heure", booking.time),
     detailRow("Personnes", `${booking.guests} adulte${booking.guests > 1 ? "s" : ""}${booking.children ? ` + ${booking.children} enfant${booking.children > 1 ? "s" : ""}` : ""}`),
     detailRow("Statut", statusLabel(booking.status)),
+    ...(booking.specialRequest ? [detailRow("Demande spéciale", booking.specialRequest)] : []),
   ].join("");
+
+  const confirmUrl = generateActionUrl(booking.cancelToken!, "confirm");
+  const refuseUrl = generateActionUrl(booking.cancelToken!, "refuse");
+  const waitingUrl = generateActionUrl(booking.cancelToken!, "waiting");
 
   const html = baseHtml(`
     <h1 style="margin:0 0 16px;font-size:20px;color:#18181b;">Nouvelle réservation</h1>
-    <p style="color:#71717a;font-size:15px;">Une nouvelle réservation a été effectuée sur votre restaurant <strong>${restaurant.name}</strong>.</p>
+    <p style="color:#71717a;font-size:15px;">Une nouvelle réservation a été effectuée sur votre restaurant <strong>${escapeHtml(restaurant.name)}</strong>.</p>
     ${detailsTable(rows)}
-    ${booking.specialRequest ? `<p style="color:#71717a;font-size:14px;"><strong>Demande spéciale :</strong> ${booking.specialRequest}</p>` : ""}
+    <p style="color:#71717a;font-size:14px;margin-top:24px;">Gérez cette réservation directement :</p>
+    <table width="100%" cellpadding="0" cellspacing="0" style="margin:16px 0;">
+      <tr>
+        <td align="center" style="padding:4px;">
+          <a href="${confirmUrl}" style="display:inline-block;padding:12px 24px;background-color:#16a34a;color:#ffffff;text-decoration:none;border-radius:6px;font-weight:600;font-size:15px;">ACCEPTER</a>
+        </td>
+        <td align="center" style="padding:4px;">
+          <a href="${refuseUrl}" style="display:inline-block;padding:12px 24px;background-color:#dc2626;color:#ffffff;text-decoration:none;border-radius:6px;font-weight:600;font-size:15px;">ANNULER</a>
+        </td>
+        <td align="center" style="padding:4px;">
+          <a href="${waitingUrl}" style="display:inline-block;padding:12px 24px;background-color:#71717a;color:#ffffff;text-decoration:none;border-radius:6px;font-weight:600;font-size:15px;">LISTE D'ATTENTE</a>
+        </td>
+      </tr>
+    </table>
   `);
 
   await getResend().emails.send({
@@ -151,10 +198,10 @@ export async function sendBookingConfirmedEmail(booking: Booking, restaurant: Re
 
   const html = baseHtml(`
     <h1 style="margin:0 0 16px;font-size:20px;color:#18181b;">Votre réservation est confirmée !</h1>
-    <p style="color:#71717a;font-size:15px;">Bonne nouvelle ! Votre réservation chez <strong>${restaurant.name}</strong> a été confirmée par le restaurant.</p>
+    <p style="color:#71717a;font-size:15px;">Bonne nouvelle ! Votre réservation chez <strong>${escapeHtml(restaurant.name)}</strong> a été confirmée par le restaurant.</p>
     ${detailsTable(rows)}
-    ${booking.specialRequest ? `<p style="color:#71717a;font-size:14px;"><strong>Demande spéciale :</strong> ${booking.specialRequest}</p>` : ""}
-    ${restaurant.address ? `<p style="color:#71717a;font-size:14px;"><strong>Adresse :</strong> ${restaurant.address}</p>` : ""}
+    ${booking.specialRequest ? `<p style="color:#71717a;font-size:14px;"><strong>Demande spéciale :</strong> ${escapeHtml(booking.specialRequest)}</p>` : ""}
+    ${restaurant.address ? `<p style="color:#71717a;font-size:14px;"><strong>Adresse :</strong> ${escapeHtml(restaurant.address)}</p>` : ""}
     <p style="color:#71717a;font-size:14px;margin-top:24px;">À bientôt !</p>
   `);
 
@@ -178,9 +225,9 @@ export async function sendBookingWaitingEmail(booking: Booking, restaurant: Rest
 
   const html = baseHtml(`
     <h1 style="margin:0 0 16px;font-size:20px;color:#18181b;">Votre réservation est en liste d'attente</h1>
-    <p style="color:#71717a;font-size:15px;">Votre réservation chez <strong>${restaurant.name}</strong> a été placée en liste d'attente. Le restaurant vous contactera si une place se libère.</p>
+    <p style="color:#71717a;font-size:15px;">Votre réservation chez <strong>${escapeHtml(restaurant.name)}</strong> a été placée en liste d'attente. Le restaurant vous contactera si une place se libère.</p>
     ${detailsTable(rows)}
-    ${booking.specialRequest ? `<p style="color:#71717a;font-size:14px;"><strong>Demande spéciale :</strong> ${booking.specialRequest}</p>` : ""}
+    ${booking.specialRequest ? `<p style="color:#71717a;font-size:14px;"><strong>Demande spéciale :</strong> ${escapeHtml(booking.specialRequest)}</p>` : ""}
     <p style="color:#71717a;font-size:14px;margin-top:24px;">Si vous ne souhaitez plus attendre, vous pouvez annuler votre réservation :</p>
     <table width="100%" cellpadding="0" cellspacing="0" style="margin:16px 0;">
       <tr><td align="center">
@@ -209,9 +256,9 @@ export async function sendBookingCancelledEmail(booking: Booking, restaurant: Re
 
   const html = baseHtml(`
     <h1 style="margin:0 0 16px;font-size:20px;color:#18181b;">Information concernant votre réservation</h1>
-    <p style="color:#71717a;font-size:15px;">Nous sommes désolés, votre réservation chez <strong>${restaurant.name}</strong> n'a pas pu être maintenue.</p>
+    <p style="color:#71717a;font-size:15px;">Nous sommes désolés, votre réservation chez <strong>${escapeHtml(restaurant.name)}</strong> n'a pas pu être maintenue.</p>
     ${detailsTable(rows)}
-    <p style="color:#71717a;font-size:15px;margin-top:16px;">Le restaurant <strong>${restaurant.name}</strong> sera ravi de vous accueillir une prochaine fois. N'hésitez pas à réserver à nouveau !</p>
+    <p style="color:#71717a;font-size:15px;margin-top:16px;">Le restaurant <strong>${escapeHtml(restaurant.name)}</strong> sera ravi de vous accueillir une prochaine fois. N'hésitez pas à réserver à nouveau !</p>
     <table width="100%" cellpadding="0" cellspacing="0" style="margin:16px 0;">
       <tr><td align="center">
         <a href="${rebookUrl}" style="display:inline-block;padding:12px 32px;background-color:#18181b;color:#ffffff;text-decoration:none;border-radius:6px;font-weight:600;font-size:15px;">Réserver à nouveau</a>
@@ -237,9 +284,9 @@ export async function sendBookingReminder(booking: Booking, restaurant: Restaura
 
   const html = baseHtml(`
     <h1 style="margin:0 0 16px;font-size:20px;color:#18181b;">Rappel de votre réservation</h1>
-    <p style="color:#71717a;font-size:15px;">Nous vous rappelons votre réservation de <strong>demain</strong> chez <strong>${restaurant.name}</strong>.</p>
+    <p style="color:#71717a;font-size:15px;">Nous vous rappelons votre réservation de <strong>demain</strong> chez <strong>${escapeHtml(restaurant.name)}</strong>.</p>
     ${detailsTable(rows)}
-    ${restaurant.address ? `<p style="color:#71717a;font-size:14px;"><strong>Adresse :</strong> ${restaurant.address}</p>` : ""}
+    ${restaurant.address ? `<p style="color:#71717a;font-size:14px;"><strong>Adresse :</strong> ${escapeHtml(restaurant.address)}</p>` : ""}
     <p style="color:#71717a;font-size:14px;margin-top:24px;">À demain !</p>
   `);
 

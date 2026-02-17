@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { Navbar } from "@/components/layout/Navbar";
 import { Button } from "@/components/ui/button";
 import { useLocation } from "wouter";
@@ -5,6 +6,10 @@ import { CheckCircle, CalendarCheck, Shield, UtensilsCrossed, LayoutDashboard, M
 
 export default function About() {
   const [, setLocation] = useLocation();
+
+  useEffect(() => {
+    document.title = "À propos - WHERETOEAT.CH";
+  }, []);
 
   return (
     <div className="min-h-screen bg-background">

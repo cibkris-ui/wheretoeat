@@ -18,7 +18,8 @@ router.get("/restaurant/:id", requireAuth, async (req: any, res) => {
     const users = await storage.getRestaurantUsers(id);
     res.json(users);
   } catch (error: any) {
-    res.status(500).json({ message: error.message });
+    console.error("Team error:", error);
+    res.status(500).json({ message: "Erreur serveur" });
   }
 });
 
@@ -33,8 +34,8 @@ router.post("/restaurant/:id", requireAuth, async (req: any, res) => {
     if (restaurant.ownerId !== req.userId) return res.status(403).json({ message: "Non autorisé pour ce restaurant" });
 
     const { email, password, firstName, lastName, role } = req.body;
-    if (!email) return res.status(400).json({ message: "Email is required" });
-    if (!password) return res.status(400).json({ message: "Password is required" });
+    if (!email) return res.status(400).json({ message: "L'email est requis" });
+    if (!password) return res.status(400).json({ message: "Le mot de passe est requis" });
 
     const existing = await storage.getRestaurantUserByEmail(id, email);
     if (existing) return res.status(400).json({ message: "L'utilisateur a déjà accès à ce restaurant" });
@@ -60,7 +61,8 @@ router.post("/restaurant/:id", requireAuth, async (req: any, res) => {
 
     res.status(201).json(newUser);
   } catch (error: any) {
-    res.status(500).json({ message: error.message });
+    console.error("Team error:", error);
+    res.status(500).json({ message: "Erreur serveur" });
   }
 });
 
@@ -70,16 +72,17 @@ router.delete("/restaurant/:restaurantId/user/:userId", requireAuth, async (req:
     const restaurantId = parseInt(req.params.restaurantId);
     const teamUserId = parseInt(req.params.userId);
 
-    if (isNaN(restaurantId) || isNaN(teamUserId)) return res.status(400).json({ message: "Invalid ID" });
+    if (isNaN(restaurantId) || isNaN(teamUserId)) return res.status(400).json({ message: "Identifiant invalide" });
 
     const restaurant = await storage.getRestaurant(restaurantId);
     if (!restaurant) return res.status(404).json({ message: "Restaurant introuvable" });
     if (restaurant.ownerId !== req.userId) return res.status(403).json({ message: "Non autorisé pour ce restaurant" });
 
     await storage.removeRestaurantUser(teamUserId);
-    res.json({ message: "User removed" });
+    res.json({ message: "Utilisateur retiré" });
   } catch (error: any) {
-    res.status(500).json({ message: error.message });
+    console.error("Team error:", error);
+    res.status(500).json({ message: "Erreur serveur" });
   }
 });
 

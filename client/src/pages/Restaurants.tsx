@@ -4,9 +4,12 @@ import { useQuery } from "@tanstack/react-query";
 import { fetchRestaurants } from "@/lib/api";
 import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 
 export default function Restaurants() {
+  useEffect(() => {
+    document.title = "Restaurants - WHERETOEAT.CH";
+  }, []);
   const [searchTerm, setSearchTerm] = useState("");
   
   const { data: restaurants, isLoading, error } = useQuery({

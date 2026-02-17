@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useEffect } from "react";
 import { useRoute } from "wouter";
 import { Navbar } from "@/components/layout/Navbar";
 import { BookingForm } from "@/components/booking/BookingForm";
@@ -13,12 +13,56 @@ export default function RestaurantDetail() {
   const [, params] = useRoute("/restaurant/:id");
   const id = params ? parseInt(params.id) : 0;
   const isEmbed = new URLSearchParams(window.location.search).get("embed") === "true";
-  
+
   const { data: restaurant, isLoading, error } = useQuery({
     queryKey: ["restaurant", id],
     queryFn: () => fetchRestaurant(id),
     enabled: id > 0,
   });
+
+  // Dynamic page title
+  useEffect(() => {
+    if (restaurant) {
+      const city = restaurant.location?.split(" ").slice(1).join(" ") || "Suisse";
+      document.title = `${restaurant.name} - Restaurant à ${city} | WHERETOEAT.CH`;
+    }
+  }, [restaurant]);
+
+  // JSON-LD structured data
+  useEffect(() => {
+    if (!restaurant) return;
+    const city = restaurant.location?.split(" ").slice(1).join(" ") || "";
+    const postalCode = restaurant.location?.split(" ")[0] || "";
+    const jsonLd = {
+      "@context": "https://schema.org",
+      "@type": "Restaurant",
+      name: restaurant.name,
+      image: restaurant.image ? (restaurant.image.startsWith("http") ? restaurant.image : `https://wheretoeat.ch${restaurant.image}`) : undefined,
+      address: {
+        "@type": "PostalAddress",
+        streetAddress: restaurant.address || undefined,
+        addressLocality: city || undefined,
+        postalCode: postalCode || undefined,
+        addressCountry: "CH",
+      },
+      telephone: restaurant.phone || undefined,
+      servesCuisine: restaurant.cuisine || undefined,
+      priceRange: restaurant.priceRange || undefined,
+      url: `https://wheretoeat.ch/restaurant/${restaurant.id}`,
+    };
+    const script = document.createElement("script");
+    script.type = "application/ld+json";
+    script.id = "restaurant-jsonld";
+    script.textContent = JSON.stringify(jsonLd);
+    // Remove any previous one
+    const existing = document.getElementById("restaurant-jsonld");
+    if (existing) existing.remove();
+    document.head.appendChild(script);
+    return () => {
+      const el = document.getElementById("restaurant-jsonld");
+      if (el) el.remove();
+    };
+  }, [restaurant]);
 
   // Embed mode: only show the booking form
   if (isEmbed) {

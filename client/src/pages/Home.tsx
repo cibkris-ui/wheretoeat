@@ -80,6 +80,10 @@ export default function Home() {
   };
 
   useEffect(() => {
+    document.title = "WHERETOEAT.CH - Réservez les meilleurs restaurants de Suisse";
+  }, []);
+
+  useEffect(() => {
     if (!authLoading && isAuthenticated && myRestaurants.length > 0) {
       setLocation("/dashboard");
     }

@@ -14,3 +14,11 @@ export const generalLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
 });
+
+export const uploadLimiter = rateLimit({
+  windowMs: 60 * 60 * 1000, // 1 hour
+  max: 10,
+  message: { message: "Trop d'uploads, veuillez réessayer plus tard." },
+  standardHeaders: true,
+  legacyHeaders: false,
+});

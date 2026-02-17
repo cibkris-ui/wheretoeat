@@ -307,24 +307,22 @@ export function BookingForm({ restaurantId, minGuests = 1, maxGuests = 12 }: Boo
           {step === "date" && (
              <div className="space-y-4 animate-in slide-in-from-right-8 duration-300">
                <h3 className="text-lg font-bold text-center mb-4">Sélectionnez une date</h3>
-               <div className="flex justify-center border rounded-xl p-4 shadow-sm">
-                 <Calendar
-                    mode="single"
-                    selected={formData.date}
-                    onSelect={(date) => {
-                      if (date) {
-                        setValue("date", date);
-                        handleNext("time");
-                      }
-                    }}
-                    disabled={(date) => date < new Date(new Date().setHours(0,0,0,0)) || isDateClosed(date)}
-                    className="rounded-md border-0"
-                    classNames={{
-                      day_selected: "bg-[#00645A] text-white hover:bg-[#00645A]/90 focus:bg-[#00645A]",
-                      day_today: "bg-accent text-accent-foreground font-bold",
-                    }}
-                  />
-               </div>
+               <Calendar
+                  mode="single"
+                  selected={formData.date}
+                  onSelect={(date) => {
+                    if (date) {
+                      setValue("date", date);
+                      handleNext("time");
+                    }
+                  }}
+                  disabled={(date) => date < new Date(new Date().setHours(0,0,0,0)) || isDateClosed(date)}
+                  className="rounded-xl border shadow-sm w-full max-w-sm mx-auto p-3 sm:p-6"
+                  classNames={{
+                    day_selected: "bg-[#00645A] text-white hover:bg-[#00645A]/90 focus:bg-[#00645A]",
+                    day_today: "bg-accent text-accent-foreground font-bold",
+                  }}
+                />
                <p className="text-xs text-muted-foreground text-center mt-4">
                  Les offres peuvent varier durant le processus de réservation.
                </p>
